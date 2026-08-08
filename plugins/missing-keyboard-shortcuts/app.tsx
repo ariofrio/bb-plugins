@@ -53,7 +53,7 @@ async function archiveThread(
 
 export default definePluginApp((app) => {
   app.contentScripts.register({
-    id: "missing-native-shortcuts",
+    id: "missing-keyboard-shortcuts",
     mount({ pluginId, signal }) {
       let archiveInFlight = false;
 

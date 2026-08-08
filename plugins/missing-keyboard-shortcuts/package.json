@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-missing-native-shortcuts",
+  "name": "bb-plugin-missing-keyboard-shortcuts",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -13,8 +13,8 @@
     "bbPluginSdk": "^0.4.1"
   },
   "bb": {
-    "name": "Missing Native Shortcuts",
-    "description": "Adds native-style keyboard shortcuts that BB does not provide.",
+    "name": "Missing keyboard shortcuts",
+    "description": "Adds keyboard shortcuts that BB does not provide.",
     "branding": {
       "icon": "Zap"
     },

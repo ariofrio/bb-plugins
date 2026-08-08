@@ -1,6 +1,6 @@
-# Missing Native Shortcuts
+# Missing keyboard shortcuts
 
-Adds native-style keyboard shortcuts that BB does not currently provide:
+Adds keyboard shortcuts that BB does not currently provide:
 
 - `Command-[` navigates backward in browser history.
 - `Command-]` navigates forward in browser history.
