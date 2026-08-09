@@ -8,17 +8,23 @@ import {
 import { createElement, useEffect, useLayoutEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
+  focusedSecondaryComposerThreadId,
   focusPrimaryComposer,
+  focusSecondaryComposer as focusRegisteredSecondaryComposer,
+  hasPrimaryComposer,
   hasOpenComposer,
+  isSecondaryComposerFocused,
   openRegisteredComposer,
   registerOpenComposer,
   registerPrimaryComposerFocus,
+  registerSecondaryComposer,
 } from "./composer-navigation-bridge";
 import {
   readLastThreadProjectId,
   rememberThreadProject,
 } from "./last-thread-project";
 import {
+  composerShortcutTarget,
   currentThreadId,
   historyDirection,
   isArchiveShortcut,
@@ -30,11 +36,18 @@ import {
   type NewThreadHost,
 } from "./new-thread-navigation";
 import {
+  activateExistingSideChatPanel,
+  activateSideChatPanel,
   activateTerminalPanel,
-  closeTerminalPanel,
+  closePanel,
+  createSideChatPanelTab,
+  readRecentSideChatTabId,
   readRecentTerminalId,
+  readSideChatPanelSnapshot,
   readTerminalPanelSnapshot,
+  rememberRecentSideChatTabId,
   rememberRecentTerminalId,
+  selectSideChatPanelTab,
   shouldCloseTerminalPanel,
   type PanelStorageChange,
 } from "./terminal-panel-state";
@@ -48,6 +61,10 @@ interface ArchiveResult {
 interface OpenTerminalResult {
   created: boolean;
   terminalId: string;
+}
+
+interface CreateSideChatResult {
+  threadId: string;
 }
 
 type RpcEnvelope<Result> =
@@ -73,7 +90,8 @@ function ComposerNavigationBridge() {
   const composer = useComposer();
   const view = useComposerView();
   const markerRef = useRef<HTMLSpanElement>(null);
-  const threadId = view.scope.kind === "thread" ? view.scope.threadId : null;
+  const composerThreadId =
+    view.scope.kind === "thread" ? view.scope.threadId : null;
   useEffect(() => {
     rememberThreadProject(window.localStorage, context);
   }, [context.projectId, context.threadId]);
@@ -85,12 +103,42 @@ function ComposerNavigationBridge() {
     [toCompose],
   );
   useLayoutEffect(() => {
-    if (threadId === null) return;
-    if (!markerRef.current?.closest('[data-app-composer-role="primary"]')) {
+    const marker = markerRef.current;
+    const composerElement = marker?.closest<HTMLElement>(
+      "[data-app-composer-role]",
+    );
+    const role = composerElement?.getAttribute("data-app-composer-role");
+    if (role === "primary") {
+      if (view.scope.kind === "thread") {
+        return registerPrimaryComposerFocus(
+          view.scope.threadId,
+          composer.focus,
+        );
+      }
+      if (view.scope.kind === "new-thread") {
+        return registerPrimaryComposerFocus(null, composer.focus);
+      }
       return;
     }
-    return registerPrimaryComposerFocus(threadId, composer.focus);
-  }, [composer.focus, threadId]);
+    if (
+      role !== "secondary" ||
+      context.threadId === null ||
+      composerThreadId === null ||
+      composerThreadId === context.threadId ||
+      composerElement === null ||
+      composerElement === undefined
+    ) {
+      return;
+    }
+    return registerSecondaryComposer(context.threadId, composerThreadId, {
+      focus: composer.focus,
+      isFocused: () => composerElement.contains(document.activeElement),
+      isVisible: () => {
+        const bounds = composerElement.getBoundingClientRect();
+        return bounds.width > 0 && bounds.height > 0;
+      },
+    });
+  }, [composer.focus, composerThreadId, context.threadId, view.scope.kind]);
   return createElement("span", { hidden: true, ref: markerRef });
 }
 
@@ -141,6 +189,56 @@ async function openTerminal(
     );
   }
   return envelope.result;
+}
+
+async function createSideChat(
+  pluginId: string,
+  threadId: string,
+): Promise<CreateSideChatResult> {
+  const response = await fetch(
+    "/api/v1/plugins/side-chat/rpc/createSideChat",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        sourceThreadId: threadId,
+        anchorText: "",
+      }),
+      credentials: "same-origin",
+    },
+  );
+  const envelope = (await response.json()) as RpcEnvelope<CreateSideChatResult>;
+  if (!response.ok || !envelope.ok) {
+    throw new Error(
+      !envelope.ok
+        ? rpcErrorMessage(envelope.error, "Failed to start side chat")
+        : `Side-chat request failed (${response.status})`,
+    );
+  }
+  const result = envelope.result;
+  const persistResponse = await fetch(
+    `/api/v1/plugins/${encodeURIComponent(pluginId)}/rpc/ensureSideChatTab`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        childThreadId: result.threadId,
+        parentThreadId: threadId,
+      }),
+      credentials: "same-origin",
+    },
+  );
+  const persistEnvelope = (await persistResponse.json()) as RpcEnvelope<{
+    tabId: string;
+  }>;
+  if (!persistResponse.ok || !persistEnvelope.ok) {
+    throw new Error(
+      !persistEnvelope.ok
+        ? rpcErrorMessage(persistEnvelope.error, "Failed to persist side chat")
+        : `Side-chat tab request failed (${persistResponse.status})`,
+    );
+  }
+  return result;
 }
 
 function notifyPanelStateChanged(change: PanelStorageChange): void {
@@ -205,6 +303,38 @@ function focusTerminal(signal: AbortSignal, threadId: string): void {
   attemptFocus();
 }
 
+function focusSideChatComposer(
+  signal: AbortSignal,
+  parentThreadId: string,
+  childThreadId: string,
+): void {
+  let attemptsRemaining = 120;
+  let animationFrame: number | null = null;
+  const stop = () => {
+    if (animationFrame !== null) {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    }
+    signal.removeEventListener("abort", stop);
+  };
+  const attemptFocus = () => {
+    animationFrame = null;
+    if (
+      signal.aborted ||
+      currentThreadId(window.location.pathname) !== parentThreadId ||
+      focusRegisteredSecondaryComposer(parentThreadId, childThreadId) ||
+      attemptsRemaining <= 0
+    ) {
+      stop();
+      return;
+    }
+    attemptsRemaining -= 1;
+    animationFrame = window.requestAnimationFrame(attemptFocus);
+  };
+  signal.addEventListener("abort", stop, { once: true });
+  attemptFocus();
+}
+
 export default definePluginApp((app) => {
   app.composer.customize({
     id: "navigation-bridge",
@@ -221,6 +351,7 @@ export default definePluginApp((app) => {
     id: "missing-keyboard-shortcuts",
     mount({ pluginId, signal }) {
       let archiveInFlight = false;
+      let sideChatInFlight = false;
       let terminalInFlight = false;
       const newThreadHost: NewThreadHost = {
         getSelectedProjectId() {
@@ -256,18 +387,43 @@ export default definePluginApp((app) => {
         "focusin",
         (event) => {
           if (!(event.target instanceof Element)) return;
-          if (event.target.closest("[data-app-terminal]") === null) return;
           const threadId = currentThreadId(window.location.pathname);
           if (threadId === null) return;
-          const { activeTerminalId } = readTerminalPanelSnapshot(
-            window.localStorage,
-            threadId,
-          );
-          if (activeTerminalId !== null) {
-            rememberRecentTerminalId(
+          if (event.target.closest("[data-app-terminal]") !== null) {
+            const { activeTerminalId } = readTerminalPanelSnapshot(
               window.localStorage,
               threadId,
-              activeTerminalId,
+            );
+            if (activeTerminalId !== null) {
+              rememberRecentTerminalId(
+                window.localStorage,
+                threadId,
+                activeTerminalId,
+              );
+            }
+            return;
+          }
+          if (
+            event.target.closest(
+              '[data-app-composer-role="secondary"]',
+            ) === null
+          ) {
+            return;
+          }
+          const focusedChildThreadId =
+            focusedSecondaryComposerThreadId(threadId);
+          if (focusedChildThreadId === null) return;
+          const focusedSideChat = readSideChatPanelSnapshot(
+            window.localStorage,
+            threadId,
+          ).sideChats.find(
+            ({ childThreadId }) => childThreadId === focusedChildThreadId,
+          );
+          if (focusedSideChat !== undefined) {
+            rememberRecentSideChatTabId(
+              window.localStorage,
+              threadId,
+              focusedSideChat.id,
             );
           }
         },
@@ -292,6 +448,96 @@ export default definePluginApp((app) => {
             return;
           }
 
+          const composerTarget = composerShortcutTarget(event);
+          if (composerTarget === "primary") {
+            const threadId = currentThreadId(window.location.pathname);
+            if (!hasPrimaryComposer(threadId)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            focusPrimaryComposer(threadId);
+            return;
+          }
+          if (composerTarget === "secondary") {
+            const threadId = currentThreadId(window.location.pathname);
+            if (threadId === null) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            const panel = readSideChatPanelSnapshot(
+              window.localStorage,
+              threadId,
+            );
+            if (
+              panel.isOpen &&
+              panel.activeSideChat !== null &&
+              isSecondaryComposerFocused(
+                threadId,
+                panel.activeSideChat.childThreadId,
+              )
+            ) {
+              notifyPanelStateChanged(
+                closePanel(window.localStorage, threadId),
+              );
+              focusPrimaryComposer(threadId);
+              return;
+            }
+
+            const sideChat = selectSideChatPanelTab(
+              panel,
+              readRecentSideChatTabId(window.localStorage, threadId),
+            );
+            if (sideChat !== null) {
+              const change = activateExistingSideChatPanel(
+                window.localStorage,
+                threadId,
+                sideChat.id,
+              );
+              if (change !== null) {
+                rememberRecentSideChatTabId(
+                  window.localStorage,
+                  threadId,
+                  sideChat.id,
+                );
+                notifyPanelStateChanged(change);
+                focusSideChatComposer(
+                  signal,
+                  threadId,
+                  sideChat.childThreadId,
+                );
+                return;
+              }
+            }
+            if (sideChatInFlight) return;
+
+            sideChatInFlight = true;
+            void createSideChat(pluginId, threadId)
+              .then(({ threadId: childThreadId }) => {
+                const tab = createSideChatPanelTab(threadId, childThreadId);
+                rememberRecentSideChatTabId(
+                  window.localStorage,
+                  threadId,
+                  tab.id,
+                );
+                notifyPanelStateChanged(
+                  activateSideChatPanel(
+                    window.localStorage,
+                    threadId,
+                    tab,
+                  ),
+                );
+                focusSideChatComposer(signal, threadId, childThreadId);
+              })
+              .catch((error: unknown) => {
+                toast.error(
+                  rpcErrorMessage(error, "Failed to start side chat"),
+                );
+              })
+              .finally(() => {
+                sideChatInFlight = false;
+              });
+            return;
+          }
+
           if (isTerminalShortcut(event)) {
             const threadId = currentThreadId(window.location.pathname);
             if (threadId === null) return;
@@ -304,7 +550,7 @@ export default definePluginApp((app) => {
             );
             if (shouldCloseTerminalPanel(panel, isTerminalFocused())) {
               notifyPanelStateChanged(
-                closeTerminalPanel(window.localStorage, threadId),
+                closePanel(window.localStorage, threadId),
               );
               focusPrimaryComposer(threadId);
               return;

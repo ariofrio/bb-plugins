@@ -13,6 +13,8 @@ export interface NewThreadTarget {
   projectId: string;
 }
 
+export type ComposerShortcutTarget = "primary" | "secondary";
+
 function exactCommandChord(event: ShortcutKeyEvent): boolean {
   return (
     event.metaKey &&
@@ -49,6 +51,15 @@ export function isTerminalShortcut(event: ShortcutKeyEvent): boolean {
     !event.repeat &&
     event.key === "`"
   );
+}
+
+export function composerShortcutTarget(
+  event: ShortcutKeyEvent,
+): ComposerShortcutTarget | null {
+  if (!exactCommandChord(event) || event.key.toLowerCase() !== "l") {
+    return null;
+  }
+  return event.shiftKey ? "secondary" : "primary";
 }
 
 export function newThreadTarget(

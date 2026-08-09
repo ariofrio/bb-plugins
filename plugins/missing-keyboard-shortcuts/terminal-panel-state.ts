@@ -2,6 +2,11 @@ const FIXED_PANEL_STORAGE_PREFIX = "bb.thread.fixedPanelTabsState";
 const FIXED_PANEL_STORAGE_VERSION = 1;
 const RECENT_TERMINAL_STORAGE_PREFIX =
   "bb.plugin.missing-keyboard-shortcuts.recent-terminal";
+const RECENT_SIDE_CHAT_STORAGE_PREFIX =
+  "bb.plugin.missing-keyboard-shortcuts.recent-side-chat";
+const SIDE_CHAT_PLUGIN_ID = "side-chat";
+const SIDE_CHAT_ACTION_ID = "side-chat";
+const SIDE_CHAT_TITLE = "Side chat";
 
 export interface StringStorage {
   getItem(key: string): string | null;
@@ -9,9 +14,13 @@ export interface StringStorage {
 }
 
 interface StoredTab {
+  actionId?: unknown;
   id?: unknown;
   kind?: unknown;
+  paramsJson?: unknown;
+  pluginId?: unknown;
   terminalId?: unknown;
+  title?: unknown;
   [key: string]: unknown;
 }
 
@@ -31,6 +40,25 @@ export interface TerminalPanelSnapshot {
   activeTerminalId: string | null;
   isOpen: boolean;
   terminalIds: readonly string[];
+}
+
+export interface SideChatPanelTab {
+  childThreadId: string;
+  id: string;
+}
+
+export interface SideChatPanelTabDefinition extends SideChatPanelTab {
+  actionId: "side-chat";
+  kind: "plugin-panel";
+  paramsJson: string;
+  pluginId: "side-chat";
+  title: "Side chat";
+}
+
+export interface SideChatPanelSnapshot {
+  activeSideChat: SideChatPanelTab | null;
+  isOpen: boolean;
+  sideChats: readonly SideChatPanelTab[];
 }
 
 export interface PanelStorageChange {
@@ -56,8 +84,20 @@ function recentTerminalStorageKey(threadId: string): string {
   return `${RECENT_TERMINAL_STORAGE_PREFIX}-${encodeURIComponent(threadId.trim())}`;
 }
 
+function recentSideChatStorageKey(threadId: string): string {
+  return `${RECENT_SIDE_CHAT_STORAGE_PREFIX}-${encodeURIComponent(threadId.trim())}`;
+}
+
 function terminalTabId(terminalId: string): string {
   return `terminal:${encodeURIComponent(terminalId)}:none`;
+}
+
+function pluginPanelTabId(
+  pluginId: string,
+  actionId: string,
+  paramsJson: string,
+): string {
+  return `plugin-panel:${encodeURIComponent(`${pluginId}:${actionId}:${paramsJson}`)}:none`;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -101,6 +141,35 @@ function terminalIdForTab(tab: StoredTab): string | null {
     : null;
 }
 
+function sideChatForTab(
+  tab: StoredTab,
+  parentThreadId: string,
+): SideChatPanelTab | null {
+  if (
+    tab.kind !== "plugin-panel" ||
+    tab.pluginId !== SIDE_CHAT_PLUGIN_ID ||
+    tab.actionId !== SIDE_CHAT_ACTION_ID ||
+    typeof tab.id !== "string" ||
+    typeof tab.paramsJson !== "string"
+  ) {
+    return null;
+  }
+  try {
+    const params: unknown = JSON.parse(tab.paramsJson);
+    if (
+      !isRecord(params) ||
+      typeof params.threadId !== "string" ||
+      params.threadId.length === 0 ||
+      params.sourceThreadId !== parentThreadId
+    ) {
+      return null;
+    }
+    return { childThreadId: params.threadId, id: tab.id };
+  } catch {
+    return null;
+  }
+}
+
 function snapshotFromState(state: StoredPanelState): TerminalPanelSnapshot {
   const terminalIds = state.secondary.tabs.flatMap((tab) => {
     const terminalId = terminalIdForTab(tab);
@@ -138,6 +207,107 @@ export function readTerminalPanelSnapshot(
   );
 }
 
+export function readSideChatPanelSnapshot(
+  storage: StringStorage,
+  threadId: string,
+): SideChatPanelSnapshot {
+  const state = parsePanelState(storage.getItem(panelStorageKey(threadId)));
+  const sideChats = state.secondary.tabs.flatMap((tab) => {
+    const sideChat = sideChatForTab(tab, threadId);
+    return sideChat === null ? [] : [sideChat];
+  });
+  const activeSideChat =
+    sideChats.find(({ id }) => id === state.secondary.activeTabId) ?? null;
+  return { activeSideChat, isOpen: state.secondary.isOpen, sideChats };
+}
+
+export function createSideChatPanelTab(
+  parentThreadId: string,
+  childThreadId: string,
+): SideChatPanelTabDefinition {
+  const paramsJson = JSON.stringify({
+    threadId: childThreadId,
+    sourceThreadId: parentThreadId,
+    sourceMessageText: "",
+    sourceSeqEnd: null,
+  });
+  return {
+    actionId: SIDE_CHAT_ACTION_ID,
+    childThreadId,
+    id: pluginPanelTabId(
+      SIDE_CHAT_PLUGIN_ID,
+      SIDE_CHAT_ACTION_ID,
+      paramsJson,
+    ),
+    kind: "plugin-panel",
+    paramsJson,
+    pluginId: SIDE_CHAT_PLUGIN_ID,
+    title: SIDE_CHAT_TITLE,
+  };
+}
+
+export function activateSideChatPanel(
+  storage: StringStorage,
+  threadId: string,
+  tab: SideChatPanelTabDefinition,
+  now = Date.now(),
+): PanelStorageChange {
+  const state = parsePanelState(storage.getItem(panelStorageKey(threadId)));
+  const storedTab = {
+    actionId: tab.actionId,
+    id: tab.id,
+    kind: tab.kind,
+    paramsJson: tab.paramsJson,
+    pluginId: tab.pluginId,
+    title: tab.title,
+  };
+  const tabs = state.secondary.tabs.some(({ id }) => id === tab.id)
+    ? state.secondary.tabs
+    : [...state.secondary.tabs, storedTab];
+  return writePanelState(storage, threadId, {
+    ...state,
+    secondary: {
+      ...state.secondary,
+      tabs,
+      activeTabId: tab.id,
+      isOpen: true,
+    },
+    lastUsedAt: now,
+  });
+}
+
+export function activateExistingSideChatPanel(
+  storage: StringStorage,
+  threadId: string,
+  tabId: string,
+  now = Date.now(),
+): PanelStorageChange | null {
+  const state = parsePanelState(storage.getItem(panelStorageKey(threadId)));
+  const tab = state.secondary.tabs.find(({ id }) => id === tabId);
+  if (tab === undefined || sideChatForTab(tab, threadId) === null) return null;
+  return writePanelState(storage, threadId, {
+    ...state,
+    secondary: {
+      ...state.secondary,
+      activeTabId: tabId,
+      isOpen: true,
+    },
+    lastUsedAt: now,
+  });
+}
+
+export function selectSideChatPanelTab(
+  panel: SideChatPanelSnapshot,
+  recentTabId: string | null,
+): SideChatPanelTab | null {
+  return (
+    panel.activeSideChat ??
+    panel.sideChats.find(({ id }) => id === recentTabId) ??
+    panel.sideChats.at(-1) ??
+    null
+  );
+}
+
 export function activateTerminalPanel(
   storage: StringStorage,
   threadId: string,
@@ -161,7 +331,7 @@ export function activateTerminalPanel(
   });
 }
 
-export function closeTerminalPanel(
+export function closePanel(
   storage: StringStorage,
   threadId: string,
   now = Date.now(),
@@ -172,6 +342,21 @@ export function closeTerminalPanel(
     secondary: { ...state.secondary, isOpen: false },
     lastUsedAt: now,
   });
+}
+
+export function readRecentSideChatTabId(
+  storage: StringStorage,
+  threadId: string,
+): string | null {
+  return storage.getItem(recentSideChatStorageKey(threadId));
+}
+
+export function rememberRecentSideChatTabId(
+  storage: StringStorage,
+  threadId: string,
+  tabId: string,
+): void {
+  storage.setItem(recentSideChatStorageKey(threadId), tabId);
 }
 
 export function readRecentTerminalId(

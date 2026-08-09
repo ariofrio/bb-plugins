@@ -1,5 +1,6 @@
 import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk";
 import { z } from "zod";
+import { createSideChatPanelTab } from "./terminal-panel-state";
 import { selectReusableTerminalId } from "./terminal-selection";
 
 const DEFAULT_TERMINAL_COLS = 100;
@@ -32,6 +33,33 @@ async function ensureThreadTerminalTab(
   }
 }
 
+async function ensureThreadSideChatTab(
+  bb: BbPluginApi,
+  parentThreadId: string,
+  childThreadId: string,
+): Promise<string> {
+  const { childThreadId: _childThreadId, ...tab } = createSideChatPanelTab(
+    parentThreadId,
+    childThreadId,
+  );
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const current = await bb.sdk.threads.tabs.get({ threadId: parentThreadId });
+    if (current.tabs.some(({ id }) => id === tab.id)) return tab.id;
+
+    try {
+      await bb.sdk.threads.tabs.update({
+        expectedRevision: current.revision,
+        tabs: [...current.tabs, tab],
+        threadId: parentThreadId,
+      });
+      return tab.id;
+    } catch (error) {
+      if (attempt === 1) throw error;
+    }
+  }
+  return tab.id;
+}
+
 export const rpcContract = defineRpcContract({
   archiveThread: {
     input: z.object({ threadId: z.string().min(1) }).strict(),
@@ -47,6 +75,15 @@ export const rpcContract = defineRpcContract({
     output: z
       .object({ terminalId: z.string().min(1), created: z.boolean() })
       .strict(),
+  },
+  ensureSideChatTab: {
+    input: z
+      .object({
+        childThreadId: z.string().min(1),
+        parentThreadId: z.string().min(1),
+      })
+      .strict(),
+    output: z.object({ tabId: z.string().min(1) }).strict(),
   },
 });
 
@@ -77,6 +114,14 @@ export default function plugin(bb: BbPluginApi) {
 
       await ensureThreadTerminalTab(bb, threadId, terminalId);
       return { terminalId, created };
+    },
+    async ensureSideChatTab({ childThreadId, parentThreadId }) {
+      const tabId = await ensureThreadSideChatTab(
+        bb,
+        parentThreadId,
+        childThreadId,
+      );
+      return { tabId };
     },
   });
 

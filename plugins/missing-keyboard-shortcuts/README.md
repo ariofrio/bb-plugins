@@ -8,6 +8,12 @@ Adds keyboard shortcuts that BB does not currently provide:
 - `Command-Shift-N` starts a new thread in the selected thread's project, or
   the last selected thread's project when no thread is selected.
 - `Command-.` archives the current thread and its child threads.
+- `Command-L` focuses the primary composer.
+- `Command-Shift-L` activates a side chat in the current thread. It creates one
+  only when none exists; otherwise it selects the active or most recently used
+  side chat, opens the right sidebar, and focuses its secondary composer. When
+  that composer is already selected, visible, and focused, the shortcut closes
+  the right sidebar and focuses the primary composer.
 - Control-backtick activates a terminal in the current thread. It creates one
   only when none exists; otherwise it selects the most recently used terminal,
   opens the right sidebar, and focuses it. When that terminal is already

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  composerShortcutTarget,
   currentThreadId,
   historyDirection,
   isArchiveShortcut,
@@ -75,6 +76,26 @@ describe("isTerminalShortcut", () => {
   it("rejects other chords", () => {
     expect(isTerminalShortcut({ ...chord, key: "~" })).toBe(false);
     expect(isTerminalShortcut({ ...chord, ctrlKey: false })).toBe(false);
+  });
+});
+
+describe("composerShortcutTarget", () => {
+  it("matches Command-L and Command-Shift-L", () => {
+    expect(composerShortcutTarget({ ...baseChord, key: "l" })).toBe(
+      "primary",
+    );
+    expect(
+      composerShortcutTarget({ ...baseChord, key: "L", shiftKey: true }),
+    ).toBe("secondary");
+  });
+
+  it("rejects extra modifiers, held-key repeats, and other keys", () => {
+    const chord = { ...baseChord, key: "l" };
+    expect(composerShortcutTarget({ ...chord, altKey: true })).toBeNull();
+    expect(composerShortcutTarget({ ...chord, ctrlKey: true })).toBeNull();
+    expect(composerShortcutTarget({ ...chord, repeat: true })).toBeNull();
+    expect(composerShortcutTarget({ ...chord, key: "k" })).toBeNull();
+    expect(composerShortcutTarget({ ...chord, metaKey: false })).toBeNull();
   });
 });
 
