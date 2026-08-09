@@ -21,9 +21,8 @@ const STATUS_LABELS = THREAD_STATUSES.join(", ");
 const USAGE = {
   list: "Usage: bb task list [--status <status>] [--json]\n",
   show: "Usage: bb task show [id] [--self] [--json]\n",
-  update: "Usage: bb task update [id] [--self] --status <status> [--json]\n",
-  reorder:
-    "Usage: bb task reorder <id> [--after <id>] [--before <id>] [--json]\n",
+  update:
+    "Usage: bb task update [id] [--self] [--status <status>] [--after <id>] [--before <id>] [--json]\n",
 } as const;
 
 const HELP = `Usage: bb task [options] [command]
@@ -37,15 +36,13 @@ Commands:
   list [options]                     List tasks
   show [options] [id]                Show task details
   update [options] [id]              Update a task
-  reorder [options] <id>             Move a task between adjacent tasks
   help [command]                     display help for command
 `;
 
 const COMMAND_HELP: Record<keyof typeof USAGE, string> = {
   list: `${USAGE.list}\nList tasks\n\nOptions:\n  --status <status>  Filter by task status\n  --json             Print machine-readable JSON output\n  -h, --help         display help for command\n`,
   show: `${USAGE.show}\nShow task details\n\nOptions:\n  --self      Target the current thread\n  --json      Print machine-readable JSON output\n  -h, --help  display help for command\n`,
-  update: `${USAGE.update}\nUpdate a task\n\nOptions:\n  --self             Target the current thread\n  --status <status>  Set the task status: ${STATUS_LABELS}\n  --json             Print machine-readable JSON output\n  -h, --help         display help for command\n`,
-  reorder: `${USAGE.reorder}\nMove a task between adjacent tasks in the same status\n\nOptions:\n  --after <id>   Previous task, or omit for the start\n  --before <id>  Next task, or omit for the end\n  --json         Print machine-readable JSON output\n  -h, --help     display help for command\n`,
+  update: `${USAGE.update}\nUpdate a task's status or position\n\nOptions:\n  --self             Target the current thread\n  --status <status>  Set the task status: ${STATUS_LABELS}\n  --after <id>       Previous task, or omit for the start\n  --before <id>      Next task, or omit for the end\n  --json             Print machine-readable JSON output\n  -h, --help         display help for command\n`,
 };
 
 function json(value: unknown): string {
@@ -217,57 +214,71 @@ export function runTaskCli(
     if (command === "update") {
       const { options, positionals } = parseArguments(
         args.slice(1),
-        ["--status"],
+        ["--status", "--after", "--before"],
         ["--self"],
       );
       if (positionals.length > 1) return { exitCode: 2, stderr: USAGE.update };
       const rawStatus = options.get("--status");
-      if (typeof rawStatus !== "string") {
-        throw new Error("No changes requested. Provide --status.");
+      const rawAfter = options.get("--after");
+      const rawBefore = options.get("--before");
+      if (
+        typeof rawStatus !== "string" &&
+        typeof rawAfter !== "string" &&
+        typeof rawBefore !== "string"
+      ) {
+        throw new Error(
+          "No changes requested. Provide --status, --after, or --before.",
+        );
       }
-      const status = parseThreadStatus(rawStatus);
-      if (!status) throw new Error(`Unknown status. Expected one of: ${STATUS_LABELS}`);
       const taskId = resolveTaskId(
         positionals[0],
         options.get("--self") === true,
         context,
       );
-      store.setStatus(taskId, status);
+      const current = store.get(taskId);
+      const status =
+        typeof rawStatus === "string"
+          ? parseThreadStatus(rawStatus)
+          : current.status;
+      if (!status) throw new Error(`Unknown status. Expected one of: ${STATUS_LABELS}`);
+
+      const warnings: string[] = [];
+      function validNeighbor(
+        flag: "--after" | "--before",
+        value: string | true | undefined,
+      ): string | null {
+        if (typeof value !== "string") return null;
+        const neighbor = store.get(value);
+        if (!neighbor.explicit || neighbor.status !== status) {
+          warnings.push(
+            `Warning: ${flag} task ${value} is not in status ${status}; ignoring ${flag}.`,
+          );
+          return null;
+        }
+        return value;
+      }
+
+      const previousThreadId = validNeighbor("--after", rawAfter);
+      const nextThreadId = validNeighbor("--before", rawBefore);
+      const hasValidPosition =
+        previousThreadId !== null || nextThreadId !== null;
+      if (hasValidPosition) {
+        store.reorderThread({
+          threadId: taskId,
+          status,
+          previousThreadId,
+          nextThreadId,
+        });
+      } else if (current.status !== status || typeof rawStatus === "string") {
+        store.setStatus(taskId, status);
+      }
       const task = store.get(taskId);
       return {
         exitCode: 0,
         stdout: wantsJson
           ? json(taskLookupJson(task))
           : `Task ${taskId} updated\n${humanTask(task)}`,
-      };
-    }
-
-    if (command === "reorder") {
-      const { options, positionals } = parseArguments(args.slice(1), [
-        "--after",
-        "--before",
-      ]);
-      if (positionals.length !== 1) return { exitCode: 2, stderr: USAGE.reorder };
-      const taskId = positionals[0] ?? "";
-      const current = store.get(taskId);
-      if (!current.explicit) {
-        throw new Error(`Task ${taskId} has no explicit status. Update it first.`);
-      }
-      const state = store.reorderThread({
-        threadId: taskId,
-        status: current.status,
-        previousThreadId: (options.get("--after") as string | undefined) ?? null,
-        nextThreadId: (options.get("--before") as string | undefined) ?? null,
-      });
-      return {
-        exitCode: 0,
-        stdout: wantsJson
-          ? json(
-              state.assignments
-                .filter((assignment) => assignment.status === current.status)
-                .map(taskAssignmentJson),
-            )
-          : `Task ${taskId} reordered\n`,
+        ...(warnings.length > 0 ? { stderr: `${warnings.join("\n")}\n` } : {}),
       };
     }
 

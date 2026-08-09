@@ -28,21 +28,23 @@ The sidebar remains opt-in after installation. Select **Tasks** under
 ```sh
 bb task list [--status <status>] [--json]
 bb task show [<id> | --self] [--json]
-bb task update [<id> | --self] --status <status> [--json]
-bb task reorder <id> [--after <id>] [--before <id>] [--json]
+bb task update [<id> | --self] [--status <status>] [--after <id>] [--before <id>] [--json]
 ```
 
-The interface follows bb's entity commands: `list`, `show`, `update`, and
-`reorder`. Status input is case-insensitive and accepts compact spellings such
-as `todo`, `to-do`, and `cancelled`. `show` reports `To Do (default)` when the
-thread has not been organized explicitly. `list` includes visible, non-archived
-threads and materializes missing ones as To Do tasks in their existing order.
-`reorder` follows the core pinned-thread interface: pass the immediately
-preceding thread with `--after`, the immediately following thread with
-`--before`, or omit one at a group boundary. Change status separately with
-`update --status`; a changed status is inserted at the front of its destination
-group. `--self` resolves to the current bb thread. Task IDs are thread IDs;
-machine-readable results expose them through the standard `id` field.
+The interface follows bb's entity commands: `list`, `show`, and `update`.
+Status input is case-insensitive and accepts compact spellings such as `todo`,
+`to-do`, and `cancelled`. `show` reports `To Do (default)` when the thread has
+not been organized explicitly. `list` includes visible, non-archived threads
+and materializes missing ones as To Do tasks in their existing order.
+
+`update` changes status, position, or both. A status change without a position
+flag puts the task at the bottom of its destination group. Override that
+placement with the immediately preceding task in `--after`, the immediately
+following task in `--before`, or both. Without `--status`, those flags reorder
+the task within its current group. A neighbor outside the destination status
+group is ignored with a warning. `--self` resolves to the current bb thread.
+Task IDs are thread IDs; machine-readable results expose them through the
+standard `id` field.
 
 ## Development
 

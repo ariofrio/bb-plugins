@@ -103,13 +103,6 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
     FROM thread_organization
     WHERE thread_id = ? AND sort_key IS NOT NULL
   `);
-  const firstAssignment = db.prepare(`
-    SELECT thread_id, status, sort_key, updated_at
-    FROM thread_organization
-    WHERE status = ? AND sort_key IS NOT NULL
-    ORDER BY sort_key, thread_id
-    LIMIT 1
-  `);
   const lastAssignment = db.prepare(`
     SELECT thread_id, status, sort_key, updated_at
     FROM thread_organization
@@ -173,11 +166,10 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
     (threadId: string, status: ThreadStatus): ThreadStatusState => {
       const existing = getAssignment.get(threadId) as AssignmentRow | undefined;
       if (existing?.status === status) return listState();
-      const first = firstAssignment.get(status) as AssignmentRow | undefined;
-      const sortKey = createOrderKeyBetween({
-        previousKey: null,
-        nextKey: first?.sort_key ?? null,
-      });
+      const last = lastAssignment.get(status) as AssignmentRow | undefined;
+      const sortKey = last
+        ? createOrderKeyAfter({ previousKey: last.sort_key })
+        : createOrderKeyBetween({ previousKey: null, nextKey: null });
       upsertAssignment.run(threadId, status, Date.now(), sortKey);
       return listState();
     },
@@ -189,9 +181,6 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
         .all(input.status)
         .map((row) => assignmentFromRow(row as AssignmentRow));
       const moved = getAssignment.get(input.threadId) as AssignmentRow | undefined;
-      if (!moved) {
-        throw new Error(`Thread ${input.threadId} has no explicit status.`);
-      }
       if (
         input.previousThreadId === input.threadId ||
         input.nextThreadId === input.threadId
@@ -221,7 +210,7 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
         (item) => item.threadId === input.threadId,
       );
       if (
-        moved.status === input.status &&
+        moved?.status === input.status &&
         (current[currentIndex - 1]?.threadId ?? null) === input.previousThreadId &&
         (current[currentIndex + 1]?.threadId ?? null) === input.nextThreadId
       ) {

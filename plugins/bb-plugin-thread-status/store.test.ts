@@ -41,7 +41,7 @@ describe("thread status store", () => {
     expect(store.ensureThreads(["thr_a", "thr_b", "thr_c"])).toEqual(first);
   });
 
-  it("places status changes at the front and preserves idempotent keys", () => {
+  it("places status changes at the bottom and preserves idempotent keys", () => {
     store.ensureThreads(["thr_a", "thr_b"]);
     store.setStatus("thr_b", "Working");
     const firstKey = store.get("thr_b").sortKey;
@@ -53,8 +53,8 @@ describe("thread status store", () => {
       .listState()
       .assignments.filter((assignment) => assignment.status === "Working");
     expect(working.map((assignment) => assignment.threadId)).toEqual([
-      "thr_a",
       "thr_b",
+      "thr_a",
     ]);
     expect(working[0]?.sortKey < (working[1]?.sortKey ?? "")).toBe(true);
   });
@@ -101,6 +101,25 @@ describe("thread status store", () => {
         .filter((assignment) => assignment.status === "Working")
         .map((assignment) => assignment.threadId),
     ).toEqual(["thr_b", "thr_a"]);
+  });
+
+  it("materializes an unassigned moved thread during an ordered status change", () => {
+    store.ensureThreads(["thr_before", "thr_after"]);
+    store.setStatus("thr_before", "Working");
+    store.setStatus("thr_after", "Working");
+
+    const after = store.reorderThread({
+      threadId: "thr_new",
+      status: "Working",
+      previousThreadId: "thr_before",
+      nextThreadId: "thr_after",
+    });
+
+    expect(
+      after.assignments
+        .filter((assignment) => assignment.status === "Working")
+        .map((assignment) => assignment.threadId),
+    ).toEqual(["thr_before", "thr_new", "thr_after"]);
   });
 
   it("rejects stale, reversed, and self-referential neighbors", () => {

@@ -86,14 +86,9 @@ export default function plugin(bb: BbPluginApi) {
       },
       {
         name: "update",
-        summary: "Update a task",
-        usage: "bb task update [id] [--self] --status <status> [--json]",
-      },
-      {
-        name: "reorder",
-        summary: "Move a task between adjacent tasks in its status",
+        summary: "Update a task's status or position",
         usage:
-          "bb task reorder <id> [--after <id>] [--before <id>] [--json]",
+          "bb task update [id] [--self] [--status <status>] [--after <id>] [--before <id>] [--json]",
       },
     ],
     async run(argv, context) {
@@ -111,7 +106,7 @@ export default function plugin(bb: BbPluginApi) {
         ...(listTaskIds ? { listTaskIds } : {}),
         ...(context.threadId ? { threadId: context.threadId } : {}),
       });
-      if ((argv[0] === "update" || argv[0] === "reorder") && result.exitCode === 0) {
+      if (argv[0] === "update" && result.exitCode === 0) {
         bb.realtime.publish("state-changed", { threadId: null });
       }
       return result;
