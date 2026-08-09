@@ -10,9 +10,13 @@ statuses:
 - Deferred
 - Canceled
 
-Drag a row by its handle to reorder it or move it into another group. Each row
-also exposes keyboard-friendly move buttons and a task-status selector. Threads
-with no saved task status appear in **To Do**.
+Drag a row to reorder it or move it into another group. The row otherwise
+follows bb's built-in sidebar: live thread and split indicators occupy the
+trailing slot, then yield to the standard hover menu; right-click opens the
+same actions. That menu includes keyboard-accessible move commands and a
+**Task status** submenu alongside bb's open-in-split, read, pin, rename,
+archive, and delete actions. Threads with no saved task status appear in
+**To Do**.
 
 Order is stored as a base-62 fractional lexicographic key, using the same
 strategy as `bb thread reorder-pinned`. A move names only its adjacent threads
