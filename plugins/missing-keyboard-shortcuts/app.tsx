@@ -1,4 +1,8 @@
-import { definePluginApp, useBbNavigate } from "@bb/plugin-sdk/app";
+import {
+  definePluginApp,
+  useBbContext,
+  useBbNavigate,
+} from "@bb/plugin-sdk/app";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import {
@@ -6,6 +10,10 @@ import {
   openRegisteredComposer,
   registerOpenComposer,
 } from "./composer-navigation-bridge";
+import {
+  readLastThreadProjectId,
+  rememberThreadProject,
+} from "./last-thread-project";
 import {
   currentThreadId,
   historyDirection,
@@ -41,7 +49,11 @@ function rpcErrorMessage(error: unknown): string {
 }
 
 function ComposerNavigationBridge() {
+  const context = useBbContext();
   const { toCompose } = useBbNavigate();
+  useEffect(() => {
+    rememberThreadProject(window.localStorage, context);
+  }, [context.projectId, context.threadId]);
   useEffect(
     () =>
       registerOpenComposer(() => {
@@ -125,14 +137,15 @@ export default definePluginApp((app) => {
       window.addEventListener(
         "keydown",
         (event) => {
-          const target = newThreadTarget(event, window.location.pathname);
+          const target = newThreadTarget(
+            event,
+            window.location.pathname,
+            readLastThreadProjectId(window.localStorage),
+          );
           if (target !== null) {
             // Claim the chord everywhere so BB's native menu cannot reuse it.
             event.preventDefault();
             event.stopPropagation();
-            // Command-Shift-N has no same-project action when the route does
-            // not select a thread, but the chord remains reserved.
-            if (target.projectId === null) return;
             // The React bridge exists wherever BB has mounted a composer.
             if (!hasOpenComposer()) return;
             openNewThread(newThreadHost, target.projectId);

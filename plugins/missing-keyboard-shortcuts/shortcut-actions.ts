@@ -1,3 +1,5 @@
+import { PERSONAL_PROJECT_ID } from "./last-thread-project";
+
 export interface ShortcutKeyEvent {
   altKey: boolean;
   ctrlKey: boolean;
@@ -8,11 +10,8 @@ export interface ShortcutKeyEvent {
 }
 
 export interface NewThreadTarget {
-  /** Null claims Command-Shift-N without navigating when no thread is selected. */
-  projectId: string | null;
+  projectId: string;
 }
-
-const PERSONAL_PROJECT_ID = "proj_personal";
 
 function exactCommandChord(event: ShortcutKeyEvent): boolean {
   return (
@@ -44,6 +43,7 @@ export function isArchiveShortcut(event: ShortcutKeyEvent): boolean {
 export function newThreadTarget(
   event: ShortcutKeyEvent,
   pathname: string,
+  lastThreadProjectId: string | null = null,
 ): NewThreadTarget | null {
   if (!exactCommandChord(event) || event.key.toLowerCase() !== "n") {
     return null;
@@ -54,7 +54,9 @@ export function newThreadTarget(
   }
 
   const route = currentThreadRoute(pathname);
-  if (route === null) return { projectId: null };
+  if (route === null) {
+    return { projectId: lastThreadProjectId ?? PERSONAL_PROJECT_ID };
+  }
   if (route.projectId === null) {
     return { projectId: PERSONAL_PROJECT_ID };
   }
