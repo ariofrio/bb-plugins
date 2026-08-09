@@ -6,4 +6,4 @@
 
 ## Testing
 
-- For bb UI tests and experiments, never drive the user's active bb client. Start or use an agent-owned isolated bb client instead.
+- For bb UI tests and experiments, never drive the user's active bb client. For client-only state, use an agent-owned web or desktop client connected to the existing bb server. Start an isolated server or host daemon only when the test can modify server or host-daemon state.
