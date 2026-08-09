@@ -31,9 +31,14 @@ describe("thread statuses", () => {
       { id: "working", updatedAt: 5 },
     ];
     const assignments: ThreadAssignment[] = [
-      { threadId: "second", status: "To Do", sortKey: "k", updatedAt: 2 },
-      { threadId: "first", status: "To Do", sortKey: "U", updatedAt: 1 },
-      { threadId: "working", status: "Working", sortKey: "U", updatedAt: 3 },
+      { threadId: "second", taskStatus: "To Do", sortKey: "k", updatedAt: 2 },
+      { threadId: "first", taskStatus: "To Do", sortKey: "U", updatedAt: 1 },
+      {
+        threadId: "working",
+        taskStatus: "Working",
+        sortKey: "U",
+        updatedAt: 3,
+      },
     ];
 
     const groups = groupThreadsByStatus(threads, assignments);

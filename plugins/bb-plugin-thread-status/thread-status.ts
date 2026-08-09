@@ -11,7 +11,7 @@ export type ThreadStatus = (typeof THREAD_STATUSES)[number];
 
 export interface ThreadAssignment {
   threadId: string;
-  status: ThreadStatus;
+  taskStatus: ThreadStatus;
   sortKey: string;
   updatedAt: number;
 }
@@ -57,8 +57,9 @@ export function groupThreadsByStatus<Thread extends SidebarThreadLike>(
   };
 
   for (const thread of threads) {
-    const status = assignmentByThread.get(thread.id)?.status ?? DEFAULT_THREAD_STATUS;
-    groups[status].push(thread);
+    const taskStatus =
+      assignmentByThread.get(thread.id)?.taskStatus ?? DEFAULT_THREAD_STATUS;
+    groups[taskStatus].push(thread);
   }
 
   for (const status of THREAD_STATUSES) {

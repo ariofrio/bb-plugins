@@ -21,7 +21,7 @@ describe("thread status store", () => {
   it("returns To Do for a thread with no explicit assignment", () => {
     expect(store.get("thr_new")).toEqual({
       threadId: "thr_new",
-      status: "To Do",
+      taskStatus: "To Do",
       sortKey: null,
       updatedAt: null,
       explicit: false,
@@ -74,7 +74,7 @@ describe("thread status store", () => {
     store.setStatus("thr_a", "Working");
     const working = store
       .listState()
-      .assignments.filter((assignment) => assignment.status === "Working");
+      .assignments.filter((assignment) => assignment.taskStatus === "Working");
     expect(working.map((assignment) => assignment.threadId)).toEqual([
       "thr_b",
       "thr_a",
@@ -93,7 +93,7 @@ describe("thread status store", () => {
 
     const after = store.reorderThread({
       threadId: "thr_c",
-      status: "To Do",
+      taskStatus: "To Do",
       previousThreadId: "thr_a",
       nextThreadId: "thr_b",
     });
@@ -114,14 +114,14 @@ describe("thread status store", () => {
 
     const after = store.reorderThread({
       threadId: "thr_a",
-      status: "Working",
+      taskStatus: "Working",
       previousThreadId: "thr_b",
       nextThreadId: null,
     });
 
     expect(
       after.assignments
-        .filter((assignment) => assignment.status === "Working")
+        .filter((assignment) => assignment.taskStatus === "Working")
         .map((assignment) => assignment.threadId),
     ).toEqual(["thr_b", "thr_a"]);
   });
@@ -133,14 +133,14 @@ describe("thread status store", () => {
 
     const after = store.reorderThread({
       threadId: "thr_new",
-      status: "Working",
+      taskStatus: "Working",
       previousThreadId: "thr_before",
       nextThreadId: "thr_after",
     });
 
     expect(
       after.assignments
-        .filter((assignment) => assignment.status === "Working")
+        .filter((assignment) => assignment.taskStatus === "Working")
         .map((assignment) => assignment.threadId),
     ).toEqual(["thr_before", "thr_new", "thr_after"]);
   });
@@ -152,7 +152,7 @@ describe("thread status store", () => {
     expect(() =>
       store.reorderThread({
         threadId: "thr_c",
-        status: "To Do",
+        taskStatus: "To Do",
         previousThreadId: "thr_missing",
         nextThreadId: null,
       }),
@@ -160,7 +160,7 @@ describe("thread status store", () => {
     expect(() =>
       store.reorderThread({
         threadId: "thr_c",
-        status: "To Do",
+        taskStatus: "To Do",
         previousThreadId: "thr_b",
         nextThreadId: "thr_a",
       }),
@@ -168,7 +168,7 @@ describe("thread status store", () => {
     expect(() =>
       store.reorderThread({
         threadId: "thr_c",
-        status: "To Do",
+        taskStatus: "To Do",
         previousThreadId: "thr_c",
         nextThreadId: null,
       }),

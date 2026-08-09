@@ -32,15 +32,17 @@ describe("task CLI", () => {
   it("shows the effective default as human and JSON output", () => {
     expect(runTaskCli(store, ["show", "thr_a"])).toEqual({
       exitCode: 0,
-      stdout: "Task: thr_a\n  Status: To Do (default)\n  Order: -\n",
+      stdout: "Task: thr_a\n  Task Status: To Do (default)\n  Order: -\n",
     });
     const result = runTaskCli(store, ["show", "thr_a", "--json"]);
-    expect(JSON.parse(result.stdout ?? "")).toMatchObject({
+    const task = JSON.parse(result.stdout ?? "");
+    expect(task).toMatchObject({
       id: "thr_a",
-      status: "To Do",
+      taskStatus: "To Do",
       sortKey: null,
       explicit: false,
     });
+    expect(task).not.toHaveProperty("status");
   });
 
   it("targets the current thread with --self", () => {
@@ -64,7 +66,10 @@ describe("task CLI", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Task thr_a updated");
-    expect(store.get("thr_a")).toMatchObject({ status: "To Do", explicit: true });
+    expect(store.get("thr_a")).toMatchObject({
+      taskStatus: "To Do",
+      explicit: true,
+    });
   });
 
   it("updates the current thread through --self", () => {
@@ -75,7 +80,7 @@ describe("task CLI", () => {
     );
     expect(JSON.parse(result.stdout ?? "")).toMatchObject({
       id: "thr_self",
-      status: "Working",
+      taskStatus: "Working",
     });
   });
 
@@ -91,8 +96,9 @@ describe("task CLI", () => {
     ]);
     const tasks = JSON.parse(result.stdout ?? "");
     expect(tasks).toMatchObject([
-      { id: "thr_a", status: "Working" },
+      { id: "thr_a", taskStatus: "Working" },
     ]);
+    expect(tasks[0]).not.toHaveProperty("status");
     expect(tasks[0]).not.toHaveProperty("sortKey");
   });
 
@@ -150,7 +156,7 @@ describe("task CLI", () => {
     ).toEqual(["thr_a", "thr_c", "thr_b"]);
     expect(JSON.parse(result.stdout ?? "")).toMatchObject({
       id: "thr_c",
-      status: "To Do",
+      taskStatus: "To Do",
     });
   });
 
@@ -171,7 +177,7 @@ describe("task CLI", () => {
     expect(
       store
         .listState()
-        .assignments.filter((assignment) => assignment.status === "Working")
+        .assignments.filter((assignment) => assignment.taskStatus === "Working")
         .map((assignment) => assignment.threadId),
     ).toEqual(["thr_first", "thr_second", "thr_moved"]);
   });
@@ -196,7 +202,7 @@ describe("task CLI", () => {
     expect(
       store
         .listState()
-        .assignments.filter((assignment) => assignment.status === "Working")
+        .assignments.filter((assignment) => assignment.taskStatus === "Working")
         .map((assignment) => assignment.threadId),
     ).toEqual(["thr_first", "thr_moved", "thr_second"]);
   });
@@ -218,12 +224,12 @@ describe("task CLI", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe(
-      "Warning: --after task thr_done is not in status Working; ignoring --after.\n",
+      "Warning: --after task thr_done is not in task status Working; ignoring --after.\n",
     );
     expect(
       store
         .listState()
-        .assignments.filter((assignment) => assignment.status === "Working")
+        .assignments.filter((assignment) => assignment.taskStatus === "Working")
         .map((assignment) => assignment.threadId),
     ).toEqual(["thr_working", "thr_moved"]);
   });
@@ -247,7 +253,7 @@ describe("task CLI", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toContain("ignoring --before");
-    expect(store.get("thr_moved").status).toBe("Working");
+    expect(store.get("thr_moved").taskStatus).toBe("Working");
     expect(store.get("thr_moved").sortKey! > store.get("thr_first").sortKey!).toBe(
       true,
     );

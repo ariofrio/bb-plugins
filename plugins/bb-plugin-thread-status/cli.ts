@@ -42,7 +42,7 @@ Commands:
 const COMMAND_HELP: Record<keyof typeof USAGE, string> = {
   list: `${USAGE.list}\nList tasks\n\nOptions:\n  --status <status>  Filter by task status\n  --json             Print machine-readable JSON output\n  -h, --help         display help for command\n`,
   show: `${USAGE.show}\nShow task details\n\nOptions:\n  --self      Target the current thread\n  --json      Print machine-readable JSON output\n  -h, --help  display help for command\n`,
-  update: `${USAGE.update}\nUpdate a task's status or position\n\nOptions:\n  --self             Target the current thread\n  --status <status>  Set the task status: ${STATUS_LABELS}\n  --after <id>       Previous task, or omit for the start\n  --before <id>      Next task, or omit for the end\n  --json             Print machine-readable JSON output\n  -h, --help         display help for command\n`,
+  update: `${USAGE.update}\nUpdate task status or position\n\nOptions:\n  --self             Target the current thread\n  --status <status>  Set the task status: ${STATUS_LABELS}\n  --after <id>       Previous task, or omit for the start\n  --before <id>      Next task, or omit for the end\n  --json             Print machine-readable JSON output\n  -h, --help         display help for command\n`,
 };
 
 function json(value: unknown): string {
@@ -107,7 +107,7 @@ function resolveTaskId(
 }
 
 function humanTask(value: ReturnType<ThreadStatusStore["get"]>): string {
-  return `Task: ${value.threadId}\n  Status: ${value.status}${
+  return `Task: ${value.threadId}\n  Task Status: ${value.taskStatus}${
     value.explicit ? "" : " (default)"
   }\n  Order: ${value.sortKey ?? "-"}\n`;
 }
@@ -117,10 +117,10 @@ function humanTaskList(
 ): string {
   if (assignments.length === 0) return "No tasks found\n";
   const rows = [
-    ["ID", "Status"],
+    ["ID", "Task Status"],
     ...assignments.map((assignment) => [
       assignment.threadId,
-      assignment.status,
+      assignment.taskStatus,
     ]),
   ];
   const widths = [0, 1].map((column) =>
@@ -177,7 +177,7 @@ export function runTaskCli(
       const status =
         typeof rawStatus === "string" ? parseThreadStatus(rawStatus) : null;
       if (rawStatus && !status) {
-        throw new Error(`Unknown status. Expected one of: ${STATUS_LABELS}`);
+        throw new Error(`Unknown task status. Expected one of: ${STATUS_LABELS}`);
       }
       const listedTaskIds = context.listTaskIds
         ? new Set(context.listTaskIds)
@@ -185,7 +185,7 @@ export function runTaskCli(
       const assignments = store.listState().assignments.filter(
         (assignment) =>
           (!listedTaskIds || listedTaskIds.has(assignment.threadId)) &&
-          (!status || assignment.status === status),
+          (!status || assignment.taskStatus === status),
       );
       return {
         exitCode: 0,
@@ -238,8 +238,10 @@ export function runTaskCli(
       const status =
         typeof rawStatus === "string"
           ? parseThreadStatus(rawStatus)
-          : current.status;
-      if (!status) throw new Error(`Unknown status. Expected one of: ${STATUS_LABELS}`);
+          : current.taskStatus;
+      if (!status) {
+        throw new Error(`Unknown task status. Expected one of: ${STATUS_LABELS}`);
+      }
 
       const warnings: string[] = [];
       function validNeighbor(
@@ -248,9 +250,9 @@ export function runTaskCli(
       ): string | null {
         if (typeof value !== "string") return null;
         const neighbor = store.get(value);
-        if (!neighbor.explicit || neighbor.status !== status) {
+        if (!neighbor.explicit || neighbor.taskStatus !== status) {
           warnings.push(
-            `Warning: ${flag} task ${value} is not in status ${status}; ignoring ${flag}.`,
+            `Warning: ${flag} task ${value} is not in task status ${status}; ignoring ${flag}.`,
           );
           return null;
         }
@@ -264,11 +266,14 @@ export function runTaskCli(
       if (hasValidPosition) {
         store.reorderThread({
           threadId: taskId,
-          status,
+          taskStatus: status,
           previousThreadId,
           nextThreadId,
         });
-      } else if (current.status !== status || typeof rawStatus === "string") {
+      } else if (
+        current.taskStatus !== status ||
+        typeof rawStatus === "string"
+      ) {
         store.setStatus(taskId, status);
       }
       const task = store.get(taskId);

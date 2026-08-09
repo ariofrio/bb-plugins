@@ -11,7 +11,7 @@ const threadStatusSchema = z.enum(THREAD_STATUSES);
 const assignmentSchema = z
   .object({
     threadId: z.string(),
-    status: threadStatusSchema,
+    taskStatus: threadStatusSchema,
     sortKey: z.string().min(1),
     updatedAt: z.number().int(),
   })
@@ -39,7 +39,7 @@ export const rpcContract = defineRpcContract({
     input: z
       .object({
         threadId: z.string().min(1).max(256),
-        status: threadStatusSchema,
+        taskStatus: threadStatusSchema,
         previousThreadId: z.string().min(1).max(256).nullable(),
         nextThreadId: z.string().min(1).max(256).nullable(),
       })
@@ -86,7 +86,7 @@ export default function plugin(bb: BbPluginApi) {
       },
       {
         name: "update",
-        summary: "Update a task's status or position",
+        summary: "Update task status or position",
         usage:
           "bb task update [id] [--self] [--status <status>] [--after <id>] [--before <id>] [--json]",
       },

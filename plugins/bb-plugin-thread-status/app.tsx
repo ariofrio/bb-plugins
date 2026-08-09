@@ -49,7 +49,7 @@ interface ThreadRowProps {
   onNavigate: () => void;
   projectName: string | null;
   showDropBefore: boolean;
-  status: ThreadStatus;
+  taskStatus: ThreadStatus;
   thread: PluginSidebarThread;
 }
 
@@ -107,7 +107,7 @@ function ThreadRow({
   onNavigate,
   projectName,
   showDropBefore,
-  status,
+  taskStatus,
   thread,
 }: ThreadRowProps) {
   const { splitProps } = experimental_useSidebarThreadSplit(thread.id);
@@ -143,7 +143,7 @@ function ThreadRow({
         onDragStart={onDragStart}
         role="button"
         tabIndex={0}
-        title="Drag to reorder or change status"
+        title="Drag to reorder or change task status"
       >
         ⋮⋮
       </span>
@@ -199,12 +199,12 @@ function ThreadRow({
           ↓
         </button>
         <select
-          aria-label={`Status for ${title}`}
+          aria-label={`Task status for ${title}`}
           className="h-6 w-6 cursor-pointer appearance-none rounded bg-transparent text-center text-xs text-muted-foreground hover:bg-muted disabled:opacity-30"
           disabled={disabled}
           onChange={(event) => onChangeStatus(event.target.value as ThreadStatus)}
-          title={`Status: ${status}`}
-          value={status}
+          title={`Task Status: ${taskStatus}`}
+          value={taskStatus}
         >
           {THREAD_STATUSES.map((option) => (
             <option key={option} value={option}>
@@ -347,7 +347,7 @@ function ThreadStatusList({
       try {
         const state = await rpc.call("moveThread", {
           threadId,
-          status,
+          taskStatus: status,
           previousThreadId: order[movedIndex - 1] ?? null,
           nextThreadId: order[movedIndex + 1] ?? null,
         });
@@ -465,7 +465,7 @@ function ThreadStatusList({
                         onNavigate={onNavigate}
                         projectName={projectNames.get(thread.projectId) ?? null}
                         showDropBefore={dropBefore === thread.id}
-                        status={status}
+                        taskStatus={status}
                         thread={thread}
                       />
                     );
@@ -488,7 +488,7 @@ export default definePluginApp((app) => {
   app.slots.experimental_threadList({
     id: "thread-status",
     title: "Tasks",
-    description: "Treat threads as manually ordered tasks grouped by status.",
+    description: "Treat threads as manually ordered tasks grouped by task status.",
     component: ThreadStatusList,
   });
 });

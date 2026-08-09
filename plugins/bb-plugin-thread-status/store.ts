@@ -48,7 +48,7 @@ export interface ThreadStatusState {
 
 export interface ThreadStatusLookup {
   threadId: string;
-  status: ThreadStatus;
+  taskStatus: ThreadStatus;
   sortKey: string | null;
   updatedAt: number | null;
   explicit: boolean;
@@ -56,7 +56,7 @@ export interface ThreadStatusLookup {
 
 export interface ReorderThreadInput {
   threadId: string;
-  status: ThreadStatus;
+  taskStatus: ThreadStatus;
   previousThreadId: string | null;
   nextThreadId: string | null;
 }
@@ -73,7 +73,7 @@ export interface ThreadStatusStore {
 function assignmentFromRow(row: AssignmentRow): ThreadAssignment {
   return {
     threadId: row.thread_id,
-    status: row.status as ThreadStatus,
+    taskStatus: row.status as ThreadStatus,
     sortKey: row.sort_key,
     updatedAt: row.updated_at,
   };
@@ -188,7 +188,7 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
   const reorderThreadTransaction = db.transaction(
     (input: ReorderThreadInput): ThreadStatusState => {
       const current = listStatusAssignments
-        .all(input.status)
+        .all(input.taskStatus)
         .map((row) => assignmentFromRow(row as AssignmentRow));
       const moved = getAssignment.get(input.threadId) as AssignmentRow | undefined;
       if (
@@ -220,7 +220,7 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
         (item) => item.threadId === input.threadId,
       );
       if (
-        moved?.status === input.status &&
+        moved?.status === input.taskStatus &&
         (current[currentIndex - 1]?.threadId ?? null) === input.previousThreadId &&
         (current[currentIndex + 1]?.threadId ?? null) === input.nextThreadId
       ) {
@@ -231,7 +231,12 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
         previousKey: previous?.sortKey ?? null,
         nextKey: next?.sortKey ?? null,
       });
-      upsertAssignment.run(input.threadId, input.status, Date.now(), sortKey);
+      upsertAssignment.run(
+        input.threadId,
+        input.taskStatus,
+        Date.now(),
+        sortKey,
+      );
       return listState();
     },
   );
@@ -244,7 +249,7 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
       if (!row) {
         return {
           threadId,
-          status: DEFAULT_THREAD_STATUS,
+          taskStatus: DEFAULT_THREAD_STATUS,
           sortKey: null,
           updatedAt: null,
           explicit: false,
@@ -258,14 +263,18 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
     },
     setStatus(threadId, status) {
       assertThreadId(threadId);
-      if (!THREAD_STATUSES.includes(status)) throw new Error("Unknown status.");
+      if (!THREAD_STATUSES.includes(status)) {
+        throw new Error("Unknown task status.");
+      }
       return setStatusTransaction.immediate(threadId, status);
     },
     reorderThread(input) {
       assertThreadId(input.threadId);
       if (input.previousThreadId) assertThreadId(input.previousThreadId);
       if (input.nextThreadId) assertThreadId(input.nextThreadId);
-      if (!THREAD_STATUSES.includes(input.status)) throw new Error("Unknown status.");
+      if (!THREAD_STATUSES.includes(input.taskStatus)) {
+        throw new Error("Unknown task status.");
+      }
       return reorderThreadTransaction.immediate(input);
     },
     delete(threadId) {
