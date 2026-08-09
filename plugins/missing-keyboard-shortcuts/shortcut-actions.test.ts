@@ -3,6 +3,7 @@ import {
   currentThreadId,
   historyDirection,
   isArchiveShortcut,
+  newThreadTarget,
 } from "./shortcut-actions";
 
 const baseChord = {
@@ -49,6 +50,52 @@ describe("isArchiveShortcut", () => {
     expect(isArchiveShortcut({ ...archiveChord, key: "B" })).toBe(false);
     expect(isArchiveShortcut({ ...archiveChord, metaKey: false })).toBe(false);
     expect(isArchiveShortcut({ ...archiveChord, shiftKey: false })).toBe(false);
+  });
+});
+
+describe("newThreadTarget", () => {
+  it("targets no project for Command-N", () => {
+    expect(
+      newThreadTarget({ ...baseChord, key: "n" }, "/projects/proj_one"),
+    ).toEqual({ path: "/", projectId: "proj_personal" });
+  });
+
+  it("targets the selected thread's project for Command-Shift-N", () => {
+    const chord = { ...baseChord, key: "N", shiftKey: true };
+    expect(
+      newThreadTarget(chord, "/projects/proj_one/threads/thr_standard"),
+    ).toEqual({ path: "/projects/proj_one", projectId: "proj_one" });
+    expect(newThreadTarget(chord, "/threads/thr_personal")).toEqual({
+      path: "/",
+      projectId: "proj_personal",
+    });
+  });
+
+  it("encodes project IDs in compose paths", () => {
+    expect(
+      newThreadTarget(
+        { ...baseChord, key: "n", shiftKey: true },
+        "/projects/proj%2Fone/threads/thr_standard",
+      ),
+    ).toEqual({ path: "/projects/proj%2Fone", projectId: "proj/one" });
+  });
+
+  it("rejects Command-Shift-N without a selected thread", () => {
+    expect(
+      newThreadTarget(
+        { ...baseChord, key: "n", shiftKey: true },
+        "/projects/proj_one",
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects extra modifiers, held-key repeats, and other keys", () => {
+    const chord = { ...baseChord, key: "n" };
+    expect(newThreadTarget({ ...chord, altKey: true }, "/threads/thr")).toBeNull();
+    expect(newThreadTarget({ ...chord, ctrlKey: true }, "/threads/thr")).toBeNull();
+    expect(newThreadTarget({ ...chord, repeat: true }, "/threads/thr")).toBeNull();
+    expect(newThreadTarget({ ...chord, key: "m" }, "/threads/thr")).toBeNull();
+    expect(newThreadTarget({ ...chord, metaKey: false }, "/threads/thr")).toBeNull();
   });
 });
 

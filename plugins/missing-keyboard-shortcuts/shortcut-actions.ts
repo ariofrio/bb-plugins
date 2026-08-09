@@ -7,14 +7,24 @@ export interface ShortcutKeyEvent {
   shiftKey: boolean;
 }
 
+export interface NewThreadTarget {
+  path: string;
+  projectId: string;
+}
+
+const PERSONAL_PROJECT_ID = "proj_personal";
+
+function exactCommandChord(event: ShortcutKeyEvent): boolean {
+  return (
+    event.metaKey &&
+    !event.altKey &&
+    !event.ctrlKey &&
+    !event.repeat
+  );
+}
+
 export function historyDirection(event: ShortcutKeyEvent): -1 | 1 | null {
-  if (
-    !event.metaKey ||
-    event.altKey ||
-    event.ctrlKey ||
-    event.shiftKey ||
-    event.repeat
-  ) {
+  if (!exactCommandChord(event) || event.shiftKey) {
     return null;
   }
 
@@ -25,23 +35,69 @@ export function historyDirection(event: ShortcutKeyEvent): -1 | 1 | null {
 
 export function isArchiveShortcut(event: ShortcutKeyEvent): boolean {
   return (
-    event.metaKey &&
+    exactCommandChord(event) &&
     event.shiftKey &&
-    !event.altKey &&
-    !event.ctrlKey &&
-    !event.repeat &&
     event.key.toLowerCase() === "a"
   );
 }
 
-export function currentThreadId(pathname: string): string | null {
-  const segments = pathname.split("/").filter(Boolean);
-  const threadsIndex = segments.lastIndexOf("threads");
-  if (threadsIndex < 0 || threadsIndex !== segments.length - 2) return null;
+export function newThreadTarget(
+  event: ShortcutKeyEvent,
+  pathname: string,
+): NewThreadTarget | null {
+  if (!exactCommandChord(event) || event.key.toLowerCase() !== "n") {
+    return null;
+  }
 
+  if (!event.shiftKey) {
+    return { path: "/", projectId: PERSONAL_PROJECT_ID };
+  }
+
+  const route = currentThreadRoute(pathname);
+  if (route === null) return null;
+  if (route.projectId === null) {
+    return { path: "/", projectId: PERSONAL_PROJECT_ID };
+  }
+  return {
+    path: `/projects/${encodeURIComponent(route.projectId)}`,
+    projectId: route.projectId,
+  };
+}
+
+interface CurrentThreadRoute {
+  projectId: string | null;
+  threadId: string;
+}
+
+function decodePathSegment(segment: string | undefined): string | null {
+  if (!segment) return null;
   try {
-    return decodeURIComponent(segments[segments.length - 1] ?? "") || null;
+    return decodeURIComponent(segment) || null;
   } catch {
     return null;
   }
+}
+
+function currentThreadRoute(pathname: string): CurrentThreadRoute | null {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 2 && segments[0] === "threads") {
+    const threadId = decodePathSegment(segments[1]);
+    return threadId === null ? null : { projectId: null, threadId };
+  }
+  if (
+    segments.length === 4 &&
+    segments[0] === "projects" &&
+    segments[2] === "threads"
+  ) {
+    const projectId = decodePathSegment(segments[1]);
+    const threadId = decodePathSegment(segments[3]);
+    return projectId === null || threadId === null
+      ? null
+      : { projectId, threadId };
+  }
+  return null;
+}
+
+export function currentThreadId(pathname: string): string | null {
+  return currentThreadRoute(pathname)?.threadId ?? null;
 }

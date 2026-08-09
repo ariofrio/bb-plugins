@@ -4,7 +4,10 @@ import {
   currentThreadId,
   historyDirection,
   isArchiveShortcut,
+  newThreadTarget,
 } from "./shortcut-actions";
+
+const ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY = "bb.root-compose.project-id";
 
 interface ArchiveResult {
   archivedThreadIds: string[];
@@ -51,6 +54,25 @@ async function archiveThread(
   return envelope.result;
 }
 
+function openNewThread(path: string, projectId: string): void {
+  // BB's root composer reads this selection on mount. The same-tab storage
+  // event also updates an already-mounted composer before navigation.
+  const oldValue = window.localStorage.getItem(
+    ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY,
+  );
+  window.localStorage.setItem(ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY, projectId);
+  window.dispatchEvent(
+    new StorageEvent("storage", {
+      key: ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY,
+      newValue: projectId,
+      oldValue,
+      storageArea: window.localStorage,
+      url: window.location.href,
+    }),
+  );
+  window.location.assign(path);
+}
+
 export default definePluginApp((app) => {
   app.contentScripts.register({
     id: "missing-keyboard-shortcuts",
@@ -60,6 +82,15 @@ export default definePluginApp((app) => {
       window.addEventListener(
         "keydown",
         (event) => {
+          const target = newThreadTarget(event, window.location.pathname);
+          if (target !== null) {
+            // Claim the chord everywhere, including editors, and let BB see
+            // the prevented keydown so it clears its Command-key hint timer.
+            event.preventDefault();
+            openNewThread(target.path, target.projectId);
+            return;
+          }
+
           const direction = historyDirection(event);
           if (direction !== null) {
             // Claim the shortcut even when an editor has focus. Let BB observe
