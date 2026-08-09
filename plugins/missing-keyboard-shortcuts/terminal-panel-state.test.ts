@@ -22,7 +22,7 @@ class MemoryStorage implements StringStorage {
 }
 
 describe("terminal panel state", () => {
-  it("closes an open non-terminal tab or an already-focused terminal", () => {
+  it("closes only when a terminal is selected, visible, and focused", () => {
     expect(
       shouldCloseTerminalPanel(
         {
@@ -55,18 +55,8 @@ describe("terminal panel state", () => {
     ).toBe(false);
     expect(
       shouldCloseTerminalPanel(
-        {
-          activeTerminalId: null,
-          isOpen: true,
-          terminalIds: ["term_one"],
-        },
-        false,
-      ),
-    ).toBe(true);
-    expect(
-      shouldCloseTerminalPanel(
-        { activeTerminalId: null, isOpen: false, terminalIds: [] },
-        false,
+        { activeTerminalId: null, isOpen: true, terminalIds: [] },
+        true,
       ),
     ).toBe(false);
   });
