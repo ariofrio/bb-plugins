@@ -35,6 +35,7 @@ import {
   openNewThread,
   type NewThreadHost,
 } from "./new-thread-navigation";
+import { waitForLifecycleAction } from "./lifecycle-action";
 import {
   activateExistingSideChatPanel,
   activateSideChatPanel,
@@ -50,6 +51,7 @@ import {
   selectSideChatPanelTab,
   shouldCloseTerminalPanel,
   type PanelStorageChange,
+  type SideChatPanelTabDefinition,
 } from "./terminal-panel-state";
 
 const ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY = "bb.root-compose.project-id";
@@ -260,7 +262,21 @@ function isTerminalFocused(): boolean {
   );
 }
 
-function focusTerminal(signal: AbortSignal, threadId: string): void {
+function observeDocumentLifecycle(callback: () => void): () => void {
+  const observer = new MutationObserver(callback);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    childList: true,
+    subtree: true,
+  });
+  return () => observer.disconnect();
+}
+
+function focusTerminal(
+  signal: AbortSignal,
+  threadId: string,
+  terminalId: string,
+): () => void {
   const tryFocus = (): boolean => {
     const visibleTerminal = Array.from(
       document.querySelectorAll<HTMLElement>("[data-app-terminal]"),
@@ -276,63 +292,75 @@ function focusTerminal(signal: AbortSignal, threadId: string): void {
     return true;
   };
 
-  let attemptsRemaining = 120;
-  let animationFrame: number | null = null;
-  const stop = () => {
-    if (animationFrame !== null) {
-      window.cancelAnimationFrame(animationFrame);
-      animationFrame = null;
-    }
-    signal.removeEventListener("abort", stop);
-  };
-  const attemptFocus = () => {
-    animationFrame = null;
-    if (
-      signal.aborted ||
-      currentThreadId(window.location.pathname) !== threadId ||
-      tryFocus() ||
-      attemptsRemaining <= 0
-    ) {
-      stop();
-      return;
-    }
-    attemptsRemaining -= 1;
-    animationFrame = window.requestAnimationFrame(attemptFocus);
-  };
-  signal.addEventListener("abort", stop, { once: true });
-  attemptFocus();
+  return waitForLifecycleAction({
+    attempt() {
+      const panel = readTerminalPanelSnapshot(
+        window.localStorage,
+        threadId,
+      );
+      if (!panel.isOpen || panel.activeTerminalId !== terminalId) {
+        notifyPanelStateChanged(
+          activateTerminalPanel(
+            window.localStorage,
+            threadId,
+            terminalId,
+          ),
+        );
+        return false;
+      }
+      return tryFocus();
+    },
+    isCurrent: () =>
+      currentThreadId(window.location.pathname) === threadId,
+    observe: observeDocumentLifecycle,
+    signal,
+  });
 }
 
 function focusSideChatComposer(
   signal: AbortSignal,
   parentThreadId: string,
   childThreadId: string,
-): void {
-  let attemptsRemaining = 120;
-  let animationFrame: number | null = null;
-  const stop = () => {
-    if (animationFrame !== null) {
-      window.cancelAnimationFrame(animationFrame);
-      animationFrame = null;
-    }
-    signal.removeEventListener("abort", stop);
-  };
-  const attemptFocus = () => {
-    animationFrame = null;
-    if (
-      signal.aborted ||
-      currentThreadId(window.location.pathname) !== parentThreadId ||
-      focusRegisteredSecondaryComposer(parentThreadId, childThreadId) ||
-      attemptsRemaining <= 0
-    ) {
-      stop();
-      return;
-    }
-    attemptsRemaining -= 1;
-    animationFrame = window.requestAnimationFrame(attemptFocus);
-  };
-  signal.addEventListener("abort", stop, { once: true });
-  attemptFocus();
+  tab: SideChatPanelTabDefinition | null,
+): () => void {
+  return waitForLifecycleAction({
+    attempt() {
+      const panel = readSideChatPanelSnapshot(
+        window.localStorage,
+        parentThreadId,
+      );
+      if (
+        !panel.isOpen ||
+        panel.activeSideChat?.childThreadId !== childThreadId
+      ) {
+        const existingTabId = panel.sideChats.find(
+          (sideChat) => sideChat.childThreadId === childThreadId,
+        )?.id;
+        const change =
+          tab === null
+            ? activateExistingSideChatPanel(
+                window.localStorage,
+                parentThreadId,
+                existingTabId ?? "",
+              )
+            : activateSideChatPanel(
+                window.localStorage,
+                parentThreadId,
+                tab,
+              );
+        if (change !== null) notifyPanelStateChanged(change);
+        return false;
+      }
+      return focusRegisteredSecondaryComposer(
+        parentThreadId,
+        childThreadId,
+      );
+    },
+    isCurrent: () =>
+      currentThreadId(window.location.pathname) === parentThreadId,
+    observe: observeDocumentLifecycle,
+    signal,
+  });
 }
 
 export default definePluginApp((app) => {
@@ -353,6 +381,8 @@ export default definePluginApp((app) => {
       let archiveInFlight = false;
       let sideChatInFlight = false;
       let terminalInFlight = false;
+      let stopPendingSideChatAction = () => {};
+      let stopPendingTerminalAction = () => {};
       const newThreadHost: NewThreadHost = {
         getSelectedProjectId() {
           return window.localStorage.getItem(
@@ -463,6 +493,7 @@ export default definePluginApp((app) => {
 
             event.preventDefault();
             event.stopPropagation();
+            stopPendingSideChatAction();
             const panel = readSideChatPanelSnapshot(
               window.localStorage,
               threadId,
@@ -487,25 +518,18 @@ export default definePluginApp((app) => {
               readRecentSideChatTabId(window.localStorage, threadId),
             );
             if (sideChat !== null) {
-              const change = activateExistingSideChatPanel(
+              rememberRecentSideChatTabId(
                 window.localStorage,
                 threadId,
                 sideChat.id,
               );
-              if (change !== null) {
-                rememberRecentSideChatTabId(
-                  window.localStorage,
-                  threadId,
-                  sideChat.id,
-                );
-                notifyPanelStateChanged(change);
-                focusSideChatComposer(
-                  signal,
-                  threadId,
-                  sideChat.childThreadId,
-                );
-                return;
-              }
+              stopPendingSideChatAction = focusSideChatComposer(
+                signal,
+                threadId,
+                sideChat.childThreadId,
+                null,
+              );
+              return;
             }
             if (sideChatInFlight) return;
 
@@ -518,14 +542,13 @@ export default definePluginApp((app) => {
                   threadId,
                   tab.id,
                 );
-                notifyPanelStateChanged(
-                  activateSideChatPanel(
-                    window.localStorage,
-                    threadId,
-                    tab,
-                  ),
+                stopPendingSideChatAction();
+                stopPendingSideChatAction = focusSideChatComposer(
+                  signal,
+                  threadId,
+                  childThreadId,
+                  tab,
                 );
-                focusSideChatComposer(signal, threadId, childThreadId);
               })
               .catch((error: unknown) => {
                 toast.error(
@@ -544,6 +567,7 @@ export default definePluginApp((app) => {
 
             event.preventDefault();
             event.stopPropagation();
+            stopPendingTerminalAction();
             const panel = readTerminalPanelSnapshot(
               window.localStorage,
               threadId,
@@ -575,14 +599,12 @@ export default definePluginApp((app) => {
                   threadId,
                   terminalId,
                 );
-                notifyPanelStateChanged(
-                  activateTerminalPanel(
-                    window.localStorage,
-                    threadId,
-                    terminalId,
-                  ),
+                stopPendingTerminalAction();
+                stopPendingTerminalAction = focusTerminal(
+                  signal,
+                  threadId,
+                  terminalId,
                 );
-                focusTerminal(signal, threadId);
               })
               .catch((error: unknown) => {
                 toast.error(rpcErrorMessage(error, "Failed to open terminal"));
