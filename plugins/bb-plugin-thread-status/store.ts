@@ -90,7 +90,17 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
     SELECT thread_id, status, sort_key, updated_at
     FROM thread_organization
     WHERE sort_key IS NOT NULL
-    ORDER BY status, sort_key, thread_id
+    ORDER BY
+      CASE status
+        WHEN 'Done' THEN 0
+        WHEN 'To Do' THEN 1
+        WHEN 'Working' THEN 2
+        WHEN 'Waiting' THEN 3
+        WHEN 'Deferred' THEN 4
+        WHEN 'Canceled' THEN 5
+      END,
+      sort_key,
+      thread_id
   `);
   const listStatusAssignments = db.prepare(`
     SELECT thread_id, status, sort_key, updated_at

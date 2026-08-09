@@ -35,7 +35,9 @@ The interface follows bb's entity commands: `list`, `show`, and `update`.
 Status input is case-insensitive and accepts compact spellings such as `todo`,
 `to-do`, and `cancelled`. `show` reports `To Do (default)` when the thread has
 not been organized explicitly. `list` includes visible, non-archived threads
-and materializes missing ones as To Do tasks in their existing order.
+and materializes missing ones as To Do tasks in their existing order. Its
+output is grouped in canonical status order, then arranged by each task's
+fractional order within the group; the internal order keys are not displayed.
 
 `update` changes status, position, or both. A status change without a position
 flag puts the task at the bottom of its destination group. Override that

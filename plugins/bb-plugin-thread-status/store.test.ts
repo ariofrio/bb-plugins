@@ -41,6 +41,29 @@ describe("thread status store", () => {
     expect(store.ensureThreads(["thr_a", "thr_b", "thr_c"])).toEqual(first);
   });
 
+  it("lists canonical status groups and fractional order within each group", () => {
+    store.ensureThreads(["thr_todo_first", "thr_todo_second"]);
+    store.setStatus("thr_canceled", "Canceled");
+    store.setStatus("thr_waiting", "Waiting");
+    store.setStatus("thr_done", "Done");
+    store.setStatus("thr_working_first", "Working");
+    store.setStatus("thr_working_second", "Working");
+    store.setStatus("thr_deferred", "Deferred");
+
+    expect(
+      store.listState().assignments.map((assignment) => assignment.threadId),
+    ).toEqual([
+      "thr_done",
+      "thr_todo_first",
+      "thr_todo_second",
+      "thr_working_first",
+      "thr_working_second",
+      "thr_waiting",
+      "thr_deferred",
+      "thr_canceled",
+    ]);
+  });
+
   it("places status changes at the bottom and preserves idempotent keys", () => {
     store.ensureThreads(["thr_a", "thr_b"]);
     store.setStatus("thr_b", "Working");

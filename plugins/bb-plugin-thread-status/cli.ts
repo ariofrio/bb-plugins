@@ -52,7 +52,7 @@ function json(value: unknown): string {
 function taskAssignmentJson(
   assignment: ReturnType<ThreadStatusStore["listState"]>["assignments"][number],
 ) {
-  const { threadId, ...task } = assignment;
+  const { threadId, sortKey: _sortKey, ...task } = assignment;
   return { id: threadId, ...task };
 }
 
@@ -117,14 +117,13 @@ function humanTaskList(
 ): string {
   if (assignments.length === 0) return "No tasks found\n";
   const rows = [
-    ["ID", "Status", "Order"],
+    ["ID", "Status"],
     ...assignments.map((assignment) => [
       assignment.threadId,
       assignment.status,
-      assignment.sortKey,
     ]),
   ];
-  const widths = [0, 1, 2].map((column) =>
+  const widths = [0, 1].map((column) =>
     Math.max(...rows.map((row) => row[column]?.length ?? 0)),
   );
   return `\n${rows

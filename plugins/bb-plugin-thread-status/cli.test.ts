@@ -89,9 +89,34 @@ describe("task CLI", () => {
       "Working",
       "--json",
     ]);
-    expect(JSON.parse(result.stdout ?? "")).toMatchObject([
+    const tasks = JSON.parse(result.stdout ?? "");
+    expect(tasks).toMatchObject([
       { id: "thr_a", status: "Working" },
     ]);
+    expect(tasks[0]).not.toHaveProperty("sortKey");
+  });
+
+  it("lists tasks without order keys in canonical display order", () => {
+    store.ensureThreads(["thr_todo"]);
+    store.setStatus("thr_waiting", "Waiting");
+    store.setStatus("thr_done", "Done");
+    store.setStatus("thr_working", "Working");
+
+    const result = runTaskCli(store, ["list"]);
+    const stdout = result.stdout ?? "";
+    const doneKey = store.get("thr_done").sortKey ?? "";
+
+    expect(result.exitCode).toBe(0);
+    expect(stdout).not.toContain("Order");
+    expect(doneKey).not.toBe("");
+    expect(stdout).not.toContain(doneKey);
+    expect(stdout.indexOf("thr_done")).toBeLessThan(stdout.indexOf("thr_todo"));
+    expect(stdout.indexOf("thr_todo")).toBeLessThan(
+      stdout.indexOf("thr_working"),
+    );
+    expect(stdout.indexOf("thr_working")).toBeLessThan(
+      stdout.indexOf("thr_waiting"),
+    );
   });
 
   it("limits lists to thread IDs supplied by the host", () => {
