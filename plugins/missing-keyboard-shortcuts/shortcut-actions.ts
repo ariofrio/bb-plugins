@@ -8,7 +8,8 @@ export interface ShortcutKeyEvent {
 }
 
 export interface NewThreadTarget {
-  projectId: string;
+  /** Null claims Command-Shift-N without navigating when no thread is selected. */
+  projectId: string | null;
 }
 
 const PERSONAL_PROJECT_ID = "proj_personal";
@@ -53,7 +54,7 @@ export function newThreadTarget(
   }
 
   const route = currentThreadRoute(pathname);
-  if (route === null) return null;
+  if (route === null) return { projectId: null };
   if (route.projectId === null) {
     return { projectId: PERSONAL_PROJECT_ID };
   }

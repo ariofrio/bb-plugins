@@ -127,13 +127,14 @@ export default definePluginApp((app) => {
         (event) => {
           const target = newThreadTarget(event, window.location.pathname);
           if (target !== null) {
-            // The React bridge exists wherever BB has mounted a composer. If
-            // it is absent, leave Command-N to BB's own app command.
-            if (!hasOpenComposer()) return;
-            // Claim the chord everywhere, including editors, without letting
-            // any downstream BB or editor handler act on the same keydown.
+            // Claim the chord everywhere so BB's native menu cannot reuse it.
             event.preventDefault();
             event.stopPropagation();
+            // Command-Shift-N has no same-project action when the route does
+            // not select a thread, but the chord remains reserved.
+            if (target.projectId === null) return;
+            // The React bridge exists wherever BB has mounted a composer.
+            if (!hasOpenComposer()) return;
             openNewThread(newThreadHost, target.projectId);
             return;
           }

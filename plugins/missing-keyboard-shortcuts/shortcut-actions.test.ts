@@ -79,13 +79,13 @@ describe("newThreadTarget", () => {
     ).toEqual({ projectId: "proj/one" });
   });
 
-  it("rejects Command-Shift-N without a selected thread", () => {
+  it("claims Command-Shift-N without opening when no thread is selected", () => {
     expect(
       newThreadTarget(
         { ...baseChord, key: "n", shiftKey: true },
-        "/projects/proj_one",
+        "/",
       ),
-    ).toBeNull();
+    ).toEqual({ projectId: null });
   });
 
   it("rejects extra modifiers, held-key repeats, and other keys", () => {

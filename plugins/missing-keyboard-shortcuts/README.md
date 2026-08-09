@@ -12,8 +12,9 @@ All shortcuts work while an input, editor, or composer has focus. They use
 exact modifier matching, ignore held-key repeats, and stop matched key events
 from propagating to downstream BB or editor handlers.
 
-The same-project and archive shortcuts are only claimed on a thread route.
-Elsewhere, their key events are left untouched. Duplicate archive requests are
+The same-project shortcut is reserved everywhere so a native menu accelerator
+cannot reuse it, but it only navigates when a thread is selected. The archive
+shortcut is only claimed on a thread route. Duplicate archive requests are
 ignored while one is in flight, and BB shows success or failure feedback when
 it finishes.
 
