@@ -40,6 +40,17 @@ export function isArchiveShortcut(event: ShortcutKeyEvent): boolean {
   );
 }
 
+export function isTerminalShortcut(event: ShortcutKeyEvent): boolean {
+  return (
+    event.ctrlKey &&
+    !event.altKey &&
+    !event.metaKey &&
+    !event.shiftKey &&
+    !event.repeat &&
+    event.key === "`"
+  );
+}
+
 export function newThreadTarget(
   event: ShortcutKeyEvent,
   pathname: string,

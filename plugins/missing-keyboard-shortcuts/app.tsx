@@ -18,12 +18,22 @@ import {
   currentThreadId,
   historyDirection,
   isArchiveShortcut,
+  isTerminalShortcut,
   newThreadTarget,
 } from "./shortcut-actions";
 import {
   openNewThread,
   type NewThreadHost,
 } from "./new-thread-navigation";
+import {
+  activateTerminalPanel,
+  closeTerminalPanel,
+  readRecentTerminalId,
+  readTerminalPanelSnapshot,
+  rememberRecentTerminalId,
+  shouldCloseTerminalPanel,
+  type PanelStorageChange,
+} from "./terminal-panel-state";
 
 const ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY = "bb.root-compose.project-id";
 
@@ -31,11 +41,16 @@ interface ArchiveResult {
   archivedThreadIds: string[];
 }
 
-type RpcEnvelope =
-  | { ok: true; result: ArchiveResult }
+interface OpenTerminalResult {
+  created: boolean;
+  terminalId: string;
+}
+
+type RpcEnvelope<Result> =
+  | { ok: true; result: Result }
   | { ok: false; error: unknown };
 
-function rpcErrorMessage(error: unknown): string {
+function rpcErrorMessage(error: unknown, fallback: string): string {
   if (typeof error === "string") return error;
   if (
     error !== null &&
@@ -45,7 +60,7 @@ function rpcErrorMessage(error: unknown): string {
   ) {
     return error.message;
   }
-  return "Failed to archive thread";
+  return fallback;
 }
 
 function ComposerNavigationBridge() {
@@ -77,15 +92,102 @@ async function archiveThread(
       credentials: "same-origin",
     },
   );
-  const envelope = (await response.json()) as RpcEnvelope;
+  const envelope = (await response.json()) as RpcEnvelope<ArchiveResult>;
   if (!response.ok || !envelope.ok) {
     throw new Error(
       !envelope.ok
-        ? rpcErrorMessage(envelope.error)
+        ? rpcErrorMessage(envelope.error, "Failed to archive thread")
         : `Archive request failed (${response.status})`,
     );
   }
   return envelope.result;
+}
+
+async function openTerminal(
+  pluginId: string,
+  threadId: string,
+  preferredTerminalId: string | null,
+): Promise<OpenTerminalResult> {
+  const response = await fetch(
+    `/api/v1/plugins/${encodeURIComponent(pluginId)}/rpc/openTerminal`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ preferredTerminalId, threadId }),
+      credentials: "same-origin",
+    },
+  );
+  const envelope = (await response.json()) as RpcEnvelope<OpenTerminalResult>;
+  if (!response.ok || !envelope.ok) {
+    throw new Error(
+      !envelope.ok
+        ? rpcErrorMessage(envelope.error, "Failed to open terminal")
+        : `Terminal request failed (${response.status})`,
+    );
+  }
+  return envelope.result;
+}
+
+function notifyPanelStateChanged(change: PanelStorageChange): void {
+  window.dispatchEvent(
+    new StorageEvent("storage", {
+      key: change.key,
+      newValue: change.newValue,
+      oldValue: change.oldValue,
+      storageArea: window.localStorage,
+      url: window.location.href,
+    }),
+  );
+}
+
+function isTerminalFocused(): boolean {
+  return (
+    document.activeElement instanceof Element &&
+    document.activeElement.closest("[data-app-terminal]") !== null
+  );
+}
+
+function focusTerminal(signal: AbortSignal, threadId: string): void {
+  const tryFocus = (): boolean => {
+    const visibleTerminal = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-app-terminal]"),
+    ).find((terminal) => {
+      const bounds = terminal.getBoundingClientRect();
+      return bounds.width > 0 && bounds.height > 0;
+    });
+    const focusTarget = visibleTerminal?.querySelector<HTMLElement>(
+      ".xterm-helper-textarea, textarea",
+    );
+    if (focusTarget === null || focusTarget === undefined) return false;
+    focusTarget.focus({ preventScroll: true });
+    return true;
+  };
+
+  let attemptsRemaining = 120;
+  let animationFrame: number | null = null;
+  const stop = () => {
+    if (animationFrame !== null) {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    }
+    signal.removeEventListener("abort", stop);
+  };
+  const attemptFocus = () => {
+    animationFrame = null;
+    if (
+      signal.aborted ||
+      currentThreadId(window.location.pathname) !== threadId ||
+      tryFocus() ||
+      attemptsRemaining <= 0
+    ) {
+      stop();
+      return;
+    }
+    attemptsRemaining -= 1;
+    animationFrame = window.requestAnimationFrame(attemptFocus);
+  };
+  signal.addEventListener("abort", stop, { once: true });
+  attemptFocus();
 }
 
 export default definePluginApp((app) => {
@@ -104,6 +206,7 @@ export default definePluginApp((app) => {
     id: "missing-keyboard-shortcuts",
     mount({ pluginId, signal }) {
       let archiveInFlight = false;
+      let terminalInFlight = false;
       const newThreadHost: NewThreadHost = {
         getSelectedProjectId() {
           return window.localStorage.getItem(
@@ -135,6 +238,28 @@ export default definePluginApp((app) => {
       };
 
       window.addEventListener(
+        "focusin",
+        (event) => {
+          if (!(event.target instanceof Element)) return;
+          if (event.target.closest("[data-app-terminal]") === null) return;
+          const threadId = currentThreadId(window.location.pathname);
+          if (threadId === null) return;
+          const { activeTerminalId } = readTerminalPanelSnapshot(
+            window.localStorage,
+            threadId,
+          );
+          if (activeTerminalId !== null) {
+            rememberRecentTerminalId(
+              window.localStorage,
+              threadId,
+              activeTerminalId,
+            );
+          }
+        },
+        { capture: true, signal },
+      );
+
+      window.addEventListener(
         "keydown",
         (event) => {
           const target = newThreadTarget(
@@ -149,6 +274,60 @@ export default definePluginApp((app) => {
             // The React bridge exists wherever BB has mounted a composer.
             if (!hasOpenComposer()) return;
             openNewThread(newThreadHost, target.projectId);
+            return;
+          }
+
+          if (isTerminalShortcut(event)) {
+            const threadId = currentThreadId(window.location.pathname);
+            if (threadId === null) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            const panel = readTerminalPanelSnapshot(
+              window.localStorage,
+              threadId,
+            );
+            if (shouldCloseTerminalPanel(panel, isTerminalFocused())) {
+              notifyPanelStateChanged(
+                closeTerminalPanel(window.localStorage, threadId),
+              );
+              return;
+            }
+            if (terminalInFlight) return;
+
+            const rememberedTerminalId = readRecentTerminalId(
+              window.localStorage,
+              threadId,
+            );
+            const preferredTerminalId =
+              panel.activeTerminalId ??
+              (rememberedTerminalId !== null &&
+                panel.terminalIds.includes(rememberedTerminalId)
+                ? rememberedTerminalId
+                : null);
+            terminalInFlight = true;
+            void openTerminal(pluginId, threadId, preferredTerminalId)
+              .then(({ terminalId }) => {
+                rememberRecentTerminalId(
+                  window.localStorage,
+                  threadId,
+                  terminalId,
+                );
+                notifyPanelStateChanged(
+                  activateTerminalPanel(
+                    window.localStorage,
+                    threadId,
+                    terminalId,
+                  ),
+                );
+                focusTerminal(signal, threadId);
+              })
+              .catch((error: unknown) => {
+                toast.error(rpcErrorMessage(error, "Failed to open terminal"));
+              })
+              .finally(() => {
+                terminalInFlight = false;
+              });
             return;
           }
 
@@ -181,7 +360,7 @@ export default definePluginApp((app) => {
               );
             })
             .catch((error: unknown) => {
-              toast.error(rpcErrorMessage(error));
+              toast.error(rpcErrorMessage(error, "Failed to archive thread"));
             })
             .finally(() => {
               archiveInFlight = false;

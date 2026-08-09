@@ -3,6 +3,7 @@ import {
   currentThreadId,
   historyDirection,
   isArchiveShortcut,
+  isTerminalShortcut,
   newThreadTarget,
 } from "./shortcut-actions";
 
@@ -49,6 +50,31 @@ describe("isArchiveShortcut", () => {
     expect(isArchiveShortcut({ ...archiveChord, key: "B" })).toBe(false);
     expect(isArchiveShortcut({ ...archiveChord, metaKey: false })).toBe(false);
     expect(isArchiveShortcut({ ...archiveChord, shiftKey: true })).toBe(false);
+  });
+});
+
+describe("isTerminalShortcut", () => {
+  const chord = {
+    ...baseChord,
+    ctrlKey: true,
+    key: "`",
+    metaKey: false,
+  };
+
+  it("matches Control-backtick", () => {
+    expect(isTerminalShortcut(chord)).toBe(true);
+  });
+
+  it("rejects extra modifiers and held-key repeats", () => {
+    expect(isTerminalShortcut({ ...chord, altKey: true })).toBe(false);
+    expect(isTerminalShortcut({ ...chord, metaKey: true })).toBe(false);
+    expect(isTerminalShortcut({ ...chord, shiftKey: true })).toBe(false);
+    expect(isTerminalShortcut({ ...chord, repeat: true })).toBe(false);
+  });
+
+  it("rejects other chords", () => {
+    expect(isTerminalShortcut({ ...chord, key: "~" })).toBe(false);
+    expect(isTerminalShortcut({ ...chord, ctrlKey: false })).toBe(false);
   });
 });
 
