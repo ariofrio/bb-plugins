@@ -7,7 +7,7 @@ Adds keyboard shortcuts that BB does not currently provide:
 - `Command-N` starts a new thread with no project selected.
 - `Command-Shift-N` starts a new thread in the selected thread's project, or
   the last selected thread's project when no thread is selected.
-- `Command-Shift-A` archives the current thread and its child threads.
+- `Command-.` archives the current thread and its child threads.
 
 All shortcuts work while an input, editor, or composer has focus. They use
 exact modifier matching, ignore held-key repeats, and stop matched key events

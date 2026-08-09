@@ -35,8 +35,8 @@ export function historyDirection(event: ShortcutKeyEvent): -1 | 1 | null {
 export function isArchiveShortcut(event: ShortcutKeyEvent): boolean {
   return (
     exactCommandChord(event) &&
-    event.shiftKey &&
-    event.key.toLowerCase() === "a"
+    !event.shiftKey &&
+    event.key === "."
   );
 }
 

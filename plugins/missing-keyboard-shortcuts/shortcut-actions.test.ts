@@ -31,12 +31,11 @@ describe("historyDirection", () => {
 
 const archiveChord = {
   ...baseChord,
-  key: "A",
-  shiftKey: true,
+  key: ".",
 };
 
 describe("isArchiveShortcut", () => {
-  it("matches Command-Shift-A", () => {
+  it("matches Command-.", () => {
     expect(isArchiveShortcut(archiveChord)).toBe(true);
   });
 
@@ -49,7 +48,7 @@ describe("isArchiveShortcut", () => {
   it("rejects other chords", () => {
     expect(isArchiveShortcut({ ...archiveChord, key: "B" })).toBe(false);
     expect(isArchiveShortcut({ ...archiveChord, metaKey: false })).toBe(false);
-    expect(isArchiveShortcut({ ...archiveChord, shiftKey: false })).toBe(false);
+    expect(isArchiveShortcut({ ...archiveChord, shiftKey: true })).toBe(false);
   });
 });
 
