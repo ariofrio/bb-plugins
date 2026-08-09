@@ -84,18 +84,19 @@ export default definePluginApp((app) => {
         (event) => {
           const target = newThreadTarget(event, window.location.pathname);
           if (target !== null) {
-            // Claim the chord everywhere, including editors, and let BB see
-            // the prevented keydown so it clears its Command-key hint timer.
+            // Claim the chord everywhere, including editors, without letting
+            // any downstream BB or editor handler act on the same keydown.
             event.preventDefault();
+            event.stopPropagation();
             openNewThread(target.path, target.projectId);
             return;
           }
 
           const direction = historyDirection(event);
           if (direction !== null) {
-            // Claim the shortcut even when an editor has focus. Let BB observe
-            // the keydown so it cancels its delayed Command-key hint timer.
+            // Claim the shortcut even when an editor has focus.
             event.preventDefault();
+            event.stopPropagation();
             window.history.go(direction);
             return;
           }
@@ -105,10 +106,9 @@ export default definePluginApp((app) => {
           const threadId = currentThreadId(window.location.pathname);
           if (threadId === null) return;
 
-          // Claim the chord everywhere, including editors. Let it continue to
-          // BB's listeners so the delayed Command-key hint timer is cancelled;
-          // BB's command dispatcher ignores an already-prevented event.
+          // Claim the chord everywhere, including editors.
           event.preventDefault();
+          event.stopPropagation();
           if (archiveInFlight) return;
 
           archiveInFlight = true;

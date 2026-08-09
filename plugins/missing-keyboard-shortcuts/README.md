@@ -9,8 +9,8 @@ Adds keyboard shortcuts that BB does not currently provide:
 - `Command-Shift-A` archives the current thread and its child threads.
 
 All shortcuts work while an input, editor, or composer has focus. They use
-exact modifier matching and ignore held-key repeats. They also cancel BB's
-delayed Command-key shortcut-hint timer for the current modifier hold.
+exact modifier matching, ignore held-key repeats, and stop matched key events
+from propagating to downstream BB or editor handlers.
 
 The same-project and archive shortcuts are only claimed on a thread route.
 Elsewhere, their key events are left untouched. Duplicate archive requests are
