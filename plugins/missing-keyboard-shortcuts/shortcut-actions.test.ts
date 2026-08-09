@@ -57,27 +57,26 @@ describe("newThreadTarget", () => {
   it("targets no project for Command-N", () => {
     expect(
       newThreadTarget({ ...baseChord, key: "n" }, "/projects/proj_one"),
-    ).toEqual({ path: "/", projectId: "proj_personal" });
+    ).toEqual({ projectId: "proj_personal" });
   });
 
   it("targets the selected thread's project for Command-Shift-N", () => {
     const chord = { ...baseChord, key: "N", shiftKey: true };
     expect(
       newThreadTarget(chord, "/projects/proj_one/threads/thr_standard"),
-    ).toEqual({ path: "/projects/proj_one", projectId: "proj_one" });
+    ).toEqual({ projectId: "proj_one" });
     expect(newThreadTarget(chord, "/threads/thr_personal")).toEqual({
-      path: "/",
       projectId: "proj_personal",
     });
   });
 
-  it("encodes project IDs in compose paths", () => {
+  it("decodes project IDs from thread routes", () => {
     expect(
       newThreadTarget(
         { ...baseChord, key: "n", shiftKey: true },
         "/projects/proj%2Fone/threads/thr_standard",
       ),
-    ).toEqual({ path: "/projects/proj%2Fone", projectId: "proj/one" });
+    ).toEqual({ projectId: "proj/one" });
   });
 
   it("rejects Command-Shift-N without a selected thread", () => {

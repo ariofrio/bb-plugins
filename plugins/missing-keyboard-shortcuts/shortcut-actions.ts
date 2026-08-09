@@ -8,7 +8,6 @@ export interface ShortcutKeyEvent {
 }
 
 export interface NewThreadTarget {
-  path: string;
   projectId: string;
 }
 
@@ -50,18 +49,15 @@ export function newThreadTarget(
   }
 
   if (!event.shiftKey) {
-    return { path: "/", projectId: PERSONAL_PROJECT_ID };
+    return { projectId: PERSONAL_PROJECT_ID };
   }
 
   const route = currentThreadRoute(pathname);
   if (route === null) return null;
   if (route.projectId === null) {
-    return { path: "/", projectId: PERSONAL_PROJECT_ID };
+    return { projectId: PERSONAL_PROJECT_ID };
   }
-  return {
-    path: `/projects/${encodeURIComponent(route.projectId)}`,
-    projectId: route.projectId,
-  };
+  return { projectId: route.projectId };
 }
 
 interface CurrentThreadRoute {

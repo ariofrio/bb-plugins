@@ -1,11 +1,21 @@
-import { definePluginApp } from "@bb/plugin-sdk/app";
+import { definePluginApp, useBbNavigate } from "@bb/plugin-sdk/app";
+import { useEffect } from "react";
 import { toast } from "sonner";
+import {
+  hasOpenComposer,
+  openRegisteredComposer,
+  registerOpenComposer,
+} from "./composer-navigation-bridge";
 import {
   currentThreadId,
   historyDirection,
   isArchiveShortcut,
   newThreadTarget,
 } from "./shortcut-actions";
+import {
+  openNewThread,
+  type NewThreadHost,
+} from "./new-thread-navigation";
 
 const ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY = "bb.root-compose.project-id";
 
@@ -28,6 +38,18 @@ function rpcErrorMessage(error: unknown): string {
     return error.message;
   }
   return "Failed to archive thread";
+}
+
+function ComposerNavigationBridge() {
+  const { toCompose } = useBbNavigate();
+  useEffect(
+    () =>
+      registerOpenComposer(() => {
+        toCompose({ focusPrompt: true });
+      }),
+    [toCompose],
+  );
+  return null;
 }
 
 async function archiveThread(
@@ -54,41 +76,65 @@ async function archiveThread(
   return envelope.result;
 }
 
-function openNewThread(path: string, projectId: string): void {
-  // BB's root composer reads this selection on mount. The same-tab storage
-  // event also updates an already-mounted composer before navigation.
-  const oldValue = window.localStorage.getItem(
-    ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY,
-  );
-  window.localStorage.setItem(ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY, projectId);
-  window.dispatchEvent(
-    new StorageEvent("storage", {
-      key: ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY,
-      newValue: projectId,
-      oldValue,
-      storageArea: window.localStorage,
-      url: window.location.href,
-    }),
-  );
-  window.location.assign(path);
-}
-
 export default definePluginApp((app) => {
+  app.composer.customize({
+    id: "navigation-bridge",
+    banners: [
+      {
+        id: "navigation-bridge",
+        chrome: "bare",
+        component: ComposerNavigationBridge,
+      },
+    ],
+  });
+
   app.contentScripts.register({
     id: "missing-keyboard-shortcuts",
     mount({ pluginId, signal }) {
       let archiveInFlight = false;
+      const newThreadHost: NewThreadHost = {
+        getSelectedProjectId() {
+          return window.localStorage.getItem(
+            ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY,
+          );
+        },
+        selectProject(projectId) {
+          window.localStorage.setItem(
+            ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY,
+            projectId,
+          );
+        },
+        notifyProjectChanged(oldProjectId, newProjectId) {
+          // BB's root composer also observes this event when it is already
+          // mounted, such as Command-N pressed from the compose route itself.
+          window.dispatchEvent(
+            new StorageEvent("storage", {
+              key: ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY,
+              newValue: newProjectId,
+              oldValue: oldProjectId,
+              storageArea: window.localStorage,
+              url: window.location.href,
+            }),
+          );
+        },
+        openComposer() {
+          openRegisteredComposer();
+        },
+      };
 
       window.addEventListener(
         "keydown",
         (event) => {
           const target = newThreadTarget(event, window.location.pathname);
           if (target !== null) {
+            // The React bridge exists wherever BB has mounted a composer. If
+            // it is absent, leave Command-N to BB's own app command.
+            if (!hasOpenComposer()) return;
             // Claim the chord everywhere, including editors, without letting
             // any downstream BB or editor handler act on the same keydown.
             event.preventDefault();
             event.stopPropagation();
-            openNewThread(target.path, target.projectId);
+            openNewThread(newThreadHost, target.projectId);
             return;
           }
 
