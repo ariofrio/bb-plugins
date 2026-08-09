@@ -43,9 +43,7 @@ export function shouldCloseTerminalPanel(
   panel: TerminalPanelSnapshot,
   terminalFocused: boolean,
 ): boolean {
-  return (
-    panel.isOpen && panel.activeTerminalId !== null && terminalFocused
-  );
+  return panel.isOpen && (panel.activeTerminalId === null || terminalFocused);
 }
 
 function panelStorageKey(threadId: string): string {
