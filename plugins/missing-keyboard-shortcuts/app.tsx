@@ -2,13 +2,17 @@ import {
   definePluginApp,
   useBbContext,
   useBbNavigate,
+  useComposer,
+  useComposerView,
 } from "@bb/plugin-sdk/app";
-import { useEffect } from "react";
+import { createElement, useEffect, useLayoutEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
+  focusPrimaryComposer,
   hasOpenComposer,
   openRegisteredComposer,
   registerOpenComposer,
+  registerPrimaryComposerFocus,
 } from "./composer-navigation-bridge";
 import {
   readLastThreadProjectId,
@@ -66,6 +70,10 @@ function rpcErrorMessage(error: unknown, fallback: string): string {
 function ComposerNavigationBridge() {
   const context = useBbContext();
   const { toCompose } = useBbNavigate();
+  const composer = useComposer();
+  const view = useComposerView();
+  const markerRef = useRef<HTMLSpanElement>(null);
+  const threadId = view.scope.kind === "thread" ? view.scope.threadId : null;
   useEffect(() => {
     rememberThreadProject(window.localStorage, context);
   }, [context.projectId, context.threadId]);
@@ -76,7 +84,14 @@ function ComposerNavigationBridge() {
       }),
     [toCompose],
   );
-  return null;
+  useLayoutEffect(() => {
+    if (threadId === null) return;
+    if (!markerRef.current?.closest('[data-app-composer-role="primary"]')) {
+      return;
+    }
+    return registerPrimaryComposerFocus(threadId, composer.focus);
+  }, [composer.focus, threadId]);
+  return createElement("span", { hidden: true, ref: markerRef });
 }
 
 async function archiveThread(
@@ -291,6 +306,7 @@ export default definePluginApp((app) => {
               notifyPanelStateChanged(
                 closeTerminalPanel(window.localStorage, threadId),
               );
+              focusPrimaryComposer(threadId);
               return;
             }
             if (terminalInFlight) return;

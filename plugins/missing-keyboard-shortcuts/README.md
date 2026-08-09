@@ -11,7 +11,8 @@ Adds keyboard shortcuts that BB does not currently provide:
 - Control-backtick activates a terminal in the current thread. It creates one
   only when none exists; otherwise it selects the most recently used terminal,
   opens the right sidebar, and focuses it. When that terminal is already
-  selected, visible, and focused, the shortcut closes the right sidebar.
+  selected, visible, and focused, the shortcut closes the right sidebar and
+  focuses the primary composer.
 
 All shortcuts work while an input, editor, or composer has focus. They use
 exact modifier matching, ignore held-key repeats, and stop matched key events
