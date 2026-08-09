@@ -23,7 +23,7 @@ describe("thread statuses", () => {
     expect(parseThreadStatus("not started")).toBeNull();
   });
 
-  it("defaults unassigned threads to To Do and honors explicit positions", () => {
+  it("defaults unassigned threads to To Do and honors explicit sort keys", () => {
     const threads = [
       { id: "unassigned", updatedAt: 30 },
       { id: "second", updatedAt: 20 },
@@ -31,9 +31,9 @@ describe("thread statuses", () => {
       { id: "working", updatedAt: 5 },
     ];
     const assignments: ThreadAssignment[] = [
-      { threadId: "second", status: "To Do", position: 2048, updatedAt: 2 },
-      { threadId: "first", status: "To Do", position: 1024, updatedAt: 1 },
-      { threadId: "working", status: "Working", position: 1024, updatedAt: 3 },
+      { threadId: "second", status: "To Do", sortKey: "k", updatedAt: 2 },
+      { threadId: "first", status: "To Do", sortKey: "U", updatedAt: 1 },
+      { threadId: "working", status: "Working", sortKey: "U", updatedAt: 3 },
     ];
 
     const groups = groupThreadsByStatus(threads, assignments);

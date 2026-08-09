@@ -6,12 +6,15 @@ interface CliResult {
   stdout?: string;
   stderr?: string;
 }
+const REORDER_USAGE =
+  "Usage: bb thread-status reorder <thread-id> [--after <id>] [--before <id>] [--json]\n";
 const HELP = `Manage manual thread statuses and order.
 
 Usage:
   bb thread-status get <thread-id> [--json]
   bb thread-status set <thread-id> <status> [--json]
   bb thread-status list [--status <status>] [--json]
+  bb thread-status reorder <thread-id> [--after <id>] [--before <id>] [--json]
 
 Statuses: ${THREAD_STATUSES.join(", ")}
 `;
@@ -80,7 +83,7 @@ export function runThreadStatusCli(
         ? state.assignments.filter((assignment) => assignment.status === status)
         : state.assignments;
       if (wantsJson) {
-        return { exitCode: 0, stdout: json({ revision: state.revision, assignments }) };
+        return { exitCode: 0, stdout: json({ assignments }) };
       }
       return {
         exitCode: 0,
@@ -88,8 +91,50 @@ export function runThreadStatusCli(
           assignments.length === 0
             ? "No explicit thread statuses. Unassigned threads default to To Do.\n"
             : assignments
-                .map((assignment) => `${assignment.threadId}\t${assignment.status}\t${assignment.position}`)
+                .map((assignment) => `${assignment.threadId}\t${assignment.status}\t${assignment.sortKey}`)
                 .join("\n") + "\n",
+      };
+    }
+
+    if (command === "reorder") {
+      if (args[1] === "--help" || args[1] === "-h") {
+        return { exitCode: 0, stdout: REORDER_USAGE };
+      }
+      const threadId = args[1];
+      if (!threadId) return { exitCode: 2, stderr: REORDER_USAGE };
+
+      let previousThreadId: string | null = null;
+      let nextThreadId: string | null = null;
+      const seen = new Set<string>();
+      for (let index = 2; index < args.length; index += 2) {
+        const flag = args[index];
+        const value = args[index + 1];
+        if (
+          (flag !== "--after" && flag !== "--before") ||
+          !value ||
+          value.startsWith("--") ||
+          seen.has(flag)
+        ) {
+          return { exitCode: 2, stderr: REORDER_USAGE };
+        }
+        seen.add(flag);
+        if (flag === "--after") previousThreadId = value;
+        else nextThreadId = value;
+      }
+
+      const current = store.get(threadId);
+      if (!current.explicit) {
+        throw new Error(`Thread ${threadId} has no explicit status. Set it first.`);
+      }
+      const state = store.reorderThread({
+        threadId,
+        status: current.status,
+        previousThreadId,
+        nextThreadId,
+      });
+      return {
+        exitCode: 0,
+        stdout: wantsJson ? json(state) : `Thread ${threadId} reordered\n`,
       };
     }
 

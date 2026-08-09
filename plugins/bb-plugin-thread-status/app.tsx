@@ -29,7 +29,6 @@ import {
 } from "./thread-status";
 
 interface OrganizationState {
-  revision: number;
   assignments: ThreadAssignment[];
 }
 
@@ -228,7 +227,6 @@ function ThreadStatusList({
   const actions = experimental_useSidebarThreadActions();
   const connectionState = useRealtimeConnectionState();
   const [organization, setOrganization] = useState<OrganizationState>({
-    revision: 0,
     assignments: [],
   });
   const [loaded, setLoaded] = useState(false);
@@ -238,6 +236,7 @@ function ThreadStatusList({
   const [collapsed, setCollapsed] = useState<Set<ThreadStatus>>(() => new Set());
   const [mutationPending, setMutationPending] = useState(false);
   const wasConnected = useRef(false);
+  const syncInFlight = useRef(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -268,6 +267,40 @@ function ThreadStatusList({
     () => sidebar.threads.filter((thread) => !thread.isArchived),
     [sidebar.threads],
   );
+  const unsyncedThreadIds = useMemo(() => {
+    const assigned = new Set(
+      organization.assignments.map((assignment) => assignment.threadId),
+    );
+    return visibleThreads
+      .map((thread) => thread.id)
+      .filter((threadId) => !assigned.has(threadId));
+  }, [organization.assignments, visibleThreads]);
+
+  useEffect(() => {
+    if (
+      !loaded ||
+      sidebar.status === "loading" ||
+      sidebar.status === "error" ||
+      unsyncedThreadIds.length === 0 ||
+      syncInFlight.current
+    ) {
+      return;
+    }
+    syncInFlight.current = true;
+    void rpc
+      .call("syncThreads", { threadIds: visibleThreads.map((thread) => thread.id) })
+      .then((state) => {
+        setOrganization(state);
+        setError(null);
+      })
+      .catch((cause) => {
+        setError(cause instanceof Error ? cause.message : "Could not save thread order.");
+      })
+      .finally(() => {
+        syncInFlight.current = false;
+      });
+  }, [loaded, rpc, sidebar.status, unsyncedThreadIds.length, visibleThreads]);
+
   const groups = useMemo(
     () => groupThreadsByStatus(visibleThreads, organization.assignments),
     [organization.assignments, visibleThreads],
@@ -302,41 +335,24 @@ function ThreadStatusList({
       status: ThreadStatus,
       beforeThreadId: string | null,
     ) => {
-      if (mutationPending) return;
+      if (mutationPending || unsyncedThreadIds.length > 0) return;
       const order = destinationOrder(
         groups[status].map((thread) => thread.id),
         threadId,
         beforeThreadId,
       );
-      const previous = organization;
-      const now = Date.now();
-      const destinationIds = new Set(order);
-      setOrganization({
-        revision: previous.revision + 1,
-        assignments: [
-          ...previous.assignments.filter(
-            (assignment) => !destinationIds.has(assignment.threadId),
-          ),
-          ...order.map((id, index) => ({
-            threadId: id,
-            status,
-            position: (index + 1) * 1024,
-            updatedAt: now,
-          })),
-        ],
-      });
+      const movedIndex = order.indexOf(threadId);
       setMutationPending(true);
       setError(null);
       try {
         const state = await rpc.call("moveThread", {
           threadId,
           status,
-          orderedThreadIds: order,
-          expectedRevision: previous.revision,
+          previousThreadId: order[movedIndex - 1] ?? null,
+          nextThreadId: order[movedIndex + 1] ?? null,
         });
         setOrganization(state);
       } catch (cause) {
-        setOrganization(previous);
         setError(cause instanceof Error ? cause.message : "Could not move the thread.");
         await refresh();
       } finally {
@@ -345,7 +361,7 @@ function ThreadStatusList({
         setDropBefore(null);
       }
     },
-    [groups, mutationPending, organization, refresh, rpc],
+    [groups, mutationPending, refresh, rpc, unsyncedThreadIds.length],
   );
 
   function toggleCollapsed(status: ThreadStatus): void {
@@ -417,7 +433,7 @@ function ThreadStatusList({
                         active={thread.id === activeThreadId}
                         canMoveDown={fullIndex < allThreads.length - 1}
                         canMoveUp={fullIndex > 0}
-                        disabled={mutationPending}
+                        disabled={mutationPending || unsyncedThreadIds.length > 0}
                         dragging={thread.id === draggingThreadId}
                         key={thread.id}
                         onChangeStatus={(nextStatus) => {

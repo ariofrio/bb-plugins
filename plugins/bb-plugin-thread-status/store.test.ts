@@ -22,79 +22,149 @@ describe("thread status store", () => {
     expect(store.get("thr_new")).toEqual({
       threadId: "thr_new",
       status: "To Do",
-      position: null,
+      sortKey: null,
       updatedAt: null,
       explicit: false,
     });
   });
 
-  it("sets statuses and appends within the destination group", () => {
-    store.setStatus("thr_a", "Working");
-    store.setStatus("thr_b", "Working");
+  it("materializes missing threads in their supplied order", () => {
+    const first = store.ensureThreads(["thr_a", "thr_b", "thr_c"]);
+    const initialKeys = first.assignments.map((assignment) => assignment.sortKey);
 
-    expect(store.listState().assignments).toMatchObject([
-      { threadId: "thr_a", status: "Working", position: 1024 },
-      { threadId: "thr_b", status: "Working", position: 2048 },
+    expect(first.assignments.map((assignment) => assignment.threadId)).toEqual([
+      "thr_a",
+      "thr_b",
+      "thr_c",
     ]);
-    expect(store.listState().revision).toBe(2);
+    expect(initialKeys).toEqual([...initialKeys].sort());
+    expect(store.ensureThreads(["thr_a", "thr_b", "thr_c"])).toEqual(first);
   });
 
-  it("materializes an exact destination order and changes status atomically", () => {
-    store.setStatus("thr_a", "To Do");
+  it("places status changes at the front and preserves idempotent keys", () => {
+    store.ensureThreads(["thr_a", "thr_b"]);
     store.setStatus("thr_b", "Working");
-    const before = store.listState();
+    const firstKey = store.get("thr_b").sortKey;
+    store.setStatus("thr_b", "Working");
+    expect(store.get("thr_b").sortKey).toBe(firstKey);
 
-    const after = store.moveThread({
+    store.setStatus("thr_a", "Working");
+    const working = store
+      .listState()
+      .assignments.filter((assignment) => assignment.status === "Working");
+    expect(working.map((assignment) => assignment.threadId)).toEqual([
+      "thr_a",
+      "thr_b",
+    ]);
+    expect(working[0]?.sortKey < (working[1]?.sortKey ?? "")).toBe(true);
+  });
+
+  it("changes only the moved row's key when reordering between neighbors", () => {
+    store.ensureThreads(["thr_a", "thr_b", "thr_c"]);
+    const before = new Map(
+      store.listState().assignments.map((assignment) => [
+        assignment.threadId,
+        assignment.sortKey,
+      ]),
+    );
+
+    const after = store.reorderThread({
+      threadId: "thr_c",
+      status: "To Do",
+      previousThreadId: "thr_a",
+      nextThreadId: "thr_b",
+    });
+
+    expect(after.assignments.map((assignment) => assignment.threadId)).toEqual([
+      "thr_a",
+      "thr_c",
+      "thr_b",
+    ]);
+    expect(store.get("thr_a").sortKey).toBe(before.get("thr_a"));
+    expect(store.get("thr_b").sortKey).toBe(before.get("thr_b"));
+    expect(store.get("thr_c").sortKey).not.toBe(before.get("thr_c"));
+  });
+
+  it("changes status and order in one transaction", () => {
+    store.ensureThreads(["thr_a", "thr_b"]);
+    store.setStatus("thr_b", "Working");
+
+    const after = store.reorderThread({
       threadId: "thr_a",
       status: "Working",
-      orderedThreadIds: ["thr_b", "thr_a", "thr_unassigned"],
-      expectedRevision: before.revision,
+      previousThreadId: "thr_b",
+      nextThreadId: null,
     });
 
     expect(
       after.assignments
         .filter((assignment) => assignment.status === "Working")
-        .map(({ threadId, position }) => ({ threadId, position })),
-    ).toEqual([
-      { threadId: "thr_b", position: 1024 },
-      { threadId: "thr_a", position: 2048 },
-      { threadId: "thr_unassigned", position: 3072 },
-    ]);
-    expect(after.revision).toBe(before.revision + 1);
+        .map((assignment) => assignment.threadId),
+    ).toEqual(["thr_b", "thr_a"]);
   });
 
-  it("rejects stale and malformed reorder requests without changing state", () => {
-    store.setStatus("thr_a", "Working");
+  it("rejects stale, reversed, and self-referential neighbors", () => {
+    store.ensureThreads(["thr_a", "thr_b", "thr_c"]);
     const before = store.listState();
 
     expect(() =>
-      store.moveThread({
-        threadId: "thr_a",
-        status: "Done",
-        orderedThreadIds: ["thr_a"],
-        expectedRevision: before.revision - 1,
+      store.reorderThread({
+        threadId: "thr_c",
+        status: "To Do",
+        previousThreadId: "thr_missing",
+        nextThreadId: null,
       }),
     ).toThrow("changed");
     expect(() =>
-      store.moveThread({
-        threadId: "thr_a",
-        status: "Done",
-        orderedThreadIds: ["thr_a", "thr_a"],
-        expectedRevision: before.revision,
+      store.reorderThread({
+        threadId: "thr_c",
+        status: "To Do",
+        previousThreadId: "thr_b",
+        nextThreadId: "thr_a",
       }),
-    ).toThrow("duplicate");
+    ).toThrow("sort before");
+    expect(() =>
+      store.reorderThread({
+        threadId: "thr_c",
+        status: "To Do",
+        previousThreadId: "thr_c",
+        nextThreadId: null,
+      }),
+    ).toThrow("own neighbor");
     expect(store.listState()).toEqual(before);
   });
 
+  it("migrates integer positions to lexicographically equivalent keys", () => {
+    const migrationDb = new Database(":memory:");
+    try {
+      migrationDb.exec(THREAD_STATUS_MIGRATIONS[0] ?? "");
+      migrationDb
+        .prepare(
+          "INSERT INTO thread_organization(thread_id, status, position, updated_at) VALUES (?, ?, ?, ?)",
+        )
+        .run("thr_b", "Waiting", 2048, 1);
+      migrationDb
+        .prepare(
+          "INSERT INTO thread_organization(thread_id, status, position, updated_at) VALUES (?, ?, ?, ?)",
+        )
+        .run("thr_a", "Waiting", 1024, 1);
+      migrationDb.exec(THREAD_STATUS_MIGRATIONS[1] ?? "");
+
+      const migrated = createThreadStatusStore(migrationDb).listState();
+      expect(migrated.assignments).toMatchObject([
+        { threadId: "thr_a", sortKey: "0000000000001024" },
+        { threadId: "thr_b", sortKey: "0000000000002048" },
+      ]);
+    } finally {
+      migrationDb.close();
+    }
+  });
+
   it("removes organization state for deleted threads", () => {
-    store.setStatus("thr_a", "Deferred");
-    const revision = store.listState().revision;
+    store.ensureThreads(["thr_a"]);
 
     expect(store.delete("thr_a")).toBe(true);
     expect(store.delete("thr_a")).toBe(false);
-    expect(store.listState()).toMatchObject({
-      revision: revision + 1,
-      assignments: [],
-    });
+    expect(store.listState()).toEqual({ assignments: [] });
   });
 });

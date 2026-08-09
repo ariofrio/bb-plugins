@@ -28,6 +28,7 @@ describe("thread-status CLI", () => {
     expect(JSON.parse(result.stdout ?? "")).toMatchObject({
       threadId: "thr_a",
       status: "To Do",
+      sortKey: null,
       explicit: false,
     });
   });
@@ -52,6 +53,44 @@ describe("thread-status CLI", () => {
     expect(JSON.parse(result.stdout ?? "").assignments).toMatchObject([
       { threadId: "thr_a", status: "Working" },
     ]);
+  });
+
+  it("reorders using the same adjacent-neighbor interface as pinned threads", () => {
+    store.ensureThreads(["thr_a", "thr_b", "thr_c"]);
+
+    const result = runThreadStatusCli(store, [
+      "reorder",
+      "thr_c",
+      "--after",
+      "thr_a",
+      "--before",
+      "thr_b",
+      "--json",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(
+      JSON.parse(result.stdout ?? "").assignments.map(
+        (assignment: { threadId: string }) => assignment.threadId,
+      ),
+    ).toEqual(["thr_a", "thr_c", "thr_b"]);
+  });
+
+  it("requires explicit state and valid flags when reordering", () => {
+    expect(runThreadStatusCli(store, ["reorder", "thr_a"]).stderr).toContain(
+      "no explicit status",
+    );
+    expect(
+      runThreadStatusCli(store, ["reorder", "thr_a", "--middle", "thr_b"]),
+    ).toMatchObject({ exitCode: 2 });
+  });
+
+  it("prints reorder-specific help", () => {
+    expect(runThreadStatusCli(store, ["reorder", "--help"])).toEqual({
+      exitCode: 0,
+      stdout:
+        "Usage: bb thread-status reorder <thread-id> [--after <id>] [--before <id>] [--json]\n",
+    });
   });
 
   it("returns actionable usage for invalid statuses", () => {

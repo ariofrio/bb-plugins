@@ -1,4 +1,5 @@
 import type BetterSqlite3 from "better-sqlite3";
+import { createOrderKeyAfter, createOrderKeyBetween } from "./order-keys";
 import {
   DEFAULT_THREAD_STATUS,
   THREAD_STATUSES,
@@ -24,37 +25,48 @@ export const THREAD_STATUS_MIGRATIONS = [
     );
     INSERT OR IGNORE INTO thread_organization_meta(singleton, revision) VALUES (1, 0);
   `,
+  `
+    ALTER TABLE thread_organization ADD COLUMN sort_key TEXT;
+    UPDATE thread_organization
+      SET sort_key = printf('%016d', position)
+      WHERE sort_key IS NULL;
+    CREATE INDEX IF NOT EXISTS thread_organization_status_sort_key
+      ON thread_organization(status, sort_key, thread_id);
+  `,
 ];
 
 interface AssignmentRow {
   thread_id: string;
   status: string;
-  position: number;
+  sort_key: string;
   updated_at: number;
 }
+
 export interface ThreadStatusState {
-  revision: number;
   assignments: ThreadAssignment[];
 }
 
 export interface ThreadStatusLookup {
   threadId: string;
   status: ThreadStatus;
-  position: number | null;
+  sortKey: string | null;
   updatedAt: number | null;
   explicit: boolean;
+}
+
+export interface ReorderThreadInput {
+  threadId: string;
+  status: ThreadStatus;
+  previousThreadId: string | null;
+  nextThreadId: string | null;
 }
 
 export interface ThreadStatusStore {
   listState(): ThreadStatusState;
   get(threadId: string): ThreadStatusLookup;
+  ensureThreads(threadIds: readonly string[]): ThreadStatusState;
   setStatus(threadId: string, status: ThreadStatus): ThreadStatusState;
-  moveThread(input: {
-    threadId: string;
-    status: ThreadStatus;
-    orderedThreadIds: readonly string[];
-    expectedRevision: number;
-  }): ThreadStatusState;
+  reorderThread(input: ReorderThreadInput): ThreadStatusState;
   delete(threadId: string): boolean;
 }
 
@@ -62,7 +74,7 @@ function assignmentFromRow(row: AssignmentRow): ThreadAssignment {
   return {
     threadId: row.thread_id,
     status: row.status as ThreadStatus,
-    position: row.position,
+    sortKey: row.sort_key,
     updatedAt: row.updated_at,
   };
 }
@@ -74,93 +86,153 @@ function assertThreadId(threadId: string): void {
 }
 
 export function createThreadStatusStore(db: Database): ThreadStatusStore {
-  const readRevision = db.prepare(
-    "SELECT revision FROM thread_organization_meta WHERE singleton = 1",
-  );
   const listAssignments = db.prepare(`
-    SELECT thread_id, status, position, updated_at
+    SELECT thread_id, status, sort_key, updated_at
     FROM thread_organization
-    ORDER BY status, position, thread_id
+    WHERE sort_key IS NOT NULL
+    ORDER BY status, sort_key, thread_id
+  `);
+  const listStatusAssignments = db.prepare(`
+    SELECT thread_id, status, sort_key, updated_at
+    FROM thread_organization
+    WHERE status = ? AND sort_key IS NOT NULL
+    ORDER BY sort_key, thread_id
   `);
   const getAssignment = db.prepare(`
-    SELECT thread_id, status, position, updated_at
+    SELECT thread_id, status, sort_key, updated_at
     FROM thread_organization
-    WHERE thread_id = ?
+    WHERE thread_id = ? AND sort_key IS NOT NULL
   `);
-  const maxPosition = db.prepare(`
-    SELECT COALESCE(MAX(position), 0) AS position
+  const firstAssignment = db.prepare(`
+    SELECT thread_id, status, sort_key, updated_at
     FROM thread_organization
-    WHERE status = ?
+    WHERE status = ? AND sort_key IS NOT NULL
+    ORDER BY sort_key, thread_id
+    LIMIT 1
+  `);
+  const lastAssignment = db.prepare(`
+    SELECT thread_id, status, sort_key, updated_at
+    FROM thread_organization
+    WHERE status = ? AND sort_key IS NOT NULL
+    ORDER BY sort_key DESC, thread_id DESC
+    LIMIT 1
   `);
   const upsertAssignment = db.prepare(`
-    INSERT INTO thread_organization(thread_id, status, position, updated_at)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO thread_organization(thread_id, status, position, updated_at, sort_key)
+    VALUES (?, ?, 0, ?, ?)
     ON CONFLICT(thread_id) DO UPDATE SET
       status = excluded.status,
-      position = excluded.position,
-      updated_at = excluded.updated_at
-  `);
-  const bumpRevision = db.prepare(`
-    UPDATE thread_organization_meta
-    SET revision = revision + 1
-    WHERE singleton = 1
+      updated_at = excluded.updated_at,
+      sort_key = excluded.sort_key
   `);
   const deleteAssignment = db.prepare(
     "DELETE FROM thread_organization WHERE thread_id = ?",
   );
 
-  function revision(): number {
-    return (readRevision.get() as { revision: number }).revision;
-  }
-
   function listState(): ThreadStatusState {
     return {
-      revision: revision(),
       assignments: (listAssignments.all() as AssignmentRow[]).map(
         assignmentFromRow,
       ),
     };
   }
 
-  const setStatusTransaction = db.transaction(
-    (threadId: string, status: ThreadStatus): ThreadStatusState => {
-      const row = maxPosition.get(status) as { position: number };
-      upsertAssignment.run(threadId, status, row.position + 1024, Date.now());
-      bumpRevision.run();
+  const ensureThreadsTransaction = db.transaction(
+    (threadIds: readonly string[]): ThreadStatusState => {
+      if (threadIds.length > 10_000) throw new Error("Too many thread ids.");
+      const uniqueIds = new Set(threadIds);
+      if (uniqueIds.size !== threadIds.length) {
+        throw new Error("Thread ids must be unique.");
+      }
+      for (const threadId of threadIds) assertThreadId(threadId);
+
+      const last = lastAssignment.get(DEFAULT_THREAD_STATUS) as
+        | AssignmentRow
+        | undefined;
+      let previousKey = last?.sort_key ?? null;
+      const now = Date.now();
+      for (const threadId of threadIds) {
+        if (getAssignment.get(threadId)) continue;
+        const sortKey =
+          previousKey === null
+            ? createOrderKeyBetween({ previousKey: null, nextKey: null })
+            : createOrderKeyAfter({ previousKey });
+        upsertAssignment.run(
+          threadId,
+          DEFAULT_THREAD_STATUS,
+          now,
+          sortKey,
+        );
+        previousKey = sortKey;
+      }
       return listState();
     },
   );
 
-  const moveThreadTransaction = db.transaction(
-    (input: {
-      threadId: string;
-      status: ThreadStatus;
-      orderedThreadIds: readonly string[];
-      expectedRevision: number;
-    }): ThreadStatusState => {
-      if (revision() !== input.expectedRevision) {
-        throw new Error("Thread organization changed; refresh and try again.");
-      }
-      if (input.orderedThreadIds.length === 0) {
-        throw new Error("The destination order cannot be empty.");
-      }
-      if (input.orderedThreadIds.length > 10_000) {
-        throw new Error("The destination order is too large.");
-      }
-      const uniqueIds = new Set(input.orderedThreadIds);
-      if (uniqueIds.size !== input.orderedThreadIds.length) {
-        throw new Error("The destination order contains duplicate thread ids.");
-      }
-      if (!uniqueIds.has(input.threadId)) {
-        throw new Error("The destination order must contain the moved thread.");
-      }
-      for (const threadId of input.orderedThreadIds) assertThreadId(threadId);
-
-      const now = Date.now();
-      input.orderedThreadIds.forEach((threadId, index) => {
-        upsertAssignment.run(threadId, input.status, (index + 1) * 1024, now);
+  const setStatusTransaction = db.transaction(
+    (threadId: string, status: ThreadStatus): ThreadStatusState => {
+      const existing = getAssignment.get(threadId) as AssignmentRow | undefined;
+      if (existing?.status === status) return listState();
+      const first = firstAssignment.get(status) as AssignmentRow | undefined;
+      const sortKey = createOrderKeyBetween({
+        previousKey: null,
+        nextKey: first?.sort_key ?? null,
       });
-      bumpRevision.run();
+      upsertAssignment.run(threadId, status, Date.now(), sortKey);
+      return listState();
+    },
+  );
+
+  const reorderThreadTransaction = db.transaction(
+    (input: ReorderThreadInput): ThreadStatusState => {
+      const current = listStatusAssignments
+        .all(input.status)
+        .map((row) => assignmentFromRow(row as AssignmentRow));
+      const moved = getAssignment.get(input.threadId) as AssignmentRow | undefined;
+      if (!moved) {
+        throw new Error(`Thread ${input.threadId} has no explicit status.`);
+      }
+      if (
+        input.previousThreadId === input.threadId ||
+        input.nextThreadId === input.threadId
+      ) {
+        throw new Error("The moved thread cannot be its own neighbor.");
+      }
+
+      const previous =
+        input.previousThreadId === null
+          ? null
+          : current.find((item) => item.threadId === input.previousThreadId);
+      const next =
+        input.nextThreadId === null
+          ? null
+          : current.find((item) => item.threadId === input.nextThreadId);
+      if (
+        (input.previousThreadId !== null && !previous) ||
+        (input.nextThreadId !== null && !next)
+      ) {
+        throw new Error("Thread order changed; refresh and try again.");
+      }
+      if (previous && next && previous.sortKey >= next.sortKey) {
+        throw new Error("The previous thread must sort before the next thread.");
+      }
+
+      const currentIndex = current.findIndex(
+        (item) => item.threadId === input.threadId,
+      );
+      if (
+        moved.status === input.status &&
+        (current[currentIndex - 1]?.threadId ?? null) === input.previousThreadId &&
+        (current[currentIndex + 1]?.threadId ?? null) === input.nextThreadId
+      ) {
+        return listState();
+      }
+
+      const sortKey = createOrderKeyBetween({
+        previousKey: previous?.sortKey ?? null,
+        nextKey: next?.sortKey ?? null,
+      });
+      upsertAssignment.run(input.threadId, input.status, Date.now(), sortKey);
       return listState();
     },
   );
@@ -174,7 +246,7 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
         return {
           threadId,
           status: DEFAULT_THREAD_STATUS,
-          position: null,
+          sortKey: null,
           updatedAt: null,
           explicit: false,
         };
@@ -182,23 +254,24 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
       const assignment = assignmentFromRow(row);
       return { ...assignment, explicit: true };
     },
+    ensureThreads(threadIds) {
+      return ensureThreadsTransaction.immediate(threadIds);
+    },
     setStatus(threadId, status) {
       assertThreadId(threadId);
       if (!THREAD_STATUSES.includes(status)) throw new Error("Unknown status.");
-      return setStatusTransaction(threadId, status);
+      return setStatusTransaction.immediate(threadId, status);
     },
-    moveThread(input) {
+    reorderThread(input) {
       assertThreadId(input.threadId);
+      if (input.previousThreadId) assertThreadId(input.previousThreadId);
+      if (input.nextThreadId) assertThreadId(input.nextThreadId);
       if (!THREAD_STATUSES.includes(input.status)) throw new Error("Unknown status.");
-      return moveThreadTransaction(input);
+      return reorderThreadTransaction.immediate(input);
     },
     delete(threadId) {
       assertThreadId(threadId);
-      return db.transaction(() => {
-        const changed = deleteAssignment.run(threadId).changes > 0;
-        if (changed) bumpRevision.run();
-        return changed;
-      })();
+      return db.transaction(() => deleteAssignment.run(threadId).changes > 0).immediate();
     },
   };
 }

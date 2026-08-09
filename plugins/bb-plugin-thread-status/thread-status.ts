@@ -12,7 +12,7 @@ export type ThreadStatus = (typeof THREAD_STATUSES)[number];
 export interface ThreadAssignment {
   threadId: string;
   status: ThreadStatus;
-  position: number;
+  sortKey: string;
   updatedAt: number;
 }
 
@@ -66,10 +66,9 @@ export function groupThreadsByStatus<Thread extends SidebarThreadLike>(
       const leftAssignment = assignmentByThread.get(left.id);
       const rightAssignment = assignmentByThread.get(right.id);
       if (leftAssignment && rightAssignment) {
-        return (
-          leftAssignment.position - rightAssignment.position ||
-          (sourceIndex.get(left.id) ?? 0) - (sourceIndex.get(right.id) ?? 0)
-        );
+        if (leftAssignment.sortKey < rightAssignment.sortKey) return -1;
+        if (leftAssignment.sortKey > rightAssignment.sortKey) return 1;
+        return left.id.localeCompare(right.id);
       }
       if (leftAssignment) return -1;
       if (rightAssignment) return 1;

@@ -12,13 +12,12 @@ const assignmentSchema = z
   .object({
     threadId: z.string(),
     status: threadStatusSchema,
-    position: z.number().int(),
+    sortKey: z.string().min(1),
     updatedAt: z.number().int(),
   })
   .strict();
 const stateSchema = z
   .object({
-    revision: z.number().int().nonnegative(),
     assignments: z.array(assignmentSchema),
   })
   .strict();
@@ -28,13 +27,21 @@ export const rpcContract = defineRpcContract({
     input: z.null(),
     output: stateSchema,
   },
+  syncThreads: {
+    input: z
+      .object({
+        threadIds: z.array(z.string().min(1).max(256)).max(10_000),
+      })
+      .strict(),
+    output: stateSchema,
+  },
   moveThread: {
     input: z
       .object({
         threadId: z.string().min(1).max(256),
         status: threadStatusSchema,
-        orderedThreadIds: z.array(z.string().min(1).max(256)).min(1).max(10_000),
-        expectedRevision: z.number().int().nonnegative(),
+        previousThreadId: z.string().min(1).max(256).nullable(),
+        nextThreadId: z.string().min(1).max(256).nullable(),
       })
       .strict(),
     output: stateSchema,
@@ -48,16 +55,24 @@ export default function plugin(bb: BbPluginApi) {
 
   bb.rpc.register(rpcContract, {
     listState: () => store.listState(),
+    syncThreads({ threadIds }) {
+      const previousCount = store.listState().assignments.length;
+      const state = store.ensureThreads(threadIds);
+      if (state.assignments.length !== previousCount) {
+        bb.realtime.publish("state-changed", { threadId: null });
+      }
+      return state;
+    },
     moveThread(input) {
-      const state = store.moveThread(input);
-      bb.realtime.publish("state-changed", { revision: state.revision });
+      const state = store.reorderThread(input);
+      bb.realtime.publish("state-changed", { threadId: input.threadId });
       return state;
     },
   });
 
   bb.cli.register({
     name: "thread-status",
-    summary: "Get and set manual thread workflow statuses",
+    summary: "Manage manual thread workflow status and order",
     commands: [
       {
         name: "get",
@@ -74,11 +89,17 @@ export default function plugin(bb: BbPluginApi) {
         summary: "List explicitly organized threads",
         usage: "bb thread-status list [--status <status>] [--json]",
       },
+      {
+        name: "reorder",
+        summary: "Move a thread between adjacent threads in its status",
+        usage:
+          "bb thread-status reorder <thread-id> [--after <id>] [--before <id>] [--json]",
+      },
     ],
     run(argv) {
       const result = runThreadStatusCli(store, argv);
-      if (argv[0] === "set" && result.exitCode === 0) {
-        bb.realtime.publish("state-changed", { revision: store.listState().revision });
+      if ((argv[0] === "set" || argv[0] === "reorder") && result.exitCode === 0) {
+        bb.realtime.publish("state-changed", { threadId: argv[1] ?? null });
       }
       return result;
     },
@@ -86,7 +107,7 @@ export default function plugin(bb: BbPluginApi) {
 
   bb.events.on("thread.deleted", ({ thread }) => {
     if (store.delete(thread.id)) {
-      bb.realtime.publish("state-changed", { revision: store.listState().revision });
+      bb.realtime.publish("state-changed", { threadId: thread.id });
     }
   });
 
