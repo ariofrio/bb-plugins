@@ -1,6 +1,6 @@
 {
   "name": "bb-plugin-thread-status",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,8 +13,8 @@
     "bbPluginSdk": "^0.4.1"
   },
   "bb": {
-    "name": "Thread Status",
-    "description": "Manually organize sidebar threads by status and order.",
+    "name": "Thread Tasks",
+    "description": "Treat sidebar threads as manually ordered tasks grouped by status.",
     "branding": {
       "icon": "List"
     },

@@ -6,135 +6,268 @@ interface CliResult {
   stdout?: string;
   stderr?: string;
 }
-const REORDER_USAGE =
-  "Usage: bb thread-status reorder <thread-id> [--after <id>] [--before <id>] [--json]\n";
-const HELP = `Manage manual thread statuses and order.
 
-Usage:
-  bb thread-status get <thread-id> [--json]
-  bb thread-status set <thread-id> <status> [--json]
-  bb thread-status list [--status <status>] [--json]
-  bb thread-status reorder <thread-id> [--after <id>] [--before <id>] [--json]
+export interface TaskCliContext {
+  listTaskIds?: readonly string[];
+  threadId?: string;
+}
 
-Statuses: ${THREAD_STATUSES.join(", ")}
+interface ParsedArguments {
+  options: Map<string, string | true>;
+  positionals: string[];
+}
+
+const STATUS_LABELS = THREAD_STATUSES.join(", ");
+const USAGE = {
+  list: "Usage: bb task list [--status <status>] [--json]\n",
+  show: "Usage: bb task show [id] [--self] [--json]\n",
+  update: "Usage: bb task update [id] [--self] --status <status> [--json]\n",
+  reorder:
+    "Usage: bb task reorder <id> [--after <id>] [--before <id>] [--json]\n",
+} as const;
+
+const HELP = `Usage: bb task [options] [command]
+
+Treat threads as manually organized tasks
+
+Options:
+  -h, --help                         display help for command
+
+Commands:
+  list [options]                     List tasks
+  show [options] [id]                Show task details
+  update [options] [id]              Update a task
+  reorder [options] <id>             Move a task between adjacent tasks
+  help [command]                     display help for command
 `;
+
+const COMMAND_HELP: Record<keyof typeof USAGE, string> = {
+  list: `${USAGE.list}\nList tasks\n\nOptions:\n  --status <status>  Filter by task status\n  --json             Print machine-readable JSON output\n  -h, --help         display help for command\n`,
+  show: `${USAGE.show}\nShow task details\n\nOptions:\n  --self      Target the current thread\n  --json      Print machine-readable JSON output\n  -h, --help  display help for command\n`,
+  update: `${USAGE.update}\nUpdate a task\n\nOptions:\n  --self             Target the current thread\n  --status <status>  Set the task status: ${STATUS_LABELS}\n  --json             Print machine-readable JSON output\n  -h, --help         display help for command\n`,
+  reorder: `${USAGE.reorder}\nMove a task between adjacent tasks in the same status\n\nOptions:\n  --after <id>   Previous task, or omit for the start\n  --before <id>  Next task, or omit for the end\n  --json         Print machine-readable JSON output\n  -h, --help     display help for command\n`,
+};
 
 function json(value: unknown): string {
   return `${JSON.stringify(value, null, 2)}\n`;
 }
 
-function humanStatus(value: ReturnType<ThreadStatusStore["get"]>): string {
-  return `${value.threadId}\t${value.status}${value.explicit ? "" : " (default)"}\n`;
+function taskAssignmentJson(
+  assignment: ReturnType<ThreadStatusStore["listState"]>["assignments"][number],
+) {
+  const { threadId, ...task } = assignment;
+  return { id: threadId, ...task };
 }
 
-export function runThreadStatusCli(
+function taskLookupJson(value: ReturnType<ThreadStatusStore["get"]>) {
+  const { threadId, ...task } = value;
+  return { id: threadId, ...task };
+}
+
+function parseArguments(
+  args: readonly string[],
+  valueOptions: readonly string[],
+  booleanOptions: readonly string[] = [],
+): ParsedArguments {
+  const options = new Map<string, string | true>();
+  const positionals: string[] = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index] ?? "";
+    if (!arg.startsWith("--")) {
+      positionals.push(arg);
+      continue;
+    }
+    if (options.has(arg)) throw new Error(`Option ${arg} cannot be repeated.`);
+    if (booleanOptions.includes(arg)) {
+      options.set(arg, true);
+      continue;
+    }
+    if (!valueOptions.includes(arg)) throw new Error(`Unknown option: ${arg}`);
+    const value = args[index + 1];
+    if (!value || value.startsWith("--")) {
+      throw new Error(`Option ${arg} requires a value.`);
+    }
+    options.set(arg, value);
+    index += 1;
+  }
+  return { options, positionals };
+}
+
+function resolveTaskId(
+  positionalId: string | undefined,
+  self: boolean,
+  context: TaskCliContext,
+): string {
+  if (self && positionalId) {
+    throw new Error("Cannot combine a task ID argument with --self.");
+  }
+  if (self) {
+    if (!context.threadId) throw new Error("--self requires a current bb thread.");
+    return context.threadId;
+  }
+  if (positionalId) return positionalId;
+  throw new Error("Missing task ID. Pass <id> or use --self.");
+}
+
+function humanTask(value: ReturnType<ThreadStatusStore["get"]>): string {
+  return `Task: ${value.threadId}\n  Status: ${value.status}${
+    value.explicit ? "" : " (default)"
+  }\n  Order: ${value.sortKey ?? "-"}\n`;
+}
+
+function humanTaskList(
+  assignments: ReturnType<ThreadStatusStore["listState"]>["assignments"],
+): string {
+  if (assignments.length === 0) return "No tasks found\n";
+  const rows = [
+    ["ID", "Status", "Order"],
+    ...assignments.map((assignment) => [
+      assignment.threadId,
+      assignment.status,
+      assignment.sortKey,
+    ]),
+  ];
+  const widths = [0, 1, 2].map((column) =>
+    Math.max(...rows.map((row) => row[column]?.length ?? 0)),
+  );
+  return `\n${rows
+    .map((row) =>
+      row
+        .map((value, column) => value.padEnd(widths[column] ?? value.length))
+        .join("  ")
+        .trimEnd(),
+    )
+    .join("\n")}\n\n`;
+}
+
+function commandHelp(command: string | undefined): string | null {
+  if (!command) return HELP;
+  if (command in COMMAND_HELP) {
+    return COMMAND_HELP[command as keyof typeof COMMAND_HELP];
+  }
+  return null;
+}
+
+export function runTaskCli(
   store: ThreadStatusStore,
   argv: readonly string[],
+  context: TaskCliContext = {},
 ): CliResult {
   const wantsJson = argv.includes("--json");
   const args = argv.filter((arg) => arg !== "--json");
   const command = args[0];
 
   try {
-    if (!command || command === "help" || command === "--help" || command === "-h") {
+    if (!command || command === "--help" || command === "-h") {
       return { exitCode: 0, stdout: HELP };
     }
-
-    if (command === "get") {
-      const threadId = args[1];
-      if (!threadId || args.length !== 2) {
-        return { exitCode: 2, stderr: "Usage: bb thread-status get <thread-id> [--json]\n" };
-      }
-      const result = store.get(threadId);
-      return { exitCode: 0, stdout: wantsJson ? json(result) : humanStatus(result) };
+    if (command === "help") {
+      const help = commandHelp(args[1]);
+      return help
+        ? { exitCode: 0, stdout: help }
+        : { exitCode: 2, stderr: `Unknown command: ${args[1]}\n\n${HELP}` };
     }
-
-    if (command === "set") {
-      const threadId = args[1];
-      const rawStatus = args.slice(2).join(" ");
-      const status = parseThreadStatus(rawStatus);
-      if (!threadId || !status) {
-        return {
-          exitCode: 2,
-          stderr: `Usage: bb thread-status set <thread-id> <status> [--json]\nStatuses: ${THREAD_STATUSES.join(", ")}\n`,
-        };
-      }
-      store.setStatus(threadId, status);
-      const result = store.get(threadId);
-      return { exitCode: 0, stdout: wantsJson ? json(result) : humanStatus(result) };
+    if (args[1] === "--help" || args[1] === "-h") {
+      const help = commandHelp(command);
+      return help
+        ? { exitCode: 0, stdout: help }
+        : { exitCode: 2, stderr: `Unknown command: ${command}\n\n${HELP}` };
     }
 
     if (command === "list") {
-      const statusFlag = args.indexOf("--status");
-      let status = null;
-      if (statusFlag >= 0) {
-        status = parseThreadStatus(args.slice(statusFlag + 1).join(" "));
-        if (!status) {
-          return {
-            exitCode: 2,
-            stderr: `Unknown status. Expected one of: ${THREAD_STATUSES.join(", ")}\n`,
-          };
-        }
-      } else if (args.length !== 1) {
-        return { exitCode: 2, stderr: "Usage: bb thread-status list [--status <status>] [--json]\n" };
+      const { options, positionals } = parseArguments(args.slice(1), ["--status"]);
+      if (positionals.length > 0) return { exitCode: 2, stderr: USAGE.list };
+      const rawStatus = options.get("--status");
+      const status =
+        typeof rawStatus === "string" ? parseThreadStatus(rawStatus) : null;
+      if (rawStatus && !status) {
+        throw new Error(`Unknown status. Expected one of: ${STATUS_LABELS}`);
       }
-      const state = store.listState();
-      const assignments = status
-        ? state.assignments.filter((assignment) => assignment.status === status)
-        : state.assignments;
-      if (wantsJson) {
-        return { exitCode: 0, stdout: json({ assignments }) };
-      }
+      const listedTaskIds = context.listTaskIds
+        ? new Set(context.listTaskIds)
+        : null;
+      const assignments = store.listState().assignments.filter(
+        (assignment) =>
+          (!listedTaskIds || listedTaskIds.has(assignment.threadId)) &&
+          (!status || assignment.status === status),
+      );
       return {
         exitCode: 0,
-        stdout:
-          assignments.length === 0
-            ? "No explicit thread statuses. Unassigned threads default to To Do.\n"
-            : assignments
-                .map((assignment) => `${assignment.threadId}\t${assignment.status}\t${assignment.sortKey}`)
-                .join("\n") + "\n",
+        stdout: wantsJson
+          ? json(assignments.map(taskAssignmentJson))
+          : humanTaskList(assignments),
+      };
+    }
+
+    if (command === "show") {
+      const { options, positionals } = parseArguments(args.slice(1), [], ["--self"]);
+      if (positionals.length > 1) return { exitCode: 2, stderr: USAGE.show };
+      const taskId = resolveTaskId(
+        positionals[0],
+        options.get("--self") === true,
+        context,
+      );
+      const task = store.get(taskId);
+      return {
+        exitCode: 0,
+        stdout: wantsJson ? json(taskLookupJson(task)) : humanTask(task),
+      };
+    }
+
+    if (command === "update") {
+      const { options, positionals } = parseArguments(
+        args.slice(1),
+        ["--status"],
+        ["--self"],
+      );
+      if (positionals.length > 1) return { exitCode: 2, stderr: USAGE.update };
+      const rawStatus = options.get("--status");
+      if (typeof rawStatus !== "string") {
+        throw new Error("No changes requested. Provide --status.");
+      }
+      const status = parseThreadStatus(rawStatus);
+      if (!status) throw new Error(`Unknown status. Expected one of: ${STATUS_LABELS}`);
+      const taskId = resolveTaskId(
+        positionals[0],
+        options.get("--self") === true,
+        context,
+      );
+      store.setStatus(taskId, status);
+      const task = store.get(taskId);
+      return {
+        exitCode: 0,
+        stdout: wantsJson
+          ? json(taskLookupJson(task))
+          : `Task ${taskId} updated\n${humanTask(task)}`,
       };
     }
 
     if (command === "reorder") {
-      if (args[1] === "--help" || args[1] === "-h") {
-        return { exitCode: 0, stdout: REORDER_USAGE };
-      }
-      const threadId = args[1];
-      if (!threadId) return { exitCode: 2, stderr: REORDER_USAGE };
-
-      let previousThreadId: string | null = null;
-      let nextThreadId: string | null = null;
-      const seen = new Set<string>();
-      for (let index = 2; index < args.length; index += 2) {
-        const flag = args[index];
-        const value = args[index + 1];
-        if (
-          (flag !== "--after" && flag !== "--before") ||
-          !value ||
-          value.startsWith("--") ||
-          seen.has(flag)
-        ) {
-          return { exitCode: 2, stderr: REORDER_USAGE };
-        }
-        seen.add(flag);
-        if (flag === "--after") previousThreadId = value;
-        else nextThreadId = value;
-      }
-
-      const current = store.get(threadId);
+      const { options, positionals } = parseArguments(args.slice(1), [
+        "--after",
+        "--before",
+      ]);
+      if (positionals.length !== 1) return { exitCode: 2, stderr: USAGE.reorder };
+      const taskId = positionals[0] ?? "";
+      const current = store.get(taskId);
       if (!current.explicit) {
-        throw new Error(`Thread ${threadId} has no explicit status. Set it first.`);
+        throw new Error(`Task ${taskId} has no explicit status. Update it first.`);
       }
       const state = store.reorderThread({
-        threadId,
+        threadId: taskId,
         status: current.status,
-        previousThreadId,
-        nextThreadId,
+        previousThreadId: (options.get("--after") as string | undefined) ?? null,
+        nextThreadId: (options.get("--before") as string | undefined) ?? null,
       });
       return {
         exitCode: 0,
-        stdout: wantsJson ? json(state) : `Thread ${threadId} reordered\n`,
+        stdout: wantsJson
+          ? json(
+              state.assignments
+                .filter((assignment) => assignment.status === current.status)
+                .map(taskAssignmentJson),
+            )
+          : `Task ${taskId} reordered\n`,
       };
     }
 

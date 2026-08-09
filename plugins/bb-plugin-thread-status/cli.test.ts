@@ -1,13 +1,13 @@
 import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runThreadStatusCli } from "./cli";
+import { runTaskCli } from "./cli";
 import {
   THREAD_STATUS_MIGRATIONS,
   createThreadStatusStore,
   type ThreadStatusStore,
 } from "./store";
 
-describe("thread-status CLI", () => {
+describe("task CLI", () => {
   let db: Database.Database;
   let store: ThreadStatusStore;
 
@@ -19,46 +19,95 @@ describe("thread-status CLI", () => {
 
   afterEach(() => db.close());
 
-  it("gets the effective default as human and JSON output", () => {
-    expect(runThreadStatusCli(store, ["get", "thr_a"])).toEqual({
+  it("uses the native entity command shape in top-level help", () => {
+    const result = runTaskCli(store, ["--help"]);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("bb task [options] [command]");
+    expect(result.stdout).toContain("list [options]");
+    expect(result.stdout).toContain("show [options] [id]");
+    expect(result.stdout).toContain("update [options] [id]");
+    expect(result.stdout).toContain("reorder [options] <id>");
+  });
+
+  it("shows the effective default as human and JSON output", () => {
+    expect(runTaskCli(store, ["show", "thr_a"])).toEqual({
       exitCode: 0,
-      stdout: "thr_a\tTo Do (default)\n",
+      stdout: "Task: thr_a\n  Status: To Do (default)\n  Order: -\n",
     });
-    const result = runThreadStatusCli(store, ["get", "thr_a", "--json"]);
+    const result = runTaskCli(store, ["show", "thr_a", "--json"]);
     expect(JSON.parse(result.stdout ?? "")).toMatchObject({
-      threadId: "thr_a",
+      id: "thr_a",
       status: "To Do",
       sortKey: null,
       explicit: false,
     });
   });
 
-  it("sets a case-insensitive, unquoted multiword status", () => {
-    const result = runThreadStatusCli(store, ["set", "thr_a", "to", "do"]);
+  it("targets the current thread with --self", () => {
+    const result = runTaskCli(store, ["show", "--self", "--json"], {
+      threadId: "thr_self",
+    });
+    expect(JSON.parse(result.stdout ?? "").id).toBe("thr_self");
+    expect(runTaskCli(store, ["show", "thr_a", "--self"])).toMatchObject({
+      exitCode: 1,
+      stderr: expect.stringContaining("Cannot combine"),
+    });
+  });
 
-    expect(result).toEqual({ exitCode: 0, stdout: "thr_a\tTo Do\n" });
+  it("updates status through a native-style mutation flag", () => {
+    const result = runTaskCli(store, [
+      "update",
+      "thr_a",
+      "--status",
+      "to-do",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Task thr_a updated");
     expect(store.get("thr_a")).toMatchObject({ status: "To Do", explicit: true });
   });
 
-  it("lists and filters explicit assignments", () => {
-    runThreadStatusCli(store, ["set", "thr_a", "working"]);
-    runThreadStatusCli(store, ["set", "thr_b", "done"]);
+  it("updates the current thread through --self", () => {
+    const result = runTaskCli(
+      store,
+      ["update", "--self", "--status", "Working", "--json"],
+      { threadId: "thr_self" },
+    );
+    expect(JSON.parse(result.stdout ?? "")).toMatchObject({
+      id: "thr_self",
+      status: "Working",
+    });
+  });
 
-    const result = runThreadStatusCli(store, [
+  it("lists a JSON array and filters by status", () => {
+    store.setStatus("thr_a", "Working");
+    store.setStatus("thr_b", "Done");
+
+    const result = runTaskCli(store, [
       "list",
       "--status",
       "Working",
       "--json",
     ]);
-    expect(JSON.parse(result.stdout ?? "").assignments).toMatchObject([
-      { threadId: "thr_a", status: "Working" },
+    expect(JSON.parse(result.stdout ?? "")).toMatchObject([
+      { id: "thr_a", status: "Working" },
     ]);
   });
 
-  it("reorders using the same adjacent-neighbor interface as pinned threads", () => {
+  it("limits lists to thread IDs supplied by the host", () => {
+    store.ensureThreads(["thr_visible", "thr_archived"]);
+    const result = runTaskCli(store, ["list", "--json"], {
+      listTaskIds: ["thr_visible"],
+    });
+    expect(JSON.parse(result.stdout ?? "").map((task: { id: string }) => task.id)).toEqual([
+      "thr_visible",
+    ]);
+  });
+
+  it("reorders using the standard adjacent-neighbor interface", () => {
     store.ensureThreads(["thr_a", "thr_b", "thr_c"]);
 
-    const result = runThreadStatusCli(store, [
+    const result = runTaskCli(store, [
       "reorder",
       "thr_c",
       "--after",
@@ -70,32 +119,40 @@ describe("thread-status CLI", () => {
 
     expect(result.exitCode).toBe(0);
     expect(
-      JSON.parse(result.stdout ?? "").assignments.map(
-        (assignment: { threadId: string }) => assignment.threadId,
+      JSON.parse(result.stdout ?? "").map(
+        (assignment: { id: string }) => assignment.id,
       ),
     ).toEqual(["thr_a", "thr_c", "thr_b"]);
   });
 
   it("requires explicit state and valid flags when reordering", () => {
-    expect(runThreadStatusCli(store, ["reorder", "thr_a"]).stderr).toContain(
+    expect(runTaskCli(store, ["reorder", "thr_a"]).stderr).toContain(
       "no explicit status",
     );
     expect(
-      runThreadStatusCli(store, ["reorder", "thr_a", "--middle", "thr_b"]),
-    ).toMatchObject({ exitCode: 2 });
+      runTaskCli(store, ["reorder", "thr_a", "--middle", "thr_b"]),
+    ).toMatchObject({ exitCode: 1, stderr: expect.stringContaining("Unknown option") });
   });
 
-  it("prints reorder-specific help", () => {
-    expect(runThreadStatusCli(store, ["reorder", "--help"])).toEqual({
-      exitCode: 0,
-      stdout:
-        "Usage: bb thread-status reorder <thread-id> [--after <id>] [--before <id>] [--json]\n",
-    });
+  it("prints command-specific help", () => {
+    const result = runTaskCli(store, ["help", "reorder"]);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain(
+      "Usage: bb task reorder <id> [--after <id>] [--before <id>] [--json]",
+    );
   });
 
-  it("returns actionable usage for invalid statuses", () => {
-    const result = runThreadStatusCli(store, ["set", "thr_a", "blocked"]);
-    expect(result.exitCode).toBe(2);
-    expect(result.stderr).toContain("Statuses: Done, To Do, Working");
+  it("returns actionable errors for missing changes and invalid statuses", () => {
+    expect(runTaskCli(store, ["update", "thr_a"]).stderr).toContain(
+      "Provide --status",
+    );
+    const invalid = runTaskCli(store, [
+      "update",
+      "thr_a",
+      "--status",
+      "blocked",
+    ]);
+    expect(invalid.exitCode).toBe(1);
+    expect(invalid.stderr).toContain("Done, To Do, Working");
   });
 });

@@ -245,7 +245,7 @@ function ThreadStatusList({
       setError(null);
       setLoaded(true);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load thread statuses.");
+      setError(cause instanceof Error ? cause.message : "Could not load tasks.");
       setLoaded(true);
     }
   }, [rpc]);
@@ -294,7 +294,7 @@ function ThreadStatusList({
         setError(null);
       })
       .catch((cause) => {
-        setError(cause instanceof Error ? cause.message : "Could not save thread order.");
+        setError(cause instanceof Error ? cause.message : "Could not save task order.");
       })
       .finally(() => {
         syncInFlight.current = false;
@@ -353,7 +353,7 @@ function ThreadStatusList({
         });
         setOrganization(state);
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Could not move the thread.");
+        setError(cause instanceof Error ? cause.message : "Could not move the task.");
         await refresh();
       } finally {
         setMutationPending(false);
@@ -487,8 +487,8 @@ function ThreadStatusList({
 export default definePluginApp((app) => {
   app.slots.experimental_threadList({
     id: "thread-status",
-    title: "Thread Status",
-    description: "Manual thread order grouped by workflow status.",
+    title: "Tasks",
+    description: "Treat threads as manually ordered tasks grouped by status.",
     component: ThreadStatusList,
   });
 });

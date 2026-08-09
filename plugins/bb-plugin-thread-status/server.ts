@@ -1,6 +1,6 @@
 import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk";
 import { z } from "zod";
-import { runThreadStatusCli } from "./cli";
+import { runTaskCli } from "./cli";
 import {
   THREAD_STATUS_MIGRATIONS,
   createThreadStatusStore,
@@ -71,35 +71,48 @@ export default function plugin(bb: BbPluginApi) {
   });
 
   bb.cli.register({
-    name: "thread-status",
-    summary: "Manage manual thread workflow status and order",
+    name: "task",
+    summary: "Treat threads as manually organized tasks",
     commands: [
       {
-        name: "get",
-        summary: "Get a thread's manual status",
-        usage: "bb thread-status get <thread-id> [--json]",
-      },
-      {
-        name: "set",
-        summary: "Set a thread's manual status",
-        usage: "bb thread-status set <thread-id> <status> [--json]",
-      },
-      {
         name: "list",
-        summary: "List explicitly organized threads",
-        usage: "bb thread-status list [--status <status>] [--json]",
+        summary: "List tasks",
+        usage: "bb task list [--status <status>] [--json]",
+      },
+      {
+        name: "show",
+        summary: "Show task details",
+        usage: "bb task show [id] [--self] [--json]",
+      },
+      {
+        name: "update",
+        summary: "Update a task",
+        usage: "bb task update [id] [--self] --status <status> [--json]",
       },
       {
         name: "reorder",
-        summary: "Move a thread between adjacent threads in its status",
+        summary: "Move a task between adjacent tasks in its status",
         usage:
-          "bb thread-status reorder <thread-id> [--after <id>] [--before <id>] [--json]",
+          "bb task reorder <id> [--after <id>] [--before <id>] [--json]",
       },
     ],
-    run(argv) {
-      const result = runThreadStatusCli(store, argv);
-      if ((argv[0] === "set" || argv[0] === "reorder") && result.exitCode === 0) {
-        bb.realtime.publish("state-changed", { threadId: argv[1] ?? null });
+    async run(argv, context) {
+      let listTaskIds: string[] | undefined;
+      if (argv[0] === "list") {
+        const previousCount = store.listState().assignments.length;
+        const threads = await bb.sdk.threads.list();
+        listTaskIds = threads.map((thread) => thread.id);
+        const state = store.ensureThreads(listTaskIds);
+        if (state.assignments.length !== previousCount) {
+          bb.realtime.publish("state-changed", { threadId: null });
+        }
+      }
+      const result = runTaskCli(store, argv, {
+        ...(listTaskIds ? { listTaskIds } : {}),
+        ...(context.threadId ? { threadId: context.threadId } : {}),
+      });
+      if ((argv[0] === "update" || argv[0] === "reorder") && result.exitCode === 0) {
+        bb.realtime.publish("state-changed", { threadId: null });
       }
       return result;
     },
@@ -111,5 +124,5 @@ export default function plugin(bb: BbPluginApi) {
     }
   });
 
-  bb.log.info("Thread Status loaded");
+  bb.log.info("Thread Tasks loaded");
 }
