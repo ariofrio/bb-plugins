@@ -34,10 +34,25 @@ On a thread route, `.` chords set the current thread's task status:
 | `Option-Command-.`     | Canceled    |
 
 **Working** has no shortcut because the task workflow assigns it automatically.
-Marking a task **Done** does not archive its thread. The shortcuts work while
-an input, editor, or composer has focus; they use exact modifier matching,
-ignore held-key repeats, and stop matched key events from propagating to
-downstream BB or editor handlers.
+Marking a task **Done** does not archive its thread.
+
+Arrow chords move the current task within the sidebar:
+
+| Shortcut                    | Action                                   |
+| --------------------------- | ---------------------------------------- |
+| `Option-Command-↑` / `↓`    | Move one position within its status       |
+| `Option-Shift-Command-↑` / `↓` | Move to the top or bottom of its status |
+| `Control-Command-↑` / `↓`   | Move to the status above or below         |
+
+A move that would leave a task where it already is does nothing, and moving to
+another status appends the task to that section. Reordering follows the
+sidebar: it moves a task among the rows shown at its own depth, and reorders a
+pinned thread within the pinned section. It needs the Thread tasks sidebar
+mounted and is unavailable while a sidebar search is active.
+
+All of these shortcuts work while an input, editor, or composer has focus; they
+use exact modifier matching, ignore held-key repeats, and stop matched key
+events from propagating to downstream BB or editor handlers.
 
 ## CLI
 

@@ -45,7 +45,13 @@ import { ThreadRenameDialog } from "./components/ThreadRenameDialog";
 import { notifyNativeShortcutHandled } from "./native-command-hints";
 import { usePersistentStringSet } from "./persistent-string-set";
 import { shouldSyncThreads } from "./task-sync";
-import { currentThreadId, taskStatusShortcut } from "./task-shortcuts";
+import {
+  currentThreadId,
+  reorderTargetId,
+  taskReorderShortcut,
+  taskStatusShortcut,
+  type ReorderIntent,
+} from "./task-shortcuts";
 import {
   canDropThreadBeside,
   effectiveHierarchyParentId,
@@ -112,8 +118,6 @@ function archivedSearchThread(thread: SearchThread): PluginSidebarThread {
 interface ThreadRowProps {
   actions: PluginSidebarThreadActions;
   active: boolean;
-  canMoveDown: boolean;
-  canMoveUp: boolean;
   disabled: boolean;
   dragging: boolean;
   depth: number;
@@ -125,8 +129,6 @@ interface ThreadRowProps {
   onDragOver: (event: DragEvent<HTMLElement>) => void;
   onDragStart: (event: DragEvent<HTMLElement>) => void;
   onDrop: (event: DragEvent<HTMLElement>) => void;
-  onMoveDown: () => void;
-  onMoveUp: () => void;
   onNavigate: () => void;
   onToggleChildren: () => void;
   preview: string | null;
@@ -144,8 +146,6 @@ function threadTitle(thread: PluginSidebarThread): string {
 function ThreadRow({
   actions,
   active,
-  canMoveDown,
-  canMoveUp,
   disabled,
   dragging,
   depth,
@@ -157,8 +157,6 @@ function ThreadRow({
   onDragOver,
   onDragStart,
   onDrop,
-  onMoveDown,
-  onMoveUp,
   onNavigate,
   onToggleChildren,
   preview,
@@ -194,11 +192,7 @@ function ThreadRow({
 
   const commonMenuProps = {
     actions,
-    canMoveDown,
-    canMoveUp,
     disabled,
-    onMoveDown,
-    onMoveUp,
     onRename: () =>
       window.setTimeout(() => {
         setRenameOpen(true);
@@ -845,6 +839,89 @@ function ThreadStatusList({
     [clearDrag, mutationPending, pinnedRootIds, pinnedRootThreads, rpc],
   );
 
+  const reorderActiveTask = useCallback(
+    (intent: ReorderIntent) => {
+      if (activeThreadId === null || Boolean(normalizedSearch)) return;
+      const status =
+        assignmentByThreadId.get(activeThreadId)?.taskStatus ??
+        DEFAULT_THREAD_STATUS;
+
+      if (intent.scope === "status") {
+        const nextStatus =
+          THREAD_STATUSES[THREAD_STATUSES.indexOf(status) + intent.direction];
+        if (nextStatus === undefined) return;
+        void commitMove(activeThreadId, nextStatus, null);
+        return;
+      }
+
+      if (pinnedRootIds.has(activeThreadId)) {
+        const pinnedIds = pinnedRootThreads.map((thread) => thread.id);
+        const target = reorderTargetId(
+          pinnedIds,
+          pinnedIds,
+          activeThreadId,
+          intent.scope,
+          intent.direction,
+        );
+        if (target === null) return;
+        void commitPinnedMove(activeThreadId, target.beforeThreadId);
+        return;
+      }
+
+      const threadsInStatus = groups[status];
+      const idsInStatus = new Set(threadsInStatus.map((thread) => thread.id));
+      const activeThread = threadsInStatus.find(
+        (thread) => thread.id === activeThreadId,
+      );
+      if (activeThread === undefined) return;
+      const parentId = effectiveHierarchyParentId(activeThread, idsInStatus);
+      const target = reorderTargetId(
+        threadsInStatus.map((thread) => thread.id),
+        threadsInStatus
+          .filter(
+            (thread) =>
+              effectiveHierarchyParentId(thread, idsInStatus) === parentId,
+          )
+          .map((thread) => thread.id),
+        activeThreadId,
+        intent.scope,
+        intent.direction,
+      );
+      if (target === null) return;
+      void commitMove(activeThreadId, status, target.beforeThreadId);
+    },
+    [
+      activeThreadId,
+      assignmentByThreadId,
+      commitMove,
+      commitPinnedMove,
+      groups,
+      normalizedSearch,
+      pinnedRootIds,
+      pinnedRootThreads,
+    ],
+  );
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent): void {
+      const intent = taskReorderShortcut(event);
+      if (intent === null || activeThreadId === null) return;
+
+      // Claim the chord everywhere, including editors.
+      event.preventDefault();
+      event.stopPropagation();
+      notifyNativeShortcutHandled(
+        window,
+        (type, init) => new KeyboardEvent(type, init),
+      );
+      reorderActiveTask(intent);
+    }
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    return () => {
+      window.removeEventListener("keydown", onKeyDown, { capture: true });
+    };
+  }, [activeThreadId, reorderActiveTask]);
+
   function toggleCollapsed(group: SidebarGroup): void {
     setCollapsedSections((current) => {
       const next = new Set(current);
@@ -974,10 +1051,6 @@ function ThreadStatusList({
                       key={thread.id}
                       actions={actions}
                       active={thread.id === activeThreadId}
-                      canMoveDown={
-                        isRoot && rootIndex < pinnedRootThreads.length - 1
-                      }
-                      canMoveUp={isRoot && rootIndex > 0}
                       childrenCollapsed={childrenCollapsed}
                       depth={depth}
                       disabled={
@@ -1036,18 +1109,6 @@ function ThreadStatusList({
                           return;
                         }
                         void commitPinnedMove(draggingThreadId, dropBefore);
-                      }}
-                      onMoveDown={() => {
-                        void commitPinnedMove(
-                          thread.id,
-                          pinnedRootThreads[rootIndex + 2]?.id ?? null,
-                        );
-                      }}
-                      onMoveUp={() => {
-                        void commitPinnedMove(
-                          thread.id,
-                          pinnedRootThreads[rootIndex - 1]?.id ?? null,
-                        );
                       }}
                       onNavigate={onNavigate}
                       onToggleChildren={() =>
@@ -1126,19 +1187,6 @@ function ThreadStatusList({
                     const fullIndex = allThreads.findIndex(
                       (item) => item.id === thread.id,
                     );
-                    const effectiveParentId = effectiveHierarchyParentId(
-                      thread,
-                      idsInStatus,
-                    );
-                    const siblings = allThreads.filter((item) => {
-                      return (
-                        effectiveHierarchyParentId(item, idsInStatus) ===
-                        effectiveParentId
-                      );
-                    });
-                    const siblingIndex = siblings.findIndex(
-                      (item) => item.id === thread.id,
-                    );
                     const childrenCollapsed = collapsedThreads.has(thread.id);
                     const indicatorThread =
                       childrenCollapsed && hasChildren
@@ -1149,8 +1197,6 @@ function ThreadStatusList({
                         key={thread.id}
                         actions={actions}
                         active={thread.id === activeThreadId}
-                        canMoveDown={siblingIndex < siblings.length - 1}
-                        canMoveUp={siblingIndex > 0}
                         childrenCollapsed={childrenCollapsed}
                         depth={depth}
                         disabled={
@@ -1222,26 +1268,6 @@ function ThreadStatusList({
                             return;
                           }
                           void commitMove(draggingThreadId, status, dropBefore);
-                        }}
-                        onMoveDown={() => {
-                          const afterNextSibling = siblings[siblingIndex + 2];
-                          const before =
-                            afterNextSibling?.id ??
-                            allThreads[
-                              allThreads.findIndex(
-                                (item) =>
-                                  item.id === siblings[siblingIndex + 1]?.id,
-                              ) + 1
-                            ]?.id ??
-                            null;
-                          void commitMove(thread.id, status, before);
-                        }}
-                        onMoveUp={() => {
-                          void commitMove(
-                            thread.id,
-                            status,
-                            siblings[siblingIndex - 1]?.id ?? null,
-                          );
                         }}
                         onNavigate={onNavigate}
                         onToggleChildren={() =>

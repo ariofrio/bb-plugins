@@ -662,7 +662,7 @@ function ContextMenuItems(props) {
           className: ITEM_CLASS,
           children: [
             /* @__PURE__ */ jsx(Icon, { name: "ListTodo", "aria-hidden": true }),
-            "Task status",
+            "Set task status",
             /* @__PURE__ */ jsx(Icon, { name: "ChevronRight", className: "ml-auto", "aria-hidden": true })
           ]
         }
@@ -689,24 +689,6 @@ function ContextMenuItems(props) {
         }
       ) })
     ] }),
-    /* @__PURE__ */ jsx(
-      ContextItem,
-      {
-        disabled: disabled || !props.canMoveUp,
-        icon: "ArrowUp",
-        onSelect: props.onMoveUp,
-        children: "Move up"
-      }
-    ),
-    /* @__PURE__ */ jsx(
-      ContextItem,
-      {
-        disabled: disabled || !props.canMoveDown,
-        icon: "ArrowDown",
-        onSelect: props.onMoveDown,
-        children: "Move down"
-      }
-    ),
     /* @__PURE__ */ jsx(Separator, { className: SEPARATOR_CLASS }),
     /* @__PURE__ */ jsx(ContextItem, { icon: "Archive", onSelect: () => actions.archive(thread.id), children: "Archive" }),
     /* @__PURE__ */ jsx(
@@ -755,7 +737,7 @@ function DropdownMenuItems(props) {
     /* @__PURE__ */ jsxs(Sub2, { children: [
       /* @__PURE__ */ jsxs(SubTrigger2, { disabled, className: ITEM_CLASS, children: [
         /* @__PURE__ */ jsx(Icon, { name: "ListTodo", "aria-hidden": true }),
-        "Task status",
+        "Set task status",
         /* @__PURE__ */ jsx(Icon, { name: "ChevronRight", className: "ml-auto", "aria-hidden": true })
       ] }),
       /* @__PURE__ */ jsx(Portal2, { children: /* @__PURE__ */ jsx(
@@ -780,24 +762,6 @@ function DropdownMenuItems(props) {
         }
       ) })
     ] }),
-    /* @__PURE__ */ jsx(
-      DropdownItem,
-      {
-        disabled: disabled || !props.canMoveUp,
-        icon: "ArrowUp",
-        onSelect: props.onMoveUp,
-        children: "Move up"
-      }
-    ),
-    /* @__PURE__ */ jsx(
-      DropdownItem,
-      {
-        disabled: disabled || !props.canMoveDown,
-        icon: "ArrowDown",
-        onSelect: props.onMoveDown,
-        children: "Move down"
-      }
-    ),
     /* @__PURE__ */ jsx(Separator2, { className: SEPARATOR_CLASS }),
     /* @__PURE__ */ jsx(DropdownItem, { icon: "Archive", onSelect: () => actions.archive(thread.id), children: "Archive" }),
     /* @__PURE__ */ jsx(
@@ -1240,6 +1204,37 @@ function taskStatusShortcut(event) {
     (chord) => chord.altKey === event.altKey && chord.ctrlKey === event.ctrlKey && chord.shiftKey === event.shiftKey
   )?.status ?? null;
 }
+function taskReorderShortcut(event) {
+  if (!event.metaKey || event.repeat) return null;
+  const direction = event.key === "ArrowUp" ? -1 : event.key === "ArrowDown" ? 1 : null;
+  if (direction === null) return null;
+  if (event.altKey && !event.ctrlKey) {
+    return { scope: event.shiftKey ? "edge" : "step", direction };
+  }
+  if (event.ctrlKey && !event.altKey && !event.shiftKey) {
+    return { scope: "status", direction };
+  }
+  return null;
+}
+function reorderTargetId(orderedIds, siblingIds, threadId, scope, direction) {
+  const index = siblingIds.indexOf(threadId);
+  if (index === -1) return null;
+  if (direction === -1) {
+    if (index === 0) return null;
+    return {
+      beforeThreadId: (scope === "edge" ? siblingIds[0] : siblingIds[index - 1]) ?? null
+    };
+  }
+  if (index === siblingIds.length - 1) return null;
+  const anchorIndex = scope === "edge" ? siblingIds.length - 1 : index + 1;
+  const nextSibling = siblingIds[anchorIndex + 1];
+  if (nextSibling !== void 0) return { beforeThreadId: nextSibling };
+  const anchorId = siblingIds[anchorIndex];
+  const anchorPosition = anchorId === void 0 ? -1 : orderedIds.indexOf(anchorId);
+  return {
+    beforeThreadId: anchorPosition === -1 ? null : orderedIds[anchorPosition + 1] ?? null
+  };
+}
 function decodePathSegment(segment) {
   if (!segment) return null;
   try {
@@ -1356,8 +1351,6 @@ function threadTitle(thread) {
 function ThreadRow({
   actions,
   active,
-  canMoveDown,
-  canMoveUp,
   disabled,
   dragging,
   depth,
@@ -1369,8 +1362,6 @@ function ThreadRow({
   onDragOver,
   onDragStart,
   onDrop,
-  onMoveDown,
-  onMoveUp,
   onNavigate,
   onToggleChildren,
   preview,
@@ -1403,11 +1394,7 @@ function ThreadRow({
   }
   const commonMenuProps = {
     actions,
-    canMoveDown,
-    canMoveUp,
     disabled,
-    onMoveDown,
-    onMoveUp,
     onRename: () => window.setTimeout(() => {
       setRenameOpen(true);
     }, 0),
@@ -1984,6 +1971,76 @@ function ThreadStatusList({
     },
     [clearDrag, mutationPending, pinnedRootIds, pinnedRootThreads, rpc]
   );
+  const reorderActiveTask = useCallback(
+    (intent) => {
+      if (activeThreadId === null || Boolean(normalizedSearch)) return;
+      const status = assignmentByThreadId.get(activeThreadId)?.taskStatus ?? DEFAULT_THREAD_STATUS;
+      if (intent.scope === "status") {
+        const nextStatus = THREAD_STATUSES[THREAD_STATUSES.indexOf(status) + intent.direction];
+        if (nextStatus === void 0) return;
+        void commitMove(activeThreadId, nextStatus, null);
+        return;
+      }
+      if (pinnedRootIds.has(activeThreadId)) {
+        const pinnedIds = pinnedRootThreads.map((thread) => thread.id);
+        const target2 = reorderTargetId(
+          pinnedIds,
+          pinnedIds,
+          activeThreadId,
+          intent.scope,
+          intent.direction
+        );
+        if (target2 === null) return;
+        void commitPinnedMove(activeThreadId, target2.beforeThreadId);
+        return;
+      }
+      const threadsInStatus = groups[status];
+      const idsInStatus = new Set(threadsInStatus.map((thread) => thread.id));
+      const activeThread = threadsInStatus.find(
+        (thread) => thread.id === activeThreadId
+      );
+      if (activeThread === void 0) return;
+      const parentId = effectiveHierarchyParentId(activeThread, idsInStatus);
+      const target = reorderTargetId(
+        threadsInStatus.map((thread) => thread.id),
+        threadsInStatus.filter(
+          (thread) => effectiveHierarchyParentId(thread, idsInStatus) === parentId
+        ).map((thread) => thread.id),
+        activeThreadId,
+        intent.scope,
+        intent.direction
+      );
+      if (target === null) return;
+      void commitMove(activeThreadId, status, target.beforeThreadId);
+    },
+    [
+      activeThreadId,
+      assignmentByThreadId,
+      commitMove,
+      commitPinnedMove,
+      groups,
+      normalizedSearch,
+      pinnedRootIds,
+      pinnedRootThreads
+    ]
+  );
+  useEffect(() => {
+    function onKeyDown(event) {
+      const intent = taskReorderShortcut(event);
+      if (intent === null || activeThreadId === null) return;
+      event.preventDefault();
+      event.stopPropagation();
+      notifyNativeShortcutHandled(
+        window,
+        (type, init) => new KeyboardEvent(type, init)
+      );
+      reorderActiveTask(intent);
+    }
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    return () => {
+      window.removeEventListener("keydown", onKeyDown, { capture: true });
+    };
+  }, [activeThreadId, reorderActiveTask]);
   function toggleCollapsed(group) {
     setCollapsedSections((current) => {
       const next = new Set(current);
@@ -2080,8 +2137,6 @@ function ThreadStatusList({
                     {
                       actions,
                       active: thread.id === activeThreadId,
-                      canMoveDown: isRoot && rootIndex < pinnedRootThreads.length - 1,
-                      canMoveUp: isRoot && rootIndex > 0,
                       childrenCollapsed,
                       depth,
                       disabled: Boolean(normalizedSearch) || mutationPending || unsyncedThreadIds.length > 0,
@@ -2126,18 +2181,6 @@ function ThreadStatusList({
                           return;
                         }
                         void commitPinnedMove(draggingThreadId, dropBefore);
-                      },
-                      onMoveDown: () => {
-                        void commitPinnedMove(
-                          thread.id,
-                          pinnedRootThreads[rootIndex + 2]?.id ?? null
-                        );
-                      },
-                      onMoveUp: () => {
-                        void commitPinnedMove(
-                          thread.id,
-                          pinnedRootThreads[rootIndex - 1]?.id ?? null
-                        );
                       },
                       onNavigate,
                       onToggleChildren: () => toggleThreadCollapsed(thread.id),
@@ -2195,16 +2238,6 @@ function ThreadStatusList({
                     const fullIndex = allThreads.findIndex(
                       (item) => item.id === thread.id
                     );
-                    const effectiveParentId = effectiveHierarchyParentId(
-                      thread,
-                      idsInStatus
-                    );
-                    const siblings = allThreads.filter((item) => {
-                      return effectiveHierarchyParentId(item, idsInStatus) === effectiveParentId;
-                    });
-                    const siblingIndex = siblings.findIndex(
-                      (item) => item.id === thread.id
-                    );
                     const childrenCollapsed = collapsedThreads.has(thread.id);
                     const indicatorThread = childrenCollapsed && hasChildren ? groupIndicator([thread, ...descendants]) ?? thread : thread;
                     return /* @__PURE__ */ jsx(
@@ -2212,8 +2245,6 @@ function ThreadStatusList({
                       {
                         actions,
                         active: thread.id === activeThreadId,
-                        canMoveDown: siblingIndex < siblings.length - 1,
-                        canMoveUp: siblingIndex > 0,
                         childrenCollapsed,
                         depth,
                         disabled: Boolean(normalizedSearch) || mutationPending || unsyncedThreadIds.length > 0,
@@ -2271,20 +2302,6 @@ function ThreadStatusList({
                             return;
                           }
                           void commitMove(draggingThreadId, status, dropBefore);
-                        },
-                        onMoveDown: () => {
-                          const afterNextSibling = siblings[siblingIndex + 2];
-                          const before = afterNextSibling?.id ?? allThreads[allThreads.findIndex(
-                            (item) => item.id === siblings[siblingIndex + 1]?.id
-                          ) + 1]?.id ?? null;
-                          void commitMove(thread.id, status, before);
-                        },
-                        onMoveUp: () => {
-                          void commitMove(
-                            thread.id,
-                            status,
-                            siblings[siblingIndex - 1]?.id ?? null
-                          );
                         },
                         onNavigate,
                         onToggleChildren: () => toggleThreadCollapsed(thread.id),

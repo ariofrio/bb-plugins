@@ -59,11 +59,7 @@ describe("ThreadActionsDropdown", () => {
     render(
       <ThreadActionsDropdown
         actions={actions}
-        canMoveDown
-        canMoveUp={false}
         disabled={false}
-        onMoveDown={vi.fn()}
-        onMoveUp={vi.fn()}
         onOpenChange={vi.fn()}
         onRename={vi.fn()}
         onSetTaskStatus={vi.fn()}
@@ -80,8 +76,9 @@ describe("ThreadActionsDropdown", () => {
     expect(screen.getByText("Mark read")).toBeDefined();
     expect(screen.getByText("Pin")).toBeDefined();
     expect(screen.getByText("Rename")).toBeDefined();
-    expect(screen.getByText("Task status")).toBeDefined();
-    expect(screen.getByText("Move up").closest("[data-disabled]")).not.toBeNull();
+    expect(screen.getByText("Set task status")).toBeDefined();
+    expect(screen.queryByText("Move up")).toBeNull();
+    expect(screen.queryByText("Move down")).toBeNull();
     expect(screen.getByText("Archive")).toBeDefined();
     expect(screen.getByText("Delete")).toBeDefined();
   });
@@ -101,11 +98,7 @@ describe("ThreadActionsContextMenu", () => {
     render(
       <ThreadActionsContextMenu
         actions={actions}
-        canMoveDown
-        canMoveUp
         disabled={false}
-        onMoveDown={vi.fn()}
-        onMoveUp={vi.fn()}
         onOpenChange={vi.fn()}
         onRename={vi.fn()}
         onSetTaskStatus={vi.fn()}
@@ -119,7 +112,7 @@ describe("ThreadActionsContextMenu", () => {
 
     fireEvent.contextMenu(screen.getByRole("button", { name: "Thread row" }));
     const parentMenu = screen.getByRole("menu", { name: "Thread actions" });
-    fireEvent.click(screen.getByText("Task status"));
+    fireEvent.click(screen.getByText("Set task status"));
 
     expect(parentMenu.contains(screen.getByText("Done"))).toBe(false);
   });

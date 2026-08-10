@@ -20,13 +20,9 @@ const SEPARATOR_CLASS = "-mx-1 my-1 h-px bg-border";
 
 interface CommonMenuProps {
   actions: PluginSidebarThreadActions;
-  canMoveDown: boolean;
-  canMoveUp: boolean;
   disabled: boolean;
   onRename: () => void;
   onSetTaskStatus: (status: ThreadStatus) => void;
-  onMoveDown: () => void;
-  onMoveUp: () => void;
   taskStatus: ThreadStatus;
   thread: PluginSidebarThread;
   splitAvailable: boolean;
@@ -126,7 +122,7 @@ function ContextMenuItems(props: CommonMenuProps) {
           className={ITEM_CLASS}
         >
           <Icon name="ListTodo" aria-hidden />
-          Task status
+          Set task status
           <Icon name="ChevronRight" className="ml-auto" aria-hidden />
         </ContextMenu.SubTrigger>
         <ContextMenu.Portal>
@@ -149,20 +145,6 @@ function ContextMenuItems(props: CommonMenuProps) {
           </ContextMenu.SubContent>
         </ContextMenu.Portal>
       </ContextMenu.Sub>
-      <ContextItem
-        disabled={disabled || !props.canMoveUp}
-        icon="ArrowUp"
-        onSelect={props.onMoveUp}
-      >
-        Move up
-      </ContextItem>
-      <ContextItem
-        disabled={disabled || !props.canMoveDown}
-        icon="ArrowDown"
-        onSelect={props.onMoveDown}
-      >
-        Move down
-      </ContextItem>
       <ContextMenu.Separator className={SEPARATOR_CLASS} />
       <ContextItem icon="Archive" onSelect={() => actions.archive(thread.id)}>
         Archive
@@ -212,7 +194,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
       <DropdownMenu.Sub>
         <DropdownMenu.SubTrigger disabled={disabled} className={ITEM_CLASS}>
           <Icon name="ListTodo" aria-hidden />
-          Task status
+          Set task status
           <Icon name="ChevronRight" className="ml-auto" aria-hidden />
         </DropdownMenu.SubTrigger>
         <DropdownMenu.Portal>
@@ -235,20 +217,6 @@ function DropdownMenuItems(props: CommonMenuProps) {
           </DropdownMenu.SubContent>
         </DropdownMenu.Portal>
       </DropdownMenu.Sub>
-      <DropdownItem
-        disabled={disabled || !props.canMoveUp}
-        icon="ArrowUp"
-        onSelect={props.onMoveUp}
-      >
-        Move up
-      </DropdownItem>
-      <DropdownItem
-        disabled={disabled || !props.canMoveDown}
-        icon="ArrowDown"
-        onSelect={props.onMoveDown}
-      >
-        Move down
-      </DropdownItem>
       <DropdownMenu.Separator className={SEPARATOR_CLASS} />
       <DropdownItem icon="Archive" onSelect={() => actions.archive(thread.id)}>
         Archive
