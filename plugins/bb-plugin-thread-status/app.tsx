@@ -17,8 +17,6 @@ import {
   useRef,
   useState,
   type DragEvent,
-  type FormEvent,
-  type KeyboardEvent,
   type MouseEvent,
 } from "react";
 import type { rpcContract } from "./server";
@@ -39,6 +37,7 @@ import {
   ThreadIndicator,
 } from "./components/ThreadIndicator";
 import { SplitPaneMiniMap } from "./components/SplitPaneMiniMap";
+import { ThreadRenameDialog } from "./components/ThreadRenameDialog";
 import { usePersistentStringSet } from "./persistent-string-set";
 import { shouldSyncThreads } from "./task-sync";
 import { flattenThreadHierarchy } from "./thread-hierarchy";
@@ -157,23 +156,10 @@ function ThreadRow({
     experimental_useSidebarThreadSplit(thread.id);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [draftTitle, setDraftTitle] = useState(() => threadTitle(thread));
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const finishingRename = useRef(false);
+  const [renameOpen, setRenameOpen] = useState(false);
   const title = threadTitle(thread);
   const accessibleTitle = projectName ? `${projectName} — ${title}` : title;
   const actionsOpen = dropdownOpen || contextOpen;
-
-  useEffect(() => {
-    if (!editing) setDraftTitle(title);
-  }, [editing, title]);
-
-  useEffect(() => {
-    if (!editing) return;
-    inputRef.current?.focus();
-    inputRef.current?.select();
-  }, [editing]);
 
   function openThread(event: MouseEvent<HTMLAnchorElement>): void {
     event.preventDefault();
@@ -190,24 +176,6 @@ function ThreadRow({
     onNavigate();
   }
 
-  function finishRename(): void {
-    if (!editing || finishingRename.current) return;
-    finishingRename.current = true;
-    const nextTitle = draftTitle.trim();
-    setEditing(false);
-    if (!nextTitle || nextTitle === title) {
-      setDraftTitle(title);
-      return;
-    }
-    void actions.rename(thread.id, nextTitle);
-  }
-
-  function cancelRename(): void {
-    finishingRename.current = true;
-    setDraftTitle(title);
-    setEditing(false);
-  }
-
   const commonMenuProps = {
     actions,
     canMoveDown,
@@ -217,8 +185,7 @@ function ThreadRow({
     onMoveUp,
     onRename: () =>
       window.setTimeout(() => {
-        finishingRename.current = false;
-        setEditing(true);
+        setRenameOpen(true);
       }, 0),
     onSetTaskStatus: onChangeStatus,
     splitAvailable,
@@ -230,7 +197,6 @@ function ThreadRow({
     <li
       className="relative list-none"
       onDragOver={(event) => {
-        if (editing) return;
         event.preventDefault();
         event.stopPropagation();
         onDragOver(event);
@@ -250,14 +216,14 @@ function ThreadRow({
         />
       ) : null}
       <div
-        className={`bb-sidebar-hover-actions-row group/thread-row relative flex h-7 w-full items-center gap-2 rounded-md pr-0 text-sm transition-colors max-md:pointer-coarse:h-10 ${
+        className={`bb-sidebar-hover-actions-row group/thread-row relative flex h-7 w-full items-center gap-2 rounded-md pr-0 text-sm transition-colors max-md:pointer-coarse:h-9 ${
           active
             ? "bg-state-active text-sidebar-foreground"
             : "cursor-pointer text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:text-sidebar-foreground"
         } ${!active && layout !== null ? "bg-sidebar-accent/50" : ""} ${
           dragging ? "opacity-40" : ""
         } ${disabled ? "" : "select-none"}`}
-        draggable={!disabled && !editing && !thread.isArchived}
+        draggable={!disabled && !thread.isArchived}
         onDragEnd={onDragEnd}
         onDragStart={onDragStart}
         style={{ paddingLeft: 8 + depth * 24 }}
@@ -270,97 +236,94 @@ function ThreadRow({
             style={{ left: 16 + level * 24 }}
           />
         ))}
-        {editing ? (
-          <form
-            className="relative z-30 min-w-0 flex-1"
-            onSubmit={(event: FormEvent) => {
-              event.preventDefault();
-              finishRename();
-            }}
-          >
-            <input
-              ref={inputRef}
-              aria-label={`Rename ${title}`}
-              className="h-6 w-full rounded-md border border-sidebar-border bg-sidebar-accent px-1.5 text-sm text-sidebar-foreground outline-none ring-sidebar-ring focus:ring-2"
-              value={draftTitle}
-              onBlur={finishRename}
-              onChange={(event) => setDraftTitle(event.target.value)}
-              onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  cancelRename();
-                }
-              }}
-            />
-          </form>
-        ) : (
-          <>
-            <a
-              {...splitProps}
-              aria-label={`Open ${accessibleTitle}`}
-              className="absolute inset-0 rounded-md outline-none ring-sidebar-ring focus-visible:ring-2"
-              data-sidebar-thread-id={thread.id}
-              data-sidebar-thread-shortcut-target=""
-              href={`/projects/${encodeURIComponent(thread.projectId)}/threads/${encodeURIComponent(thread.id)}`}
-              onClick={openThread}
-            />
-            <span className="relative flex min-w-0 flex-1 items-center gap-1.5">
-              <span className="min-w-0 truncate" title={accessibleTitle}>
-                {title}
-              </span>
-              {projectName ? (
-                <span
-                  className="max-w-24 shrink truncate text-[11px] text-subtle-foreground/75"
-                  title={projectName}
-                >
-                  {projectName}
-                </span>
-              ) : null}
-              {hasChildren ? (
-                <button
-                  type="button"
-                  aria-expanded={!childrenCollapsed}
-                  aria-label={
-                    childrenCollapsed
-                      ? `Expand ${title} threads`
-                      : `Collapse ${title} threads`
-                  }
-                  className="bb-sidebar-hover-actions relative z-20 inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    onToggleChildren();
-                  }}
-                >
-                  <Icon
-                    name="ChevronRight"
-                    className={`size-3 transition-transform duration-150 ${
-                      childrenCollapsed ? "" : "rotate-90"
-                    }`}
-                    aria-hidden
-                  />
-                </button>
-              ) : null}
+        <>
+          <a
+            {...splitProps}
+            aria-label={`Open ${accessibleTitle}`}
+            className="absolute inset-0 rounded-md outline-none ring-sidebar-ring focus-visible:ring-2"
+            data-sidebar-thread-id={thread.id}
+            data-sidebar-thread-shortcut-target=""
+            href={`/projects/${encodeURIComponent(thread.projectId)}/threads/${encodeURIComponent(thread.id)}`}
+            onClick={openThread}
+          />
+          <span className="relative flex min-w-0 flex-1 items-center gap-1.5">
+            <span className="min-w-0 truncate" title={accessibleTitle}>
+              {title}
             </span>
-          </>
-        )}
-        {!editing ? (
-          <span className="relative flex h-7 w-7 shrink-0 items-center justify-end max-md:pointer-coarse:h-10 max-md:pointer-coarse:w-10">
+            {projectName ? (
+              <span
+                className="max-w-24 shrink truncate text-[11px] text-subtle-foreground/75"
+                title={projectName}
+              >
+                {projectName}
+              </span>
+            ) : null}
+            {hasChildren ? (
+              <button
+                type="button"
+                aria-expanded={!childrenCollapsed}
+                aria-label={
+                  childrenCollapsed
+                    ? `Expand ${title} threads`
+                    : `Collapse ${title} threads`
+                }
+                className="bb-sidebar-hover-actions relative z-20 inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onToggleChildren();
+                }}
+              >
+                <Icon
+                  name="ChevronRight"
+                  className={`size-3 transition-transform duration-150 ${
+                    childrenCollapsed ? "" : "rotate-90"
+                  }`}
+                  aria-hidden
+                />
+              </button>
+            ) : null}
+          </span>
+        </>
+        <span className="relative flex h-7 w-7 shrink-0 items-center justify-end max-md:pointer-coarse:h-9 max-md:pointer-coarse:w-9">
             <span
               data-sidebar-hover-actions-open={actionsOpen ? "true" : undefined}
               className="bb-sidebar-hover-actions-fade absolute inset-0 flex items-center justify-center text-subtle-foreground"
             >
               {layout ? (
-                <SplitPaneMiniMap
-                  layout={layout}
-                  label={`${title} — open in split`}
-                />
-              ) : (
-                <ThreadIndicator
-                  indicator={indicatorThread.indicator}
-                  label={indicatorThread.indicatorLabel}
-                />
-              )}
+                <span
+                  data-sidebar-thread-trailing-indicator=""
+                  className="inline-flex size-4 shrink-0 items-center justify-center"
+                >
+                  <SplitPaneMiniMap
+                    layout={layout}
+                    label={
+                      indicatorThread.indicatorLabel
+                        ? `${title} — open in split; ${indicatorThread.indicatorLabel}`
+                        : `${title} — open in split`
+                    }
+                    isWorking={[
+                      "working-draft",
+                      "workflow",
+                      "background-agent",
+                      "background-command",
+                      "plan-mode",
+                      "goal",
+                      "runtime",
+                    ].includes(indicatorThread.indicator)}
+                  />
+                </span>
+              ) : indicatorThread.indicator !== "none" ? (
+                <span
+                  data-sidebar-thread-trailing-indicator=""
+                  className="inline-flex size-4 shrink-0 items-center justify-center"
+                >
+                  <ThreadIndicator
+                    indicator={indicatorThread.indicator}
+                    label={indicatorThread.indicatorLabel}
+                  />
+                </span>
+              ) : null}
             </span>
             {!thread.isArchived ? (
               <span
@@ -375,8 +338,7 @@ function ThreadRow({
                 />
               </span>
             ) : null}
-          </span>
-        ) : null}
+        </span>
       </div>
     </li>
   );
@@ -384,12 +346,20 @@ function ThreadRow({
   if (thread.isArchived) return row;
 
   return (
-    <ThreadActionsContextMenu
-      {...commonMenuProps}
-      onOpenChange={setContextOpen}
-    >
-      {row}
-    </ThreadActionsContextMenu>
+    <>
+      <ThreadActionsContextMenu
+        {...commonMenuProps}
+        onOpenChange={setContextOpen}
+      >
+        {row}
+      </ThreadActionsContextMenu>
+      <ThreadRenameDialog
+        currentTitle={title}
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+        onRename={(nextTitle) => actions.rename(thread.id, nextTitle)}
+      />
+    </>
   );
 }
 
@@ -429,7 +399,7 @@ function TaskStatusSection({
       <div
         data-sidebar="group-label"
         data-sidebar-sticky-tier="label"
-        className="bb-sidebar-hover-actions-row sticky top-0 z-[60] flex h-7 items-center rounded-md bg-sidebar pl-2 pr-0 text-xs font-normal leading-5 text-subtle-foreground/75 transition-colors max-md:pointer-coarse:h-10"
+        className="bb-sidebar-hover-actions-row sticky top-0 z-[60] flex h-6 items-center rounded-md bg-sidebar pl-2 pr-0 text-xs font-normal leading-5 text-subtle-foreground/75 transition-colors max-md:pointer-coarse:h-9"
       >
         <span className="relative z-10 flex min-w-0 flex-1 items-center gap-1 text-left">
           <span id={id} className="min-w-0 truncate" title={status}>
@@ -491,12 +461,21 @@ function LoadingState() {
 function SidebarMessage({
   action,
   children,
+  icon,
+  isLoading = false,
 }: {
   action?: { label: string; onClick: () => void };
   children: React.ReactNode;
+  icon: "AlertCircle" | "CircleQuestion" | "Loading";
+  isLoading?: boolean;
 }) {
   return (
     <div className="mx-2 flex min-h-8 items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+      <Icon
+        name={icon}
+        className={`size-4 shrink-0 ${isLoading ? "animate-spin" : ""}`}
+        aria-hidden
+      />
       <span className="min-w-0 flex-1">{children}</span>
       {action ? (
         <button
@@ -749,11 +728,14 @@ function ThreadStatusList({
     return <LoadingState />;
   }
   if (sidebar.status === "error") {
-    return <SidebarMessage>Could not load threads.</SidebarMessage>;
+    return (
+      <SidebarMessage icon="AlertCircle">Could not load threads.</SidebarMessage>
+    );
   }
   if (organization === null) {
     return (
       <SidebarMessage
+        icon="AlertCircle"
         action={{
           label: "Retry",
           onClick: () => {
@@ -771,14 +753,18 @@ function ThreadStatusList({
     normalizedSearch &&
     (search.query !== normalizedSearch || search.status === "loading")
   ) {
-    return <SidebarMessage>Searching threads...</SidebarMessage>;
+    return (
+      <SidebarMessage icon="Loading" isLoading>
+        Searching threads...
+      </SidebarMessage>
+    );
   }
   if (normalizedSearch && search.status === "error") {
-    return <SidebarMessage>Search failed.</SidebarMessage>;
+    return <SidebarMessage icon="AlertCircle">Search failed.</SidebarMessage>;
   }
   if (displayThreads.length === 0) {
     return (
-      <SidebarMessage>
+      <SidebarMessage icon="CircleQuestion">
         {normalizedSearch ? "No matching threads" : "No threads yet"}
       </SidebarMessage>
     );

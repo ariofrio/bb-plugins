@@ -3,9 +3,11 @@ import type { PluginSidebarThreadSplit } from "@bb/plugin-sdk/app";
 export function SplitPaneMiniMap({
   layout,
   label,
+  isWorking,
 }: {
   layout: NonNullable<PluginSidebarThreadSplit["layout"]>;
   label: string;
+  isWorking: boolean;
 }) {
   const representsFocusedPane = layout.panes.some(
     (pane) => pane.isMe && pane.isFocused,
@@ -17,7 +19,7 @@ export function SplitPaneMiniMap({
       viewBox="0 0 14 14"
       className={`pointer-events-none size-3.5 shrink-0 ${
         representsFocusedPane ? "" : "opacity-60"
-      }`}
+      } ${isWorking ? "animate-shine-icon" : ""}`}
       shapeRendering="crispEdges"
       role="img"
       aria-label={label}

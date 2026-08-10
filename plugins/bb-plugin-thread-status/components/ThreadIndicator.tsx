@@ -17,7 +17,7 @@ export function ThreadIndicator({
   indicator: PluginSidebarThreadIndicator;
   label: string | null;
 }) {
-  const iconClass = "size-3.5 shrink-0";
+  const iconClass = "size-4 shrink-0";
   const ariaLabel = label ?? undefined;
 
   switch (indicator) {
@@ -75,7 +75,7 @@ export function ThreadIndicator({
       return (
         <span
           aria-label={ariaLabel}
-          className="flex size-3.5 shrink-0 items-center justify-center"
+          className="flex size-4 shrink-0 items-center justify-center"
         >
           <span className="size-[5px] rounded-full bg-muted-foreground/60" />
         </span>
@@ -97,7 +97,7 @@ function WorkingIcon({
     <Icon
       name={name}
       aria-label={label}
-      className="size-3.5 shrink-0 animate-shine-icon text-muted-foreground/50"
+      className="size-4 shrink-0 animate-shine-icon text-muted-foreground/50"
     />
   );
 }

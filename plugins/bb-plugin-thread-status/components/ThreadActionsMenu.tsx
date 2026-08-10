@@ -10,11 +10,11 @@ import { portalScopeProps } from "../lib/portal-scope";
 import { Icon, type IconName } from "./Icon";
 
 const CONTENT_CLASS =
-  "z-[70] min-w-44 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
+  "z-[70] min-w-28 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
 const SUB_CONTENT_CLASS =
-  "z-[70] min-w-36 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
+  "z-[70] min-w-28 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
 const ITEM_CLASS =
-  "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-[0.3125rem] text-xs outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground";
+  "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-[0.3125rem] text-xs outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground [&>svg]:size-4 [&>svg]:shrink-0";
 const DESTRUCTIVE_ITEM_CLASS = `${ITEM_CLASS} text-destructive data-[highlighted]:bg-destructive/15 data-[highlighted]:text-destructive`;
 const SEPARATOR_CLASS = "-mx-1 my-1 h-px bg-border";
 
@@ -72,7 +72,7 @@ export function ThreadActionsDropdown({
           onClick={(event) => event.stopPropagation()}
           onDragStart={(event) => event.preventDefault()}
         >
-          <Icon name="MoreHorizontal" className="size-3.5" aria-hidden />
+          <Icon name="MoreHorizontal" className="size-4" aria-hidden />
         </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
