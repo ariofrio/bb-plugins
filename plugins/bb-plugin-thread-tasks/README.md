@@ -35,6 +35,8 @@ npm run build
 bb plugin reload thread-tasks
 ```
 
+Installing a path builds the plugin; reloading loads what is already built.
+
 ## Keyboard shortcuts
 
 On a thread route, `.` chords set the open thread's task status:

@@ -24,9 +24,9 @@ cd bb-plugins
 npm run install:plugins
 ```
 
-Run the same command after a `git pull`: it rebuilds and reloads the plugins
-already installed from these directories, and installs any that are missing.
-To install one plugin on its own, follow its README.
+Run the same command after a `git pull`: it installs whatever is missing, then
+rebuilds and reloads every plugin. To install one plugin on its own, follow its
+README.
 
 `bb plugin install git:...` installs the plugin at a repository root, so it
 cannot reach these plugins until bb supports multi-plugin repositories
@@ -50,6 +50,10 @@ Both run from a plugin directory through `npm run release:check`, which
 [CI](.github/workflows/plugins.yml) runs for every plugin. The root
 `package.json` carries no dependencies; it only holds `install:plugins`, which
 discovers plugin directories the same way CI does.
+
+`bb plugin install <path>` also builds, but it writes module comments relative
+to the installing machine into `dist/app.js`. Rebuild with `npm run build`, as
+`install:plugins` and `release:check` do, before committing a bundle.
 
 ## License
 

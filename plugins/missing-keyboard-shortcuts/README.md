@@ -59,6 +59,8 @@ npm run build
 bb plugin reload missing-keyboard-shortcuts
 ```
 
+Installing a path builds the plugin; reloading loads what is already built.
+
 ## Development
 
 ```sh

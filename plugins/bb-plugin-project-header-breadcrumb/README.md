@@ -60,6 +60,8 @@ npm run build
 bb plugin reload project-header-breadcrumb
 ```
 
+Installing a path builds the plugin; reloading loads what is already built.
+
 ## Development
 
 ```sh
