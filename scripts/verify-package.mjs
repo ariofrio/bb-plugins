@@ -6,21 +6,13 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve, sep } from "node:path";
+import { derivePluginId } from "./plugin-id.mjs";
 
 const pluginDirectory = resolve(process.argv[2] ?? process.cwd());
 const manifest = JSON.parse(
   readFileSync(join(pluginDirectory, "package.json"), "utf8"),
 );
-// Mirrors bb's derivePluginId().
-const pluginId = (
-  manifest.name.includes("/")
-    ? manifest.name.split("/").at(-1)
-    : manifest.name
-)
-  .replace(/^bb-plugin-/, "")
-  .toLowerCase()
-  .replace(/[^a-z0-9-]/g, "-")
-  .replace(/^-+|-+$/g, "");
+const pluginId = derivePluginId(manifest.name);
 
 const toPackagePath = (path) =>
   relative(pluginDirectory, path).split(sep).join("/");
