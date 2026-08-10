@@ -1,91 +1,52 @@
 # Thread tasks
 
-A bb sidebar plugin that treats threads as tasks, grouped into six manual task
-statuses:
+A bb sidebar that treats threads as tasks. It preserves bb's pinned-thread and
+subthread behavior, then groups the remaining threads into manually ordered
+**Done**, **To Do**, **Working**, **Waiting**, **Deferred**, and **Canceled**
+sections.
 
-- Done
-- To Do
-- Working
-- Waiting
-- Deferred
-- Canceled
+Drag tasks to reorder or change their task status. Task order uses fractional
+keys, so a move updates only the moved task. Threads automatically enter
+**Working** when they start and return to **To Do** when they stop, unless you
+manually move them after the transition.
 
-Pinned threads appear first in bb's global fractional pin order. As in the
-built-in sidebar, pinning a parent brings its descendants into the pinned tree,
-and that effective pinned subtree is not duplicated in task-status groups.
-Pinned roots can be reordered by dragging or with the row menu.
+## Install
 
-Within task-status groups, drag a row to reorder it or move it into another
-group. The row otherwise follows bb's built-in sidebar: live thread and split
-indicators occupy the trailing slot, then yield to the standard hover menu;
-right-click opens the same actions. That menu includes keyboard-accessible
-move commands and a **Task status** submenu alongside bb's open-in-split,
-read, pin, rename, archive, and delete actions. Threads with no saved task
-status appear in **To Do**.
+After the package is published to npm:
 
-Subthreads nest under their parent when both are in the same task-status group.
-If a parent and child have different task statuses, each appears as a root in
-its own group; moving a task never silently changes its descendants. Collapsed
-task-status groups and collapsed parent threads are remembered in this client.
-Below its title, each row shows one ellipsized line derived from the latest
-relevant message: the latest user message while starting or active; the latest
-assistant message when completed; and an `Error:`, `Interrupted:`, or
-`Stopping:` prefix for those states.
+```sh
+bb plugin install npm:bb-plugin-thread-tasks@0.5.0 --yes
+```
 
-Order is stored as a base-62 fractional lexicographic key, using the same
-strategy as `bb thread reorder-pinned`. A move names only its adjacent threads
-and updates only the moved row inside an immediate SQLite transaction. This
-avoids renumbering a whole task-status group and reduces conflicts between
-concurrent moves.
-
-Task status follows the thread lifecycle at workflow boundaries. When a thread
-enters `starting`, `active`, or `stopping`, its task moves to the bottom of
-**Working**. A manual move after that is preserved while the thread keeps
-working. When a task still in **Working** later enters `idle` or `error`, it
-moves to the bottom of **To Do**. The last observed working state is persisted,
-so reloading the plugin neither repeats an entry transition nor erases a manual
-override.
-
-The sidebar remains opt-in after installation. Select **Thread tasks** under
-**Settings → Appearance → Sidebar**.
+Then select **Thread tasks** in **Settings → Appearance → Sidebar**. Update an
+installed copy with `bb plugin update thread-tasks`.
 
 ## CLI
 
 ```sh
 bb task list [--status <status>] [--json]
-bb task show [<id> | --self] [--json]
-bb task update [<id> | --self] [--status <status>] [--after <id>] [--before <id>] [--json]
+bb task show [<thread-id> | --self] [--json]
+bb task update [<thread-id> | --self] [--status <status>] [--after <thread-id>] [--before <thread-id>] [--json]
 ```
 
-The interface follows bb's entity commands: `list`, `show`, and `update`.
-Task-status input is case-insensitive and accepts compact spellings such as
-`todo`, `to-do`, and `cancelled`. `show` reports `To Do (default)` when the
-thread has not been organized explicitly. `list` includes visible,
-non-archived threads and materializes missing ones as To Do tasks in their
-existing order. Its output is grouped in canonical task-status order, then
-arranged by each task's fractional order within the group; the internal order
-keys are not displayed.
-
-`update` changes task status, position, or both. A task-status change without a
-position flag puts the task at the bottom of its destination group. Repeating
-the task's current status without a position is a no-op. Override placement
-with the immediately preceding task in `--after`, the
-immediately following task in `--before`, or both. Without `--status`, those
-flags reorder the task within its current group. A neighbor outside the
-destination task-status group is ignored with a warning. `--self` resolves to
-the current bb thread. Task IDs are thread IDs; machine-readable results expose
-them through the standard `id` field and name the organization field
-`taskStatus`, keeping it distinct from a thread's lifecycle `status` (idle,
-active, and so on).
+Task-status input is case-insensitive. `update` without `--after` or `--before`
+places a task at the bottom only when its status changes; repeating its current
+status is a no-op. A neighbor outside the destination status is ignored with a
+warning.
 
 ## Development
 
 ```sh
 npm install
-npm test
-npm run typecheck
-npm run build
+npm run release:check
 bb plugin install . --yes
+bb plugin reload thread-tasks
 ```
 
-After editing an installed copy, run `bb plugin reload thread-status`.
+`release:check` runs the tests and typecheck, rebuilds from a clean `dist/`,
+fails if the generated files differ from Git, and installs the packed npm
+artifact in a temporary directory to validate its contents.
+
+## License
+
+[MIT](LICENSE)
