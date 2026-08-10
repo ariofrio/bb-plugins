@@ -13,7 +13,7 @@
     "bbPluginSdk": "^0.4.1"
   },
   "bb": {
-    "name": "Thread Tasks",
+    "name": "Thread tasks",
     "description": "Treat sidebar threads as manually ordered tasks grouped by task status.",
     "branding": {
       "icon": "List"

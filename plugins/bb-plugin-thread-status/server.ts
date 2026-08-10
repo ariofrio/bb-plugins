@@ -177,5 +177,5 @@ export default function plugin(bb: BbPluginApi) {
     }
   });
 
-  bb.log.info("Thread Tasks loaded");
+  bb.log.info("Thread tasks loaded");
 }

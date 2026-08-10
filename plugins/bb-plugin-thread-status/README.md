@@ -1,4 +1,4 @@
-# Thread Tasks
+# Thread tasks
 
 A bb sidebar plugin that treats threads as tasks, grouped into six manual task
 statuses:
@@ -35,7 +35,7 @@ and updates only the moved row inside an immediate SQLite transaction. This
 avoids renumbering a whole task-status group and reduces conflicts between
 concurrent moves.
 
-The sidebar remains opt-in after installation. Select **Thread Tasks** under
+The sidebar remains opt-in after installation. Select **Thread tasks** under
 **Settings → Appearance → Sidebar**.
 
 ## CLI

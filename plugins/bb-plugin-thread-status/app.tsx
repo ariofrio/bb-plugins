@@ -1242,7 +1242,7 @@ function ThreadStatusList({
 export default definePluginApp((app) => {
   app.slots.experimental_threadList({
     id: "thread-status",
-    title: "Thread Tasks",
+    title: "Thread tasks",
     description:
       "Treat threads as manually ordered tasks grouped by task status.",
     component: ThreadStatusList,
