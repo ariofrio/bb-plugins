@@ -20,6 +20,7 @@ const expectedFiles = [
   "dist/server.meta.json",
   "package.json",
   "server.ts",
+  "skills/thread-tasks/SKILL.md",
 ];
 const temporaryDirectory = mkdtempSync(join(tmpdir(), "thread-tasks-pack-"));
 
@@ -62,6 +63,7 @@ try {
   assert.equal(manifest.license, "MIT");
   readFileSync(join(packageRoot, manifest.bb.server));
   readFileSync(join(packageRoot, manifest.bb.app));
+  readFileSync(join(packageRoot, manifest.bb.skills[0], "thread-tasks", "SKILL.md"));
   for (const metadata of [appMetadata, serverMetadata]) {
     assert.equal(metadata.pluginId, "thread-tasks");
     assert.equal(metadata.pluginVersion, manifest.version);

@@ -5,7 +5,8 @@
   "files": [
     "app.tsx",
     "dist",
-    "server.ts"
+    "server.ts",
+    "skills"
   ],
   "type": "module",
   "scripts": {
@@ -29,7 +30,7 @@
     },
     "server": "./server.ts",
     "app": "./app.tsx",
-    "skills": []
+    "skills": ["skills"]
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.1.3",
