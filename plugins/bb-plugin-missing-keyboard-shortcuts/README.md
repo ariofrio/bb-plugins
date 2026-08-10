@@ -42,7 +42,7 @@ Clone the repository and install this directory:
 
 ```sh
 git clone https://github.com/ariofrio/bb-plugins.git
-cd bb-plugins/plugins/missing-keyboard-shortcuts
+cd bb-plugins/plugins/bb-plugin-missing-keyboard-shortcuts
 npm install
 bb plugin install . --yes
 ```

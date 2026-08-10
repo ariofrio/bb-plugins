@@ -4,7 +4,7 @@ Personal plugins for [bb](https://github.com/ymichael/bb).
 
 ## Plugins
 
-- [Missing keyboard shortcuts](plugins/missing-keyboard-shortcuts#readme) —
+- [Missing keyboard shortcuts](plugins/bb-plugin-missing-keyboard-shortcuts#readme) —
   adds shortcuts for starting threads, navigating history, focusing the
   primary composer, and toggling a side chat or thread terminal.
 - [Project header breadcrumb](plugins/bb-plugin-project-header-breadcrumb#readme)
