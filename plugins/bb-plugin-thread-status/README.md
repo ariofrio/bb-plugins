@@ -18,6 +18,12 @@ same actions. That menu includes keyboard-accessible move commands and a
 archive, and delete actions. Threads with no saved task status appear in
 **To Do**.
 
+Subthreads nest under their parent when both are in the same task-status group.
+If a parent and child have different task statuses, each appears as a root in
+its own group; moving a task never silently changes its descendants. Collapsed
+task-status groups and collapsed parent threads are remembered in this client.
+Because this is a cross-project task view, each row also shows its project.
+
 Order is stored as a base-62 fractional lexicographic key, using the same
 strategy as `bb thread reorder-pinned`. A move names only its adjacent threads
 and updates only the moved row inside an immediate SQLite transaction. This
