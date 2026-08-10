@@ -11,7 +11,16 @@ const pluginDirectory = resolve(process.argv[2] ?? process.cwd());
 const manifest = JSON.parse(
   readFileSync(join(pluginDirectory, "package.json"), "utf8"),
 );
-const pluginId = manifest.name.replace(/^bb-plugin-/, "");
+// Mirrors bb's derivePluginId().
+const pluginId = (
+  manifest.name.includes("/")
+    ? manifest.name.split("/").at(-1)
+    : manifest.name
+)
+  .replace(/^bb-plugin-/, "")
+  .toLowerCase()
+  .replace(/[^a-z0-9-]/g, "-")
+  .replace(/^-+|-+$/g, "");
 
 const toPackagePath = (path) =>
   relative(pluginDirectory, path).split(sep).join("/");
