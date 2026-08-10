@@ -1,7 +1,6 @@
 import {
   definePluginApp,
   useBbContext,
-  useBbNavigate,
   useComposer,
   useComposerView,
 } from "@bb/plugin-sdk/app";
@@ -12,10 +11,7 @@ import {
   focusPrimaryComposer,
   focusSecondaryComposer as focusRegisteredSecondaryComposer,
   hasPrimaryComposer,
-  hasOpenComposer,
   isSecondaryComposerFocused,
-  openRegisteredComposer,
-  registerOpenComposer,
   registerPrimaryComposerFocus,
   registerSecondaryComposer,
 } from "./composer-navigation-bridge";
@@ -35,6 +31,7 @@ import {
   openNewThread,
   type NewThreadHost,
 } from "./new-thread-navigation";
+import { createNativeCommandDelegate } from "./native-command-delegation";
 import { waitForLifecycleAction } from "./lifecycle-action";
 import {
   activateExistingSideChatPanel,
@@ -88,7 +85,6 @@ function rpcErrorMessage(error: unknown, fallback: string): string {
 
 function ComposerNavigationBridge() {
   const context = useBbContext();
-  const { toCompose } = useBbNavigate();
   const composer = useComposer();
   const view = useComposerView();
   const markerRef = useRef<HTMLSpanElement>(null);
@@ -97,13 +93,6 @@ function ComposerNavigationBridge() {
   useEffect(() => {
     rememberThreadProject(window.localStorage, context);
   }, [context.projectId, context.threadId]);
-  useEffect(
-    () =>
-      registerOpenComposer(() => {
-        toCompose({ focusPrompt: true });
-      }),
-    [toCompose],
-  );
   useLayoutEffect(() => {
     const marker = markerRef.current;
     const composerElement = marker?.closest<HTMLElement>(
@@ -383,6 +372,22 @@ export default definePluginApp((app) => {
       let terminalInFlight = false;
       let stopPendingSideChatAction = () => {};
       let stopPendingTerminalAction = () => {};
+      const nativeThreadNewCommand = createNativeCommandDelegate({
+        command: "thread.new",
+        createEvent: (type, init) => new KeyboardEvent(type, init),
+        async fetchConfig() {
+          const response = await fetch("/api/v1/system/config", {
+            credentials: "same-origin",
+          });
+          if (!response.ok) {
+            throw new Error(`System config request failed (${response.status})`);
+          }
+          return response.json() as Promise<unknown>;
+        },
+        isMac: /Mac|iPhone|iPad|iPod/u.test(navigator.platform),
+        target: window,
+      });
+      void nativeThreadNewCommand.prefetch();
       const newThreadHost: NewThreadHost = {
         getSelectedProjectId() {
           return window.localStorage.getItem(
@@ -409,7 +414,7 @@ export default definePluginApp((app) => {
           );
         },
         openComposer() {
-          openRegisteredComposer();
+          void nativeThreadNewCommand.dispatch();
         },
       };
 
@@ -463,6 +468,7 @@ export default definePluginApp((app) => {
       window.addEventListener(
         "keydown",
         (event) => {
+          if (nativeThreadNewCommand.isDelegatedEvent(event)) return;
           const target = newThreadTarget(
             event,
             window.location.pathname,
@@ -472,8 +478,6 @@ export default definePluginApp((app) => {
             // Claim the chord everywhere so BB's native menu cannot reuse it.
             event.preventDefault();
             event.stopPropagation();
-            // The React bridge exists wherever BB has mounted a composer.
-            if (!hasOpenComposer()) return;
             openNewThread(newThreadHost, target.projectId);
             return;
           }
