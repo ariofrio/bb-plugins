@@ -1,0 +1,44 @@
+name: Plugins
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      plugins: ${{ steps.plugins.outputs.plugins }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: plugins
+        run: |
+          plugins=$(
+            for directory in plugins/*/; do
+              if [ -f "$directory/package.json" ]; then
+                basename "$directory"
+              fi
+            done | jq -R -s -c 'split("\n") | map(select(length > 0))'
+          )
+          echo "plugins=$plugins" >> "$GITHUB_OUTPUT"
+
+  release-check:
+    needs: discover
+    name: ${{ matrix.plugin }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: ${{ fromJSON(needs.discover.outputs.plugins) }}
+    defaults:
+      run:
+        working-directory: plugins/${{ matrix.plugin }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: plugins/${{ matrix.plugin }}/package-lock.json
+      - run: npm ci
+      - run: npm run release:check
