@@ -60,6 +60,28 @@ async function ensureThreadSideChatTab(
   return tab.id;
 }
 
+async function removeThreadTab(
+  bb: BbPluginApi,
+  threadId: string,
+  tabId: string,
+): Promise<void> {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const current = await bb.sdk.threads.tabs.get({ threadId });
+    const tabs = current.tabs.filter(({ id }) => id !== tabId);
+    if (tabs.length === current.tabs.length) return;
+    try {
+      await bb.sdk.threads.tabs.update({
+        expectedRevision: current.revision,
+        tabs,
+        threadId,
+      });
+      return;
+    } catch (error) {
+      if (attempt === 1) throw error;
+    }
+  }
+}
+
 export const rpcContract = defineRpcContract({
   openTerminal: {
     input: z
@@ -80,6 +102,16 @@ export const rpcContract = defineRpcContract({
       })
       .strict(),
     output: z.object({ tabId: z.string().min(1) }).strict(),
+  },
+  validateSideChat: {
+    input: z
+      .object({
+        childThreadId: z.string().min(1),
+        parentThreadId: z.string().min(1),
+        tabId: z.string().min(1),
+      })
+      .strict(),
+    output: z.object({ reusable: z.boolean() }).strict(),
   },
 });
 
@@ -114,6 +146,17 @@ export default function plugin(bb: BbPluginApi) {
         childThreadId,
       );
       return { tabId };
+    },
+    async validateSideChat({ childThreadId, parentThreadId, tabId }) {
+      const child = await bb.sdk.threads.get({ threadId: childThreadId });
+      const reusable =
+        child.archivedAt === null &&
+        child.originKind === "fork" &&
+        child.originPluginId === "side-chat" &&
+        child.sourceThreadId === parentThreadId &&
+        child.visibility === "hidden";
+      if (!reusable) await removeThreadTab(bb, parentThreadId, tabId);
+      return { reusable };
     },
   });
 

@@ -47,6 +47,7 @@ import {
   readTerminalPanelSnapshot,
   rememberRecentSideChatTabId,
   rememberRecentTerminalId,
+  removeSideChatPanelTab,
   selectSideChatPanelTab,
   shouldCloseTerminalPanel,
   type PanelStorageChange,
@@ -62,6 +63,10 @@ interface OpenTerminalResult {
 
 interface CreateSideChatResult {
   threadId: string;
+}
+
+interface ValidateSideChatResult {
+  reusable: boolean;
 }
 
 type RpcEnvelope<Result> =
@@ -212,6 +217,35 @@ async function createSideChat(
     );
   }
   return result;
+}
+
+async function validateSideChat(
+  pluginId: string,
+  parentThreadId: string,
+  sideChat: { childThreadId: string; id: string },
+): Promise<ValidateSideChatResult> {
+  const response = await fetch(
+    `/api/v1/plugins/${encodeURIComponent(pluginId)}/rpc/validateSideChat`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        childThreadId: sideChat.childThreadId,
+        parentThreadId,
+        tabId: sideChat.id,
+      }),
+      credentials: "same-origin",
+    },
+  );
+  const envelope = (await response.json()) as RpcEnvelope<ValidateSideChatResult>;
+  if (!response.ok || !envelope.ok) {
+    throw new Error(
+      !envelope.ok
+        ? rpcErrorMessage(envelope.error, "Failed to validate side chat")
+        : `Side-chat validation failed (${response.status})`,
+    );
+  }
+  return envelope.result;
 }
 
 function notifyPanelStateChanged(change: PanelStorageChange): void {
@@ -383,6 +417,45 @@ export default definePluginApp((app) => {
           void nativeThreadNewCommand.dispatch();
         },
       };
+      const focusExistingSideChat = (
+        parentThreadId: string,
+        childThreadId: string,
+      ) => {
+        if (currentThreadId(window.location.pathname) !== parentThreadId) return;
+        stopPendingAction(pendingSideChatActions, parentThreadId);
+        pendingSideChatActions.set(
+          parentThreadId,
+          focusSideChatComposer(
+            signal,
+            parentThreadId,
+            childThreadId,
+            null,
+          ),
+        );
+      };
+      const createAndFocusSideChat = async (parentThreadId: string) => {
+        const { threadId: childThreadId } = await createSideChat(
+          pluginId,
+          parentThreadId,
+        );
+        if (currentThreadId(window.location.pathname) !== parentThreadId) return;
+        const tab = createSideChatPanelTab(parentThreadId, childThreadId);
+        rememberRecentSideChatTabId(
+          window.localStorage,
+          parentThreadId,
+          tab.id,
+        );
+        stopPendingAction(pendingSideChatActions, parentThreadId);
+        pendingSideChatActions.set(
+          parentThreadId,
+          focusSideChatComposer(
+            signal,
+            parentThreadId,
+            childThreadId,
+            tab,
+          ),
+        );
+      };
 
       window.addEventListener(
         "focusin",
@@ -487,45 +560,36 @@ export default definePluginApp((app) => {
               panel,
               readRecentSideChatTabId(window.localStorage, threadId),
             );
-            if (sideChat !== null) {
-              rememberRecentSideChatTabId(
+            if (sideChatInFlightThreads.has(threadId)) return;
+
+            sideChatInFlightThreads.add(threadId);
+            void (async () => {
+              if (sideChat === null) {
+                await createAndFocusSideChat(threadId);
+                return;
+              }
+              const { reusable } = await validateSideChat(
+                pluginId,
+                threadId,
+                sideChat,
+              );
+              if (reusable) {
+                rememberRecentSideChatTabId(
+                  window.localStorage,
+                  threadId,
+                  sideChat.id,
+                );
+                focusExistingSideChat(threadId, sideChat.childThreadId);
+                return;
+              }
+              const change = removeSideChatPanelTab(
                 window.localStorage,
                 threadId,
                 sideChat.id,
               );
-              pendingSideChatActions.set(
-                threadId,
-                focusSideChatComposer(
-                  signal,
-                  threadId,
-                  sideChat.childThreadId,
-                  null,
-                ),
-              );
-              return;
-            }
-            if (sideChatInFlightThreads.has(threadId)) return;
-
-            sideChatInFlightThreads.add(threadId);
-            void createSideChat(pluginId, threadId)
-              .then(({ threadId: childThreadId }) => {
-                const tab = createSideChatPanelTab(threadId, childThreadId);
-                rememberRecentSideChatTabId(
-                  window.localStorage,
-                  threadId,
-                  tab.id,
-                );
-                stopPendingAction(pendingSideChatActions, threadId);
-                pendingSideChatActions.set(
-                  threadId,
-                  focusSideChatComposer(
-                    signal,
-                    threadId,
-                    childThreadId,
-                    tab,
-                  ),
-                );
-              })
+              if (change !== null) notifyPanelStateChanged(change);
+              await createAndFocusSideChat(threadId);
+            })()
               .catch((error: unknown) => {
                 toast.error(
                   rpcErrorMessage(error, "Failed to start side chat"),

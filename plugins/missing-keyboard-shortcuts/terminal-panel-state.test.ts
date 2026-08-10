@@ -9,6 +9,7 @@ import {
   readRecentTerminalId,
   readSideChatPanelSnapshot,
   readTerminalPanelSnapshot,
+  removeSideChatPanelTab,
   rememberRecentSideChatTabId,
   rememberRecentTerminalId,
   selectSideChatPanelTab,
@@ -272,5 +273,27 @@ describe("terminal panel state", () => {
 
     expect(readRecentSideChatTabId(storage, "thr_one")).toBe("tab_one");
     expect(readRecentSideChatTabId(storage, "thr_two")).toBe("tab_two");
+  });
+
+  it("removes a stale side-chat tab without losing sibling tabs", () => {
+    const storage = new MemoryStorage();
+    const stale = createSideChatPanelTab("thr_parent", "thr_stale");
+    const live = createSideChatPanelTab("thr_parent", "thr_live");
+    activateSideChatPanel(storage, "thr_parent", live, 10);
+    activateSideChatPanel(storage, "thr_parent", stale, 11);
+    activateTerminalPanel(storage, "thr_parent", "term_one", 12);
+
+    removeSideChatPanelTab(storage, "thr_parent", stale.id, 13);
+
+    expect(readSideChatPanelSnapshot(storage, "thr_parent")).toEqual({
+      activeSideChat: null,
+      isOpen: true,
+      sideChats: [{ childThreadId: "thr_live", id: live.id }],
+    });
+    expect(readTerminalPanelSnapshot(storage, "thr_parent")).toEqual({
+      activeTerminalId: "term_one",
+      isOpen: true,
+      terminalIds: ["term_one"],
+    });
   });
 });

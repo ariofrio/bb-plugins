@@ -296,6 +296,29 @@ export function activateExistingSideChatPanel(
   });
 }
 
+export function removeSideChatPanelTab(
+  storage: StringStorage,
+  threadId: string,
+  tabId: string,
+  now = Date.now(),
+): PanelStorageChange | null {
+  const state = parsePanelState(storage.getItem(panelStorageKey(threadId)));
+  const tab = state.secondary.tabs.find(({ id }) => id === tabId);
+  if (tab === undefined || sideChatForTab(tab, threadId) === null) return null;
+  return writePanelState(storage, threadId, {
+    ...state,
+    secondary: {
+      ...state.secondary,
+      tabs: state.secondary.tabs.filter(({ id }) => id !== tabId),
+      activeTabId:
+        state.secondary.activeTabId === tabId
+          ? null
+          : state.secondary.activeTabId,
+    },
+    lastUsedAt: now,
+  });
+}
+
 export function selectSideChatPanelTab(
   panel: SideChatPanelSnapshot,
   recentTabId: string | null,
