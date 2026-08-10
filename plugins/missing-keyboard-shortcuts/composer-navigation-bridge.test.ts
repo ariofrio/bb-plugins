@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  archiveRegisteredThread,
   focusedSecondaryComposerThreadId,
   focusPrimaryComposer,
   focusSecondaryComposer,
@@ -7,6 +8,7 @@ import {
   isSecondaryComposerFocused,
   registerPrimaryComposerFocus,
   registerSecondaryComposer,
+  registerThreadArchive,
 } from "./composer-navigation-bridge";
 
 const disposers: Array<() => void> = [];
@@ -16,6 +18,18 @@ afterEach(() => {
 });
 
 describe("composer navigation bridge", () => {
+  it("runs the latest native archive action for the requested thread", () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    disposers.push(registerThreadArchive("thr_one", first));
+    disposers.push(registerThreadArchive("thr_two", second));
+
+    expect(archiveRegisteredThread("thr_two")).toBe(true);
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledOnce();
+    expect(archiveRegisteredThread("thr_missing")).toBe(false);
+  });
+
   it("focuses the primary composer registered for the requested thread", () => {
     const firstThread = vi.fn();
     const secondThread = vi.fn();

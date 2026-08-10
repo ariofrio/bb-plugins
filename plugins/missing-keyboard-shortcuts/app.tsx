@@ -1,5 +1,6 @@
 import {
   definePluginApp,
+  experimental_useSidebarThreadActions,
   useBbContext,
   useComposer,
   useComposerView,
@@ -7,6 +8,7 @@ import {
 import { createElement, useEffect, useLayoutEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
+  archiveRegisteredThread,
   focusedSecondaryComposerThreadId,
   focusPrimaryComposer,
   focusSecondaryComposer as focusRegisteredSecondaryComposer,
@@ -14,6 +16,7 @@ import {
   isSecondaryComposerFocused,
   registerPrimaryComposerFocus,
   registerSecondaryComposer,
+  registerThreadArchive,
 } from "./composer-navigation-bridge";
 import {
   readLastThreadProjectId,
@@ -53,10 +56,6 @@ import {
 
 const ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY = "bb.root-compose.project-id";
 
-interface ArchiveResult {
-  archivedThreadIds: string[];
-}
-
 interface OpenTerminalResult {
   created: boolean;
   terminalId: string;
@@ -85,6 +84,7 @@ function rpcErrorMessage(error: unknown, fallback: string): string {
 
 function ComposerNavigationBridge() {
   const context = useBbContext();
+  const sidebarThreadActions = experimental_useSidebarThreadActions();
   const composer = useComposer();
   const view = useComposerView();
   const markerRef = useRef<HTMLSpanElement>(null);
@@ -93,6 +93,13 @@ function ComposerNavigationBridge() {
   useEffect(() => {
     rememberThreadProject(window.localStorage, context);
   }, [context.projectId, context.threadId]);
+  useEffect(() => {
+    const threadId = context.threadId;
+    if (threadId === null) return;
+    return registerThreadArchive(threadId, () => {
+      sidebarThreadActions.archive(threadId);
+    });
+  }, [context.threadId, sidebarThreadActions]);
   useLayoutEffect(() => {
     const marker = markerRef.current;
     const composerElement = marker?.closest<HTMLElement>(
@@ -131,30 +138,6 @@ function ComposerNavigationBridge() {
     });
   }, [composer.focus, composerThreadId, context.threadId, view.scope.kind]);
   return createElement("span", { hidden: true, ref: markerRef });
-}
-
-async function archiveThread(
-  pluginId: string,
-  threadId: string,
-): Promise<ArchiveResult> {
-  const response = await fetch(
-    `/api/v1/plugins/${encodeURIComponent(pluginId)}/rpc/archiveThread`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ threadId }),
-      credentials: "same-origin",
-    },
-  );
-  const envelope = (await response.json()) as RpcEnvelope<ArchiveResult>;
-  if (!response.ok || !envelope.ok) {
-    throw new Error(
-      !envelope.ok
-        ? rpcErrorMessage(envelope.error, "Failed to archive thread")
-        : `Archive request failed (${response.status})`,
-    );
-  }
-  return envelope.result;
 }
 
 async function openTerminal(
@@ -367,7 +350,6 @@ export default definePluginApp((app) => {
   app.contentScripts.register({
     id: "missing-keyboard-shortcuts",
     mount({ pluginId, signal }) {
-      let archiveInFlight = false;
       let sideChatInFlight = false;
       let terminalInFlight = false;
       let stopPendingSideChatAction = () => {};
@@ -636,23 +618,11 @@ export default definePluginApp((app) => {
           // Claim the chord everywhere, including editors.
           event.preventDefault();
           event.stopPropagation();
-          if (archiveInFlight) return;
-
-          archiveInFlight = true;
-          void archiveThread(pluginId, threadId)
-            .then(({ archivedThreadIds }) => {
-              toast.success(
-                archivedThreadIds.length > 1
-                  ? `Archived thread and ${archivedThreadIds.length - 1} children`
-                  : "Archived thread",
-              );
-            })
-            .catch((error: unknown) => {
-              toast.error(rpcErrorMessage(error, "Failed to archive thread"));
-            })
-            .finally(() => {
-              archiveInFlight = false;
-            });
+          try {
+            archiveRegisteredThread(threadId);
+          } catch (error) {
+            toast.error(rpcErrorMessage(error, "Failed to archive thread"));
+          }
         },
         { capture: true, signal },
       );

@@ -61,10 +61,6 @@ async function ensureThreadSideChatTab(
 }
 
 export const rpcContract = defineRpcContract({
-  archiveThread: {
-    input: z.object({ threadId: z.string().min(1) }).strict(),
-    output: z.object({ archivedThreadIds: z.array(z.string()) }).strict(),
-  },
   openTerminal: {
     input: z
       .object({
@@ -89,10 +85,6 @@ export const rpcContract = defineRpcContract({
 
 export default function plugin(bb: BbPluginApi) {
   bb.rpc.register(rpcContract, {
-    async archiveThread({ threadId }) {
-      const result = await bb.sdk.threads.archiveAll({ threadId });
-      return { archivedThreadIds: result.archivedThreadIds };
-    },
     async openTerminal({ preferredTerminalId, threadId }) {
       const { sessions } = await bb.sdk.terminals.list({
         scope: { kind: "thread", threadId },

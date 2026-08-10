@@ -1,4 +1,5 @@
 type FocusComposer = () => void;
+type ArchiveThread = () => void;
 
 interface SecondaryComposerRegistration {
   focus: FocusComposer;
@@ -7,10 +8,37 @@ interface SecondaryComposerRegistration {
 }
 
 const primaryComposerFocusByThread = new Map<string | null, FocusComposer[]>();
+const archiveThreadByThread = new Map<string, ArchiveThread[]>();
 const secondaryComposersByParent = new Map<
   string,
   Map<string, SecondaryComposerRegistration[]>
 >();
+
+export function registerThreadArchive(
+  threadId: string,
+  archiveThread: ArchiveThread,
+): () => void {
+  const actions = archiveThreadByThread.get(threadId) ?? [];
+  actions.push(archiveThread);
+  archiveThreadByThread.set(threadId, actions);
+  return () => {
+    const index = actions.lastIndexOf(archiveThread);
+    if (index !== -1) actions.splice(index, 1);
+    if (
+      actions.length === 0 &&
+      archiveThreadByThread.get(threadId) === actions
+    ) {
+      archiveThreadByThread.delete(threadId);
+    }
+  };
+}
+
+export function archiveRegisteredThread(threadId: string): boolean {
+  const archiveThread = archiveThreadByThread.get(threadId)?.at(-1);
+  if (archiveThread === undefined) return false;
+  archiveThread();
+  return true;
+}
 
 export function registerPrimaryComposerFocus(
   threadId: string | null,
