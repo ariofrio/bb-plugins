@@ -21,12 +21,14 @@ import {
 } from "react";
 import type { rpcContract } from "./server";
 import {
+  DEFAULT_THREAD_STATUS,
   THREAD_STATUSES,
   destinationOrder,
   groupThreadsByStatus,
   type ThreadAssignment,
   type ThreadStatus,
 } from "./thread-status";
+import { buildPinnedThreadState } from "./pinned-threads";
 import { Icon } from "./components/Icon";
 import {
   ThreadActionsContextMenu,
@@ -49,7 +51,12 @@ import {
 const COLLAPSED_STATUSES_STORAGE_KEY =
   "bb.plugin.thread-status.collapsedStatuses";
 const COLLAPSED_THREADS_STORAGE_KEY = "bb.sidebar.collapsedThreads";
-const THREAD_STATUS_SET: ReadonlySet<string> = new Set(THREAD_STATUSES);
+const PINNED_SECTION = "Pinned" as const;
+type SidebarGroup = ThreadStatus | typeof PINNED_SECTION;
+const COLLAPSIBLE_SECTION_SET: ReadonlySet<string> = new Set([
+  PINNED_SECTION,
+  ...THREAD_STATUSES,
+]);
 
 interface OrganizationState {
   assignments: ThreadAssignment[];
@@ -119,6 +126,7 @@ interface ThreadRowProps {
   onNavigate: () => void;
   onToggleChildren: () => void;
   projectName: string | null;
+  reorderable: boolean;
   showDropAfter: boolean;
   showDropBefore: boolean;
   taskStatus: ThreadStatus;
@@ -150,6 +158,7 @@ function ThreadRow({
   onNavigate,
   onToggleChildren,
   projectName,
+  reorderable,
   showDropAfter,
   showDropBefore,
   taskStatus,
@@ -226,7 +235,7 @@ function ThreadRow({
         } ${!active && layout !== null ? "bg-sidebar-accent/50" : ""} ${
           dragging ? "opacity-40" : ""
         } ${disabled ? "" : "select-none"}`}
-        draggable={!disabled && !thread.isArchived}
+        draggable={reorderable && !disabled && !thread.isArchived}
         onDragEnd={onDragEnd}
         onDragStart={onDragStart}
         style={{ paddingLeft: 8 + depth * 24 }}
@@ -366,29 +375,29 @@ function ThreadRow({
   );
 }
 
-interface TaskStatusSectionProps {
+interface SidebarSectionProps {
   children: React.ReactNode;
   collapsed: boolean;
   dropTarget: boolean;
   onDropAtEnd: (event: DragEvent<HTMLElement>) => void;
   onDragOverEnd: (event: DragEvent<HTMLElement>) => void;
   onToggle: () => void;
-  status: ThreadStatus;
+  label: SidebarGroup;
   threads: readonly PluginSidebarThread[];
 }
 
-function TaskStatusSection({
+function SidebarSection({
   children,
   collapsed,
   dropTarget,
   onDropAtEnd,
   onDragOverEnd,
   onToggle,
-  status,
+  label,
   threads,
-}: TaskStatusSectionProps) {
+}: SidebarSectionProps) {
   const activityThread = collapsed ? groupIndicator(threads) : null;
-  const id = `thread-task-status-${status.replace(/\s/g, "-")}`;
+  const id = `thread-task-group-${label.replace(/\s/g, "-")}`;
   return (
     <section
       data-sidebar-sticky-group=""
@@ -405,16 +414,16 @@ function TaskStatusSection({
         className="bb-sidebar-hover-actions-row sticky top-0 z-[60] flex h-6 items-center rounded-md bg-sidebar pl-2 pr-0 text-xs font-normal leading-5 text-subtle-foreground/75 transition-colors max-md:pointer-coarse:h-9"
       >
         <span className="relative z-10 flex min-w-0 flex-1 items-center gap-1 text-left">
-          <span id={id} className="min-w-0 truncate" title={status}>
-            {status}
+          <span id={id} className="min-w-0 truncate" title={label}>
+            {label}
           </span>
           <button
             type="button"
             aria-expanded={!collapsed}
             aria-label={
               collapsed
-                ? `Expand ${status} section`
-                : `Collapse ${status} section`
+                ? `Expand ${label} section`
+                : `Collapse ${label} section`
             }
             className={`relative z-20 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 ${
               collapsed ? "" : "bb-sidebar-hover-actions"
@@ -520,15 +529,16 @@ function ThreadStatusList({
   const [draggingThreadId, setDraggingThreadId] = useState<string | null>(null);
   const [dropBefore, setDropBefore] = useState<string | null>(null);
   const [dropAfter, setDropAfter] = useState<string | null>(null);
-  const [dropStatus, setDropStatus] = useState<ThreadStatus | null>(null);
-  const [collapsedStatuses, setCollapsedStatuses] = usePersistentStringSet(
+  const [dropGroup, setDropGroup] = useState<SidebarGroup | null>(null);
+  const [collapsedSections, setCollapsedSections] = usePersistentStringSet(
     COLLAPSED_STATUSES_STORAGE_KEY,
-    THREAD_STATUS_SET,
+    COLLAPSIBLE_SECTION_SET,
   );
   const [collapsedThreads, setCollapsedThreads] = usePersistentStringSet(
     COLLAPSED_THREADS_STORAGE_KEY,
   );
   const [mutationPending, setMutationPending] = useState(false);
+  const [pinnedThreadIds, setPinnedThreadIds] = useState<readonly string[]>([]);
   const wasConnected = useRef(false);
   const syncInFlight = useRef(false);
 
@@ -536,7 +546,7 @@ function ThreadStatusList({
     setDraggingThreadId(null);
     setDropBefore(null);
     setDropAfter(null);
-    setDropStatus(null);
+    setDropGroup(null);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -571,6 +581,31 @@ function ThreadStatusList({
     () => sidebar.threads.filter((thread) => !thread.isArchived),
     [sidebar.threads],
   );
+  const explicitPinnedThreadIds = useMemo(
+    () =>
+      taskThreads
+        .filter((thread) => thread.isPinned)
+        .map((thread) => thread.id),
+    [taskThreads],
+  );
+
+  useEffect(() => {
+    if (explicitPinnedThreadIds.length === 0) return;
+    let canceled = false;
+    void rpc
+      .call("listPinnedThreadIds", null)
+      .then(({ threadIds }) => {
+        if (!canceled) setPinnedThreadIds(threadIds);
+      })
+      .catch(() => {
+        // Live pin membership remains usable in source order when the
+        // authoritative fractional order cannot be loaded.
+      });
+    return () => {
+      canceled = true;
+    };
+  }, [explicitPinnedThreadIds, rpc]);
+
   const unsyncedThreadIds = useMemo(() => {
     const assigned = new Set(
       (organization?.assignments ?? []).map(
@@ -665,13 +700,49 @@ function ThreadStatusList({
       (thread) => liveThreads.get(thread.id) ?? archivedSearchThread(thread),
     );
   }, [normalizedSearch, search, sidebar.threads, taskThreads]);
+  const pinnedState = useMemo(
+    () => buildPinnedThreadState(displayThreads, pinnedThreadIds),
+    [displayThreads, pinnedThreadIds],
+  );
+  const statusThreads = useMemo(
+    () =>
+      displayThreads.filter(
+        (thread) => !pinnedState.effectivePinnedThreadIds.has(thread.id),
+      ),
+    [displayThreads, pinnedState.effectivePinnedThreadIds],
+  );
   const groups = useMemo(
-    () => groupThreadsByStatus(displayThreads, organization?.assignments ?? []),
-    [displayThreads, organization?.assignments],
+    () => groupThreadsByStatus(statusThreads, organization?.assignments ?? []),
+    [organization?.assignments, statusThreads],
+  );
+  const assignmentByThreadId = useMemo(
+    () =>
+      new Map(
+        (organization?.assignments ?? []).map((assignment) => [
+          assignment.threadId,
+          assignment,
+        ]),
+      ),
+    [organization?.assignments],
   );
   const projectNames = useMemo(
     () => new Map(sidebar.projects.map((project) => [project.id, project.name])),
     [sidebar.projects],
+  );
+  const pinnedHierarchyRows = useMemo(
+    () => flattenThreadHierarchy(pinnedState.pinnedThreads, collapsedThreads),
+    [collapsedThreads, pinnedState.pinnedThreads],
+  );
+  const pinnedRootThreads = useMemo(
+    () =>
+      pinnedHierarchyRows
+        .filter(({ depth }) => depth === 0)
+        .map(({ thread }) => thread),
+    [pinnedHierarchyRows],
+  );
+  const pinnedRootIds = useMemo(
+    () => new Set(pinnedRootThreads.map((thread) => thread.id)),
+    [pinnedRootThreads],
   );
 
   const commitMove = useCallback(
@@ -710,11 +781,43 @@ function ThreadStatusList({
     [clearDrag, groups, mutationPending, refresh, rpc, unsyncedThreadIds.length],
   );
 
-  function toggleCollapsed(status: ThreadStatus): void {
-    setCollapsedStatuses((current) => {
+  const commitPinnedMove = useCallback(
+    async (threadId: string, beforeThreadId: string | null) => {
+      if (mutationPending || !pinnedRootIds.has(threadId)) return;
+      const order = destinationOrder(
+        pinnedRootThreads.map((thread) => thread.id),
+        threadId,
+        beforeThreadId,
+      );
+      const movedIndex = order.indexOf(threadId);
+      setMutationPending(true);
+      setError(null);
+      try {
+        const { threadIds } = await rpc.call("reorderPinnedThread", {
+          threadId,
+          previousThreadId: order[movedIndex - 1] ?? null,
+          nextThreadId: order[movedIndex + 1] ?? null,
+        });
+        setPinnedThreadIds(threadIds);
+      } catch (cause) {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "Could not reorder the pinned thread.",
+        );
+      } finally {
+        setMutationPending(false);
+        clearDrag();
+      }
+    },
+    [clearDrag, mutationPending, pinnedRootIds, pinnedRootThreads, rpc],
+  );
+
+  function toggleCollapsed(group: SidebarGroup): void {
+    setCollapsedSections((current) => {
       const next = new Set(current);
-      if (next.has(status)) next.delete(status);
-      else next.add(status);
+      if (next.has(group)) next.delete(group);
+      else next.add(group);
       return next;
     });
   }
@@ -791,6 +894,152 @@ function ThreadStatusList({
         </div>
       ) : null}
       <div className="space-y-4">
+        {pinnedState.pinnedThreads.length > 0 ? (
+          <SidebarSection
+            label={PINNED_SECTION}
+            threads={pinnedState.pinnedThreads}
+            collapsed={collapsedSections.has(PINNED_SECTION)}
+            dropTarget={
+              dropGroup === PINNED_SECTION &&
+              dropBefore === null &&
+              dropAfter === null
+            }
+            onToggle={() => toggleCollapsed(PINNED_SECTION)}
+            onDragOverEnd={(event) => {
+              if (!draggingThreadId || !pinnedRootIds.has(draggingThreadId)) {
+                return;
+              }
+              event.preventDefault();
+              setDropGroup(PINNED_SECTION);
+              setDropBefore(null);
+              setDropAfter(null);
+            }}
+            onDropAtEnd={(event) => {
+              if (!draggingThreadId || !pinnedRootIds.has(draggingThreadId)) {
+                return;
+              }
+              event.preventDefault();
+              void commitPinnedMove(draggingThreadId, null);
+            }}
+          >
+            <ul>
+              {pinnedHierarchyRows.map(
+                ({ thread, depth, hasChildren, descendants }) => {
+                  const rootIndex = pinnedRootThreads.findIndex(
+                    (item) => item.id === thread.id,
+                  );
+                  const isRoot = rootIndex >= 0;
+                  const childrenCollapsed = collapsedThreads.has(thread.id);
+                  const indicatorThread =
+                    childrenCollapsed && hasChildren
+                      ? (groupIndicator([thread, ...descendants]) ?? thread)
+                      : thread;
+                  const taskStatus =
+                    assignmentByThreadId.get(thread.id)?.taskStatus ??
+                    DEFAULT_THREAD_STATUS;
+                  return (
+                    <ThreadRow
+                      key={thread.id}
+                      actions={actions}
+                      active={thread.id === activeThreadId}
+                      canMoveDown={
+                        isRoot && rootIndex < pinnedRootThreads.length - 1
+                      }
+                      canMoveUp={isRoot && rootIndex > 0}
+                      childrenCollapsed={childrenCollapsed}
+                      depth={depth}
+                      disabled={
+                        Boolean(normalizedSearch) ||
+                        mutationPending ||
+                        unsyncedThreadIds.length > 0
+                      }
+                      dragging={thread.id === draggingThreadId}
+                      hasChildren={hasChildren}
+                      indicatorThread={indicatorThread}
+                      onChangeStatus={(nextStatus) => {
+                        void commitMove(thread.id, nextStatus, null);
+                      }}
+                      onDragEnd={clearDrag}
+                      onDragOver={(event) => {
+                        if (
+                          !isRoot ||
+                          !draggingThreadId ||
+                          !pinnedRootIds.has(draggingThreadId)
+                        ) {
+                          setDropGroup(null);
+                          setDropBefore(null);
+                          setDropAfter(null);
+                          return;
+                        }
+                        setDropGroup(PINNED_SECTION);
+                        const bounds =
+                          event.currentTarget.getBoundingClientRect();
+                        const isAfter =
+                          event.clientY > bounds.top + bounds.height / 2;
+                        if (isAfter) {
+                          setDropBefore(
+                            pinnedRootThreads[rootIndex + 1]?.id ?? null,
+                          );
+                          setDropAfter(thread.id);
+                        } else {
+                          setDropBefore(thread.id);
+                          setDropAfter(null);
+                        }
+                      }}
+                      onDragStart={(event) => {
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData("text/plain", thread.id);
+                        setDraggingThreadId(thread.id);
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        if (
+                          !isRoot ||
+                          !draggingThreadId ||
+                          !pinnedRootIds.has(draggingThreadId)
+                        ) {
+                          clearDrag();
+                          return;
+                        }
+                        void commitPinnedMove(draggingThreadId, dropBefore);
+                      }}
+                      onMoveDown={() => {
+                        void commitPinnedMove(
+                          thread.id,
+                          pinnedRootThreads[rootIndex + 2]?.id ?? null,
+                        );
+                      }}
+                      onMoveUp={() => {
+                        void commitPinnedMove(
+                          thread.id,
+                          pinnedRootThreads[rootIndex - 1]?.id ?? null,
+                        );
+                      }}
+                      onNavigate={onNavigate}
+                      onToggleChildren={() =>
+                        toggleThreadCollapsed(thread.id)
+                      }
+                      projectName={projectNames.get(thread.projectId) ?? null}
+                      reorderable={isRoot && !Boolean(normalizedSearch)}
+                      showDropAfter={
+                        dropGroup === PINNED_SECTION &&
+                        dropAfter === thread.id
+                      }
+                      showDropBefore={
+                        dropGroup === PINNED_SECTION &&
+                        dropAfter === null &&
+                        dropBefore === thread.id
+                      }
+                      taskStatus={taskStatus}
+                      thread={thread}
+                    />
+                  );
+                },
+              )}
+            </ul>
+          </SidebarSection>
+        ) : null}
         {THREAD_STATUSES.map((status) => {
           const allThreads = groups[status];
           const shownThreads = allThreads;
@@ -803,27 +1052,37 @@ function ThreadStatusList({
                 descendants: [] as readonly PluginSidebarThread[],
               }))
             : flattenThreadHierarchy(shownThreads, collapsedThreads);
-          const isCollapsed = collapsedStatuses.has(status);
+          const isCollapsed = collapsedSections.has(status);
           if (normalizedSearch && shownThreads.length === 0) return null;
           return (
-            <TaskStatusSection
+            <SidebarSection
               key={status}
-              status={status}
+              label={status}
               threads={shownThreads}
               collapsed={isCollapsed}
               dropTarget={
-                dropStatus === status && dropBefore === null && dropAfter === null
+                dropGroup === status && dropBefore === null && dropAfter === null
               }
               onToggle={() => toggleCollapsed(status)}
               onDragOverEnd={(event) => {
-                if (!draggingThreadId) return;
+                if (
+                  !draggingThreadId ||
+                  pinnedRootIds.has(draggingThreadId)
+                ) {
+                  return;
+                }
                 event.preventDefault();
-                setDropStatus(status);
+                setDropGroup(status);
                 setDropBefore(null);
                 setDropAfter(null);
               }}
               onDropAtEnd={(event) => {
-                if (!draggingThreadId) return;
+                if (
+                  !draggingThreadId ||
+                  pinnedRootIds.has(draggingThreadId)
+                ) {
+                  return;
+                }
                 event.preventDefault();
                 void commitMove(draggingThreadId, status, null);
               }}
@@ -879,18 +1138,19 @@ function ThreadStatusList({
                           );
                           if (
                             draggedThread === undefined ||
+                            pinnedRootIds.has(draggedThread.id) ||
                             !canDropThreadBeside(
                               draggedThread,
                               thread,
                               idsInStatus,
                             )
                           ) {
-                            setDropStatus(null);
+                            setDropGroup(null);
                             setDropBefore(null);
                             setDropAfter(null);
                             return;
                           }
-                          setDropStatus(status);
+                          setDropGroup(status);
                           const bounds =
                             event.currentTarget.getBoundingClientRect();
                           const isAfter =
@@ -917,6 +1177,7 @@ function ThreadStatusList({
                           );
                           if (
                             draggedThread === undefined ||
+                            pinnedRootIds.has(draggedThread.id) ||
                             !canDropThreadBeside(
                               draggedThread,
                               thread,
@@ -953,11 +1214,12 @@ function ThreadStatusList({
                           toggleThreadCollapsed(thread.id)
                         }
                         projectName={projectNames.get(thread.projectId) ?? null}
+                        reorderable={!Boolean(normalizedSearch)}
                         showDropAfter={
-                          dropStatus === status && dropAfter === thread.id
+                          dropGroup === status && dropAfter === thread.id
                         }
                         showDropBefore={
-                          dropStatus === status &&
+                          dropGroup === status &&
                           dropAfter === null &&
                           dropBefore === thread.id
                         }
@@ -968,7 +1230,7 @@ function ThreadStatusList({
                   },
                 )}
               </ul>
-            </TaskStatusSection>
+            </SidebarSection>
           );
         })}
       </div>

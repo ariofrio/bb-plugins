@@ -10,13 +10,18 @@ statuses:
 - Deferred
 - Canceled
 
-Drag a row to reorder it or move it into another group. The row otherwise
-follows bb's built-in sidebar: live thread and split indicators occupy the
-trailing slot, then yield to the standard hover menu; right-click opens the
-same actions. That menu includes keyboard-accessible move commands and a
-**Task status** submenu alongside bb's open-in-split, read, pin, rename,
-archive, and delete actions. Threads with no saved task status appear in
-**To Do**.
+Pinned threads appear first in bb's global fractional pin order. As in the
+built-in sidebar, pinning a parent brings its descendants into the pinned tree,
+and that effective pinned subtree is not duplicated in task-status groups.
+Pinned roots can be reordered by dragging or with the row menu.
+
+Within task-status groups, drag a row to reorder it or move it into another
+group. The row otherwise follows bb's built-in sidebar: live thread and split
+indicators occupy the trailing slot, then yield to the standard hover menu;
+right-click opens the same actions. That menu includes keyboard-accessible
+move commands and a **Task status** submenu alongside bb's open-in-split,
+read, pin, rename, archive, and delete actions. Threads with no saved task
+status appear in **To Do**.
 
 Subthreads nest under their parent when both are in the same task-status group.
 If a parent and child have different task statuses, each appears as a root in

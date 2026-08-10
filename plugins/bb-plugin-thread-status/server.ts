@@ -1,6 +1,7 @@
 import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk";
 import { z } from "zod";
 import { runTaskCli } from "./cli";
+import { sortExplicitPinnedThreadIds } from "./pinned-threads";
 import { sidebarThreadsFromSearchResult } from "./search-results";
 import {
   THREAD_STATUS_MIGRATIONS,
@@ -45,6 +46,20 @@ export const rpcContract = defineRpcContract({
     input: z.null(),
     output: stateSchema,
   },
+  listPinnedThreadIds: {
+    input: z.null(),
+    output: z.object({ threadIds: z.array(z.string()) }).strict(),
+  },
+  reorderPinnedThread: {
+    input: z
+      .object({
+        threadId: z.string().min(1).max(256),
+        previousThreadId: z.string().min(1).max(256).nullable(),
+        nextThreadId: z.string().min(1).max(256).nullable(),
+      })
+      .strict(),
+    output: z.object({ threadIds: z.array(z.string()) }).strict(),
+  },
   searchThreads: {
     input: z
       .object({
@@ -81,6 +96,14 @@ export default function plugin(bb: BbPluginApi) {
 
   bb.rpc.register(rpcContract, {
     listState: () => store.listState(),
+    async listPinnedThreadIds() {
+      const threads = await bb.sdk.threads.list({ archived: false });
+      return { threadIds: sortExplicitPinnedThreadIds(threads) };
+    },
+    async reorderPinnedThread(input) {
+      const threads = await bb.sdk.threads.reorderPinned(input);
+      return { threadIds: sortExplicitPinnedThreadIds(threads) };
+    },
     async searchThreads({ query }) {
       const result = await bb.sdk.threads.search({
         query,
