@@ -35,6 +35,7 @@ import {
   type NewThreadHost,
 } from "./new-thread-navigation";
 import { createNativeCommandDelegate } from "./native-command-delegation";
+import { notifyNativeShortcutHandled } from "./native-command-hints";
 import {
   activateExistingSideChatPanel,
   activateSideChatPanel,
@@ -372,9 +373,11 @@ export default definePluginApp((app) => {
         },
         { once: true },
       );
+      const createKeyboardEvent = (type: string, init: KeyboardEventInit) =>
+        new KeyboardEvent(type, init);
       const nativeThreadNewCommand = createNativeCommandDelegate({
         command: "thread.new",
-        createEvent: (type, init) => new KeyboardEvent(type, init),
+        createEvent: createKeyboardEvent,
         async fetchConfig() {
           const response = await fetch("/api/v1/system/config", {
             credentials: "same-origin",
@@ -527,6 +530,7 @@ export default definePluginApp((app) => {
             if (!hasPrimaryComposer(threadId)) return;
             event.preventDefault();
             event.stopPropagation();
+            notifyNativeShortcutHandled(window, createKeyboardEvent);
             focusPrimaryComposer(threadId);
             return;
           }
@@ -536,6 +540,7 @@ export default definePluginApp((app) => {
 
             event.preventDefault();
             event.stopPropagation();
+            notifyNativeShortcutHandled(window, createKeyboardEvent);
             stopPendingAction(pendingSideChatActions, threadId);
             const panel = readSideChatPanelSnapshot(
               window.localStorage,
@@ -607,6 +612,7 @@ export default definePluginApp((app) => {
 
             event.preventDefault();
             event.stopPropagation();
+            notifyNativeShortcutHandled(window, createKeyboardEvent);
             const panel = readTerminalPanelSnapshot(
               window.localStorage,
               threadId,
@@ -654,6 +660,7 @@ export default definePluginApp((app) => {
             // Claim the shortcut even when an editor has focus.
             event.preventDefault();
             event.stopPropagation();
+            notifyNativeShortcutHandled(window, createKeyboardEvent);
             window.history.go(direction);
             return;
           }
@@ -666,6 +673,7 @@ export default definePluginApp((app) => {
           // Claim the chord everywhere, including editors.
           event.preventDefault();
           event.stopPropagation();
+          notifyNativeShortcutHandled(window, createKeyboardEvent);
           try {
             archiveRegisteredThread(threadId);
           } catch (error) {
