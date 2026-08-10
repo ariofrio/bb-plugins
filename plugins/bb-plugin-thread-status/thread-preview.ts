@@ -17,8 +17,39 @@ export interface ThreadPreviewRow {
   children?: readonly ThreadPreviewRow[] | null;
 }
 
+function stripMarkdownFormatting(value: string): string {
+  return value
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/^\s{0,3}(?:`{3,}|~{3,}).*$/gm, " ")
+    .replace(/^\s{0,3}\[[^\]]+\]:\s+\S+.*$/gm, " ")
+    .replace(/!\[([^\]]*)\]\[[^\]]*\]/g, "$1")
+    .replace(
+      /!\[([^\]]*)\]\((?:\\.|[^\\()\n]|\([^()\n]*\))*\)/g,
+      "$1",
+    )
+    .replace(
+      /\[([^\]]+)\]\((?:\\.|[^\\()\n]|\([^()\n]*\))*\)/g,
+      "$1",
+    )
+    .replace(/\[([^\]]+)\]\[[^\]]*\]/g, "$1")
+    .replace(/<(https?:\/\/[^>]+|mailto:[^>]+)>/g, "$1")
+    .replace(/<\/?[A-Za-z][^>]*>/g, " ")
+    .replace(/`+([^`\n]+?)`+/g, "$1")
+    .replace(/(\*\*|__|~~)(?=\S)([\s\S]*?\S)\1/g, "$2")
+    .replace(/(^|[^\w])([*_])(?=\S)([^*_\n]*?\S)\2(?=$|[^\w])/g, "$1$3")
+    .replace(
+      /^\s{0,3}(?:#{1,6}\s+|(?:>\s*)+|[-+*]\s+|\d+[.)]\s+)/gm,
+      "",
+    )
+    .replace(/^\s*\[[ xX]\]\s+/gm, "")
+    .replace(/^\s{0,3}(?:={3,}|(?:[-*_]\s*){3,})$/gm, " ")
+    .replace(/\\([\\`*{}\[\]()#+\-.!_>~|])/g, "$1");
+}
+
 function oneLine(value: string | null | undefined): string | null {
-  const normalized = value?.replace(/\s+/g, " ").trim() ?? "";
+  const normalized = value
+    ? stripMarkdownFormatting(value).replace(/\s+/g, " ").trim()
+    : "";
   return normalized ? normalized.slice(0, MAX_PREVIEW_LENGTH) : null;
 }
 

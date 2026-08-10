@@ -34,6 +34,59 @@ const error = {
 } as const;
 
 describe("thread preview", () => {
+  it("renders Markdown message content as plain-text subtitle text", () => {
+    expect(
+      deriveThreadPreview("active", [
+        {
+          ...user,
+          text: [
+            "## **Fix** the [sidebar](https://example.com/sidebar)",
+            "",
+            "> Keep `drag and drop` working.",
+            "",
+            "- ~~Remove~~ formatting",
+          ].join("\n"),
+        },
+      ]),
+    ).toBe("Fix the sidebar Keep drag and drop working. Remove formatting");
+  });
+
+  it("keeps readable content from fenced code, images, and setext headings", () => {
+    expect(
+      deriveThreadPreview("idle", [
+        {
+          ...assistant,
+          text: [
+            "Release notes",
+            "=============",
+            "",
+            "![Sidebar preview](https://example.com/sidebar.png)",
+            "",
+            "```ts",
+            "const ready = true;",
+            "```",
+          ].join("\n"),
+        },
+      ]),
+    ).toBe("Release notes Sidebar preview const ready = true;");
+  });
+
+  it("strips nested quotes, task markers, and reference-style image syntax", () => {
+    expect(
+      deriveThreadPreview("active", [
+        {
+          ...user,
+          text: [
+            "> > [Details](https://example.com/docs_(draft))",
+            "- [x] ![Complete][status]",
+            "",
+            "[status]: /status.png",
+          ].join("\n"),
+        },
+      ]),
+    ).toBe("Details Complete");
+  });
+
   it.each([
     ["starting", "Latest user message"],
     ["active", "Latest user message"],
