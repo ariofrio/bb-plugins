@@ -39,9 +39,53 @@ import {
   ThreadIndicator,
 } from "./components/ThreadIndicator";
 import { SplitPaneMiniMap } from "./components/SplitPaneMiniMap";
+import { shouldSyncThreads } from "./task-sync";
 
 interface OrganizationState {
   assignments: ThreadAssignment[];
+}
+
+type SearchState =
+  | { query: ""; status: "idle"; threads: readonly SearchThread[] }
+  | { query: string; status: "loading"; threads: readonly SearchThread[] }
+  | { query: string; status: "ready"; threads: readonly SearchThread[] }
+  | { query: string; status: "error"; threads: readonly SearchThread[] };
+
+interface SearchThread {
+  id: string;
+  projectId: string;
+  title: string | null;
+  titleFallback: string | null;
+  parentThreadId: string | null;
+  providerId: string;
+  isArchived: boolean;
+}
+
+function archivedSearchThread(thread: SearchThread): PluginSidebarThread {
+  return {
+    ...thread,
+    sectionId: null,
+    originKind: null,
+    originPluginId: null,
+    hasPendingInteraction: false,
+    activity: {
+      workflows: 0,
+      backgroundAgents: 0,
+      backgroundCommands: 0,
+      planMode: 0,
+      goals: 0,
+    },
+    indicator: "none",
+    indicatorLabel: null,
+    isUnread: false,
+    isPinned: false,
+    environment: null,
+    host: null,
+    createdAt: 0,
+    updatedAt: 0,
+    lastReadAt: null,
+    latestAttentionAt: 0,
+  };
 }
 
 interface ThreadRowProps {
@@ -115,6 +159,13 @@ function ThreadRow({
 
   function openThread(event: MouseEvent<HTMLAnchorElement>): void {
     event.preventDefault();
+    if (thread.isArchived) {
+      window.location.assign(
+        `/projects/${encodeURIComponent(thread.projectId)}/threads/${encodeURIComponent(thread.id)}`,
+      );
+      onNavigate();
+      return;
+    }
     actions.open(thread.id, {
       split: splitAvailable && (event.metaKey || event.ctrlKey),
     });
@@ -188,7 +239,7 @@ function ThreadRow({
         } ${!active && layout !== null ? "bg-sidebar-accent/50" : ""} ${
           dragging ? "opacity-40" : ""
         } ${disabled ? "" : "select-none"}`}
-        draggable={!disabled && !editing}
+        draggable={!disabled && !editing && !thread.isArchived}
         onDragEnd={onDragEnd}
         onDragStart={onDragStart}
       >
@@ -223,10 +274,13 @@ function ThreadRow({
               className="absolute inset-0 rounded-md outline-none ring-sidebar-ring focus-visible:ring-2"
               data-sidebar-thread-id={thread.id}
               data-sidebar-thread-shortcut-target=""
-              href={`#thread-${encodeURIComponent(thread.id)}`}
+              href={`/projects/${encodeURIComponent(thread.projectId)}/threads/${encodeURIComponent(thread.id)}`}
               onClick={openThread}
             />
-            <span className="relative min-w-0 flex-1 truncate" title={accessibleTitle}>
+            <span
+              className="relative min-w-0 flex-1 truncate"
+              title={accessibleTitle}
+            >
               {title}
             </span>
           </>
@@ -249,20 +303,26 @@ function ThreadRow({
                 />
               )}
             </span>
-            <span
-              data-sidebar-hover-actions-open={actionsOpen ? "true" : undefined}
-              className="bb-sidebar-hover-actions absolute inset-0 z-10 flex items-center justify-end max-md:pointer-coarse:hidden"
-            >
-              <ThreadActionsDropdown
-                {...commonMenuProps}
-                onOpenChange={setDropdownOpen}
-              />
-            </span>
+            {!thread.isArchived ? (
+              <span
+                data-sidebar-hover-actions-open={
+                  actionsOpen ? "true" : undefined
+                }
+                className="bb-sidebar-hover-actions absolute inset-0 z-10 flex items-center justify-end max-md:pointer-coarse:hidden"
+              >
+                <ThreadActionsDropdown
+                  {...commonMenuProps}
+                  onOpenChange={setDropdownOpen}
+                />
+              </span>
+            ) : null}
           </span>
         ) : null}
       </div>
     </li>
   );
+
+  if (thread.isArchived) return row;
 
   return (
     <ThreadActionsContextMenu
@@ -369,6 +429,29 @@ function LoadingState() {
   );
 }
 
+function SidebarMessage({
+  action,
+  children,
+}: {
+  action?: { label: string; onClick: () => void };
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mx-2 flex min-h-8 items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+      <span className="min-w-0 flex-1">{children}</span>
+      {action ? (
+        <button
+          type="button"
+          className="shrink-0 rounded-md px-2 py-1 text-xs text-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent focus-visible:ring-2"
+          onClick={action.onClick}
+        >
+          {action.label}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 function ThreadStatusList({
   activeThreadId,
   onNavigate,
@@ -378,11 +461,17 @@ function ThreadStatusList({
   const sidebar = experimental_useSidebarThreads();
   const actions = experimental_useSidebarThreadActions();
   const connectionState = useRealtimeConnectionState();
-  const [organization, setOrganization] = useState<OrganizationState>({
-    assignments: [],
-  });
-  const [loaded, setLoaded] = useState(false);
+  const [organization, setOrganization] = useState<OrganizationState | null>(
+    null,
+  );
+  const organizationLoaded = useRef(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState<SearchState>({
+    query: "",
+    status: "idle",
+    threads: [],
+  });
   const [draggingThreadId, setDraggingThreadId] = useState<string | null>(null);
   const [dropBefore, setDropBefore] = useState<string | null>(null);
   const [dropAfter, setDropAfter] = useState<string | null>(null);
@@ -401,13 +490,16 @@ function ThreadStatusList({
 
   const refresh = useCallback(async () => {
     try {
-      const state = await rpc.call("listState");
+      const state = await rpc.call("listState", null);
       setOrganization(state);
+      organizationLoaded.current = true;
+      setLoadError(null);
       setError(null);
-      setLoaded(true);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load tasks.");
-      setLoaded(true);
+      const message =
+        cause instanceof Error ? cause.message : "Could not load tasks.";
+      if (organizationLoaded.current) setError(message);
+      else setLoadError(message);
     }
   }, [rpc]);
 
@@ -424,32 +516,36 @@ function ThreadStatusList({
     wasConnected.current = connectionState === "connected";
   }, [connectionState, refresh]);
 
-  const visibleThreads = useMemo(
+  const taskThreads = useMemo(
     () => sidebar.threads.filter((thread) => !thread.isArchived),
     [sidebar.threads],
   );
   const unsyncedThreadIds = useMemo(() => {
     const assigned = new Set(
-      organization.assignments.map((assignment) => assignment.threadId),
+      (organization?.assignments ?? []).map(
+        (assignment) => assignment.threadId,
+      ),
     );
-    return visibleThreads
+    return taskThreads
       .map((thread) => thread.id)
       .filter((threadId) => !assigned.has(threadId));
-  }, [organization.assignments, visibleThreads]);
+  }, [organization?.assignments, taskThreads]);
 
   useEffect(() => {
     if (
-      !loaded ||
-      sidebar.status === "loading" ||
-      sidebar.status === "error" ||
-      unsyncedThreadIds.length === 0 ||
-      syncInFlight.current
+      !shouldSyncThreads({
+        hasOrganization: organization !== null,
+        loadError,
+        sidebarStatus: sidebar.status,
+        syncInFlight: syncInFlight.current,
+        unsyncedCount: unsyncedThreadIds.length,
+      })
     ) {
       return;
     }
     syncInFlight.current = true;
     void rpc
-      .call("syncThreads", { threadIds: visibleThreads.map((thread) => thread.id) })
+      .call("syncThreads", { threadIds: taskThreads.map((thread) => thread.id) })
       .then((state) => {
         setOrganization(state);
         setError(null);
@@ -462,34 +558,69 @@ function ThreadStatusList({
       .finally(() => {
         syncInFlight.current = false;
       });
-  }, [loaded, rpc, sidebar.status, unsyncedThreadIds.length, visibleThreads]);
+  }, [
+    loadError,
+    organization,
+    rpc,
+    sidebar.status,
+    taskThreads,
+    unsyncedThreadIds.length,
+  ]);
 
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
+
+  useEffect(() => {
+    if (!normalizedSearch) {
+      setSearch({ query: "", status: "idle", threads: [] });
+      return;
+    }
+    let canceled = false;
+    const timeout = window.setTimeout(() => {
+      setSearch({ query: normalizedSearch, status: "loading", threads: [] });
+      void rpc
+        .call("searchThreads", { query: searchQuery.trim() })
+        .then(({ threads }) => {
+          if (!canceled) {
+            setSearch({
+              query: normalizedSearch,
+              status: "ready",
+              threads,
+            });
+          }
+        })
+        .catch(() => {
+          if (!canceled) {
+            setSearch({
+              query: normalizedSearch,
+              status: "error",
+              threads: [],
+            });
+          }
+        });
+    }, 150);
+    return () => {
+      canceled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [normalizedSearch, rpc, searchQuery]);
+
+  const displayThreads = useMemo(() => {
+    if (!normalizedSearch) return taskThreads;
+    if (search.query !== normalizedSearch || search.status !== "ready") return [];
+    const liveThreads = new Map(
+      sidebar.threads.map((thread) => [thread.id, thread] as const),
+    );
+    return search.threads.map(
+      (thread) => liveThreads.get(thread.id) ?? archivedSearchThread(thread),
+    );
+  }, [normalizedSearch, search, sidebar.threads, taskThreads]);
   const groups = useMemo(
-    () => groupThreadsByStatus(visibleThreads, organization.assignments),
-    [organization.assignments, visibleThreads],
+    () => groupThreadsByStatus(displayThreads, organization?.assignments ?? []),
+    [displayThreads, organization?.assignments],
   );
   const projectNames = useMemo(
     () => new Map(sidebar.projects.map((project) => [project.id, project.name])),
     [sidebar.projects],
-  );
-  const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
-
-  const matchesSearch = useCallback(
-    (thread: PluginSidebarThread) => {
-      if (!normalizedSearch) return true;
-      const haystack = [
-        threadTitle(thread),
-        projectNames.get(thread.projectId),
-        thread.environment?.branchName,
-        thread.host?.name,
-        thread.providerId,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLocaleLowerCase();
-      return haystack.includes(normalizedSearch);
-    },
-    [normalizedSearch, projectNames],
   );
 
   const commitMove = useCallback(
@@ -537,21 +668,45 @@ function ThreadStatusList({
     });
   }
 
-  if (sidebar.status === "loading" || !loaded) return <LoadingState />;
+  if (
+    sidebar.status === "loading" ||
+    (organization === null && loadError === null)
+  ) {
+    return <LoadingState />;
+  }
   if (sidebar.status === "error") {
+    return <SidebarMessage>Could not load threads.</SidebarMessage>;
+  }
+  if (organization === null) {
     return (
-      <p role="status" className="px-2 py-6 text-center text-xs text-muted-foreground">
-        Could not load threads.
-      </p>
+      <SidebarMessage
+        action={{
+          label: "Retry",
+          onClick: () => {
+            setLoadError(null);
+            void refresh();
+          },
+        }}
+      >
+        Could not load tasks.
+      </SidebarMessage>
     );
   }
 
-  const matchedCount = visibleThreads.filter(matchesSearch).length;
-  if (matchedCount === 0) {
+  if (
+    normalizedSearch &&
+    (search.query !== normalizedSearch || search.status === "loading")
+  ) {
+    return <SidebarMessage>Searching threads...</SidebarMessage>;
+  }
+  if (normalizedSearch && search.status === "error") {
+    return <SidebarMessage>Search failed.</SidebarMessage>;
+  }
+  if (displayThreads.length === 0) {
     return (
-      <p role="status" className="px-2 py-6 text-center text-xs text-muted-foreground">
-        {normalizedSearch ? "No threads found" : "No threads yet"}
-      </p>
+      <SidebarMessage>
+        {normalizedSearch ? "No matching threads" : "No threads yet"}
+      </SidebarMessage>
     );
   }
 
@@ -570,7 +725,7 @@ function ThreadStatusList({
       ) : null}
       {THREAD_STATUSES.map((status) => {
         const allThreads = groups[status];
-        const shownThreads = allThreads.filter(matchesSearch);
+        const shownThreads = allThreads;
         const isCollapsed = collapsed.has(status);
         if (normalizedSearch && shownThreads.length === 0) return null;
         return (

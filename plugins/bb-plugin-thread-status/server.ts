@@ -1,6 +1,7 @@
 import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk";
 import { z } from "zod";
 import { runTaskCli } from "./cli";
+import { sidebarThreadsFromSearchResult } from "./search-results";
 import {
   THREAD_STATUS_MIGRATIONS,
   createThreadStatusStore,
@@ -21,11 +22,36 @@ const stateSchema = z
     assignments: z.array(assignmentSchema),
   })
   .strict();
+const searchResultSchema = z
+  .object({
+    threads: z.array(
+      z
+        .object({
+          id: z.string(),
+          projectId: z.string(),
+          title: z.string().nullable(),
+          titleFallback: z.string().nullable(),
+          parentThreadId: z.string().nullable(),
+          providerId: z.string(),
+          isArchived: z.boolean(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
 
 export const rpcContract = defineRpcContract({
   listState: {
     input: z.null(),
     output: stateSchema,
+  },
+  searchThreads: {
+    input: z
+      .object({
+        query: z.string().trim().min(1).max(500),
+      })
+      .strict(),
+    output: searchResultSchema,
   },
   syncThreads: {
     input: z
@@ -55,6 +81,15 @@ export default function plugin(bb: BbPluginApi) {
 
   bb.rpc.register(rpcContract, {
     listState: () => store.listState(),
+    async searchThreads({ query }) {
+      const result = await bb.sdk.threads.search({
+        query,
+        limitPerGroup: "50",
+      });
+      return {
+        threads: sidebarThreadsFromSearchResult(result),
+      };
+    },
     syncThreads({ threadIds }) {
       const previousCount = store.listState().assignments.length;
       const state = store.ensureThreads(threadIds);
