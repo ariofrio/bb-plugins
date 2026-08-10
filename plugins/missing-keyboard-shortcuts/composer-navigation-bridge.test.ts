@@ -10,7 +10,12 @@ import {
   registerPrimaryComposerFocus,
   registerSecondaryComposer,
   registerThreadArchive,
+  selectPrimaryPanelTabWhenReady,
 } from "./composer-navigation-bridge";
+import type {
+  PanelTabButton,
+  PanelTabObserver,
+} from "./panel-tab-selection";
 
 const disposers: Array<() => void> = [];
 
@@ -71,6 +76,42 @@ describe("composer navigation bridge", () => {
     expect(hasPrimaryComposer(null)).toBe(true);
     expect(focusPrimaryComposer(null)).toBe(true);
     expect(focus).toHaveBeenCalledOnce();
+  });
+
+  it("selects a panel tab inside the requested thread pane when it appears", () => {
+    const controller = new AbortController();
+    const terminal: PanelTabButton = {
+      click: vi.fn(),
+      hasIcon: (icon) => icon === "Terminal",
+    };
+    let buttons: PanelTabButton[] = [];
+    let notifyChanged: (() => void) | undefined;
+    const observer: PanelTabObserver = {
+      disconnect: vi.fn(),
+      observe: vi.fn(),
+    };
+    disposers.push(
+      registerPrimaryComposerFocus("thr_one", vi.fn(), {
+        createObserver(callback) {
+          notifyChanged = callback;
+          return observer;
+        },
+        root: { panelTabButtons: () => buttons },
+      }),
+    );
+    disposers.push(
+      selectPrimaryPanelTabWhenReady("thr_one", {
+        icon: "Terminal",
+        index: () => 0,
+        isCurrent: () => true,
+        signal: controller.signal,
+      }),
+    );
+
+    buttons = [terminal];
+    notifyChanged?.();
+
+    expect(terminal.click).toHaveBeenCalledOnce();
   });
 
   it("focuses only the requested visible secondary composer", () => {

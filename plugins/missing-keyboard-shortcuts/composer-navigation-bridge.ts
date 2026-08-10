@@ -1,5 +1,22 @@
+import {
+  selectPanelTabWhenReady,
+  type PanelTabIcon,
+  type PanelTabObserver,
+  type PanelTabRoot,
+} from "./panel-tab-selection";
+
 type FocusComposer = () => void;
 type ArchiveThread = () => void;
+
+interface PrimaryPanelTabHost {
+  createObserver(callback: () => void): PanelTabObserver;
+  root: PanelTabRoot;
+}
+
+interface PrimaryComposerRegistration {
+  focus: FocusComposer;
+  panelTabHost?: PrimaryPanelTabHost;
+}
 
 interface SecondaryComposerRegistration {
   focus: FocusComposer;
@@ -7,7 +24,10 @@ interface SecondaryComposerRegistration {
   isVisible: () => boolean;
 }
 
-const primaryComposerFocusByThread = new Map<string | null, FocusComposer[]>();
+const primaryComposersByThread = new Map<
+  string | null,
+  PrimaryComposerRegistration[]
+>();
 const archiveThreadByThread = new Map<string, ArchiveThread[]>();
 const secondaryComposersByParent = new Map<
   string,
@@ -47,31 +67,51 @@ export function archiveRegisteredThread(threadId: string): boolean {
 export function registerPrimaryComposerFocus(
   threadId: string | null,
   focusComposer: FocusComposer,
+  panelTabHost?: PrimaryPanelTabHost,
 ): () => void {
-  const focusComposers = primaryComposerFocusByThread.get(threadId) ?? [];
-  focusComposers.push(focusComposer);
-  primaryComposerFocusByThread.set(threadId, focusComposers);
+  const registrations = primaryComposersByThread.get(threadId) ?? [];
+  const registration = { focus: focusComposer, panelTabHost };
+  registrations.push(registration);
+  primaryComposersByThread.set(threadId, registrations);
   return () => {
-    const index = focusComposers.lastIndexOf(focusComposer);
-    if (index !== -1) focusComposers.splice(index, 1);
+    const index = registrations.lastIndexOf(registration);
+    if (index !== -1) registrations.splice(index, 1);
     if (
-      focusComposers.length === 0 &&
-      primaryComposerFocusByThread.get(threadId) === focusComposers
+      registrations.length === 0 &&
+      primaryComposersByThread.get(threadId) === registrations
     ) {
-      primaryComposerFocusByThread.delete(threadId);
+      primaryComposersByThread.delete(threadId);
     }
   };
 }
 
 export function hasPrimaryComposer(threadId: string | null): boolean {
-  return (primaryComposerFocusByThread.get(threadId)?.length ?? 0) > 0;
+  return (primaryComposersByThread.get(threadId)?.length ?? 0) > 0;
 }
 
 export function focusPrimaryComposer(threadId: string | null): boolean {
-  const focusComposer = primaryComposerFocusByThread.get(threadId)?.at(-1);
-  if (focusComposer === undefined) return false;
-  focusComposer();
+  const registration = primaryComposersByThread.get(threadId)?.at(-1);
+  if (registration === undefined) return false;
+  registration.focus();
   return true;
+}
+
+interface SelectPrimaryPanelTabWhenReadyOptions {
+  icon: PanelTabIcon;
+  index(): number;
+  isCurrent(): boolean;
+  signal: AbortSignal;
+}
+
+export function selectPrimaryPanelTabWhenReady(
+  threadId: string,
+  options: SelectPrimaryPanelTabWhenReadyOptions,
+): () => void {
+  const panelTabHost = primaryComposersByThread
+    .get(threadId)
+    ?.at(-1)?.panelTabHost;
+  if (panelTabHost === undefined) return () => {};
+  return selectPanelTabWhenReady({ ...panelTabHost, ...options });
 }
 
 export function registerSecondaryComposer(

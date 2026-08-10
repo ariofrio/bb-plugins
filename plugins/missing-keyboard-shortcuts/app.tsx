@@ -17,6 +17,7 @@ import {
   registerPrimaryComposerFocus,
   registerSecondaryComposer,
   registerThreadArchive,
+  selectPrimaryPanelTabWhenReady,
 } from "./composer-navigation-bridge";
 import {
   readLastThreadProjectId,
@@ -113,9 +114,41 @@ function ComposerNavigationBridge() {
     const role = composerElement?.getAttribute("data-app-composer-role");
     if (role === "primary") {
       if (view.scope.kind === "thread") {
+        const panelRoot = composerElement?.closest<HTMLElement>(
+          "[data-panel-group]",
+        );
         return registerPrimaryComposerFocus(
           view.scope.threadId,
           composer.focus,
+          panelRoot === null || panelRoot === undefined
+            ? undefined
+            : {
+                createObserver(callback) {
+                  const observer = new MutationObserver(callback);
+                  return {
+                    disconnect: () => observer.disconnect(),
+                    observe: () =>
+                      observer.observe(panelRoot, {
+                        childList: true,
+                        subtree: true,
+                      }),
+                  };
+                },
+                root: {
+                  panelTabButtons: () =>
+                    Array.from(
+                      panelRoot.querySelectorAll<HTMLButtonElement>(
+                        '[data-testid="secondary-panel-tab-strip"] button:not([data-tab-pill-close])',
+                      ),
+                      (button) => ({
+                        click: () => button.click(),
+                        hasIcon: (icon: "SideChat" | "Terminal") =>
+                          button.querySelector(`[data-icon="${icon}"]`) !==
+                          null,
+                      }),
+                    ),
+                },
+              },
         );
       }
       if (view.scope.kind === "new-thread") {
@@ -269,16 +302,27 @@ function isTerminalFocused(): boolean {
 }
 
 function activateAndFocusTerminal(
+  signal: AbortSignal,
   threadId: string,
   terminalId: string,
-): void {
-  if (currentThreadId(window.location.pathname) !== threadId) return;
+): () => void {
+  if (currentThreadId(window.location.pathname) !== threadId) return () => {};
   const panel = readTerminalPanelSnapshot(window.localStorage, threadId);
   if (!panel.isOpen || panel.activeTerminalId !== terminalId) {
     notifyPanelStateChanged(
       activateTerminalPanel(window.localStorage, threadId, terminalId),
     );
-    return;
+    return selectPrimaryPanelTabWhenReady(threadId, {
+      icon: "Terminal",
+      index: () =>
+        readTerminalPanelSnapshot(
+          window.localStorage,
+          threadId,
+        ).terminalIds.indexOf(terminalId),
+      isCurrent: () =>
+        currentThreadId(window.location.pathname) === threadId,
+      signal,
+    });
   }
 
   const visibleTerminal = Array.from(
@@ -290,6 +334,7 @@ function activateAndFocusTerminal(
   visibleTerminal
     ?.querySelector<HTMLElement>(".xterm-helper-textarea, textarea")
     ?.focus({ preventScroll: true });
+  return () => {};
 }
 
 function focusSideChatComposer(
@@ -322,22 +367,39 @@ function focusSideChatComposer(
         : activateSideChatPanel(window.localStorage, parentThreadId, tab);
     if (change !== null) notifyPanelStateChanged(change);
   }
-  return focusSecondaryComposerWhenReady(parentThreadId, childThreadId, {
-    isCurrent: () => {
-      if (currentThreadId(window.location.pathname) !== parentThreadId) {
-        return false;
-      }
-      const currentPanel = readSideChatPanelSnapshot(
-        window.localStorage,
-        parentThreadId,
-      );
-      return (
-        currentPanel.isOpen &&
-        currentPanel.activeSideChat?.childThreadId === childThreadId
-      );
-    },
+  const stopSelectingTab = selectPrimaryPanelTabWhenReady(parentThreadId, {
+    icon: "SideChat",
+    index: () =>
+      readSideChatPanelSnapshot(window.localStorage, parentThreadId).sideChats
+        .findIndex(({ childThreadId: candidate }) => candidate === childThreadId),
+    isCurrent: () =>
+      currentThreadId(window.location.pathname) === parentThreadId,
     signal,
   });
+  const stopFocusingComposer = focusSecondaryComposerWhenReady(
+    parentThreadId,
+    childThreadId,
+    {
+      isCurrent: () => {
+        if (currentThreadId(window.location.pathname) !== parentThreadId) {
+          return false;
+        }
+        const currentPanel = readSideChatPanelSnapshot(
+          window.localStorage,
+          parentThreadId,
+        );
+        return (
+          currentPanel.isOpen &&
+          currentPanel.activeSideChat?.childThreadId === childThreadId
+        );
+      },
+      signal,
+    },
+  );
+  return () => {
+    stopSelectingTab();
+    stopFocusingComposer();
+  };
 }
 
 export default definePluginApp((app) => {
@@ -358,6 +420,7 @@ export default definePluginApp((app) => {
       const sideChatInFlightThreads = new Set<string>();
       const terminalInFlightThreads = new Set<string>();
       const pendingSideChatActions = new Map<string, () => void>();
+      const pendingTerminalActions = new Map<string, () => void>();
       const stopPendingAction = (
         actions: Map<string, () => void>,
         threadId: string,
@@ -370,6 +433,8 @@ export default definePluginApp((app) => {
         () => {
           for (const stop of pendingSideChatActions.values()) stop();
           pendingSideChatActions.clear();
+          for (const stop of pendingTerminalActions.values()) stop();
+          pendingTerminalActions.clear();
         },
         { once: true },
       );
@@ -613,6 +678,7 @@ export default definePluginApp((app) => {
             event.preventDefault();
             event.stopPropagation();
             notifyNativeShortcutHandled(window, createKeyboardEvent);
+            stopPendingAction(pendingTerminalActions, threadId);
             const panel = readTerminalPanelSnapshot(
               window.localStorage,
               threadId,
@@ -644,7 +710,10 @@ export default definePluginApp((app) => {
                   threadId,
                   terminalId,
                 );
-                activateAndFocusTerminal(threadId, terminalId);
+                pendingTerminalActions.set(
+                  threadId,
+                  activateAndFocusTerminal(signal, threadId, terminalId),
+                );
               })
               .catch((error: unknown) => {
                 toast.error(rpcErrorMessage(error, "Failed to open terminal"));
