@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { flattenThreadHierarchy } from "./thread-hierarchy";
+import {
+  canDropThreadBeside,
+  flattenThreadHierarchy,
+} from "./thread-hierarchy";
 
 interface Thread {
   id: string;
@@ -51,5 +54,36 @@ describe("flattenThreadHierarchy", () => {
       new Set(),
     );
     expect(rows.map(({ thread }) => thread.id)).toEqual(["one", "two"]);
+  });
+});
+
+describe("canDropThreadBeside", () => {
+  it("allows sibling drops and rejects child-to-root drops", () => {
+    const ids = new Set(["parent", "child-one", "child-two", "root"]);
+    expect(
+      canDropThreadBeside(
+        thread("child-one", "parent"),
+        thread("child-two", "parent"),
+        ids,
+      ),
+    ).toBe(true);
+    expect(
+      canDropThreadBeside(
+        thread("child-one", "parent"),
+        thread("root"),
+        ids,
+      ),
+    ).toBe(false);
+  });
+
+  it("treats a child as a root when its parent is outside the destination", () => {
+    const destinationIds = new Set(["child", "root"]);
+    expect(
+      canDropThreadBeside(
+        thread("child", "parent-in-other-status"),
+        thread("root"),
+        destinationIds,
+      ),
+    ).toBe(true);
   });
 });

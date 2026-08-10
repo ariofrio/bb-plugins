@@ -40,12 +40,15 @@ import { SplitPaneMiniMap } from "./components/SplitPaneMiniMap";
 import { ThreadRenameDialog } from "./components/ThreadRenameDialog";
 import { usePersistentStringSet } from "./persistent-string-set";
 import { shouldSyncThreads } from "./task-sync";
-import { flattenThreadHierarchy } from "./thread-hierarchy";
+import {
+  canDropThreadBeside,
+  effectiveHierarchyParentId,
+  flattenThreadHierarchy,
+} from "./thread-hierarchy";
 
 const COLLAPSED_STATUSES_STORAGE_KEY =
   "bb.plugin.thread-status.collapsedStatuses";
-const COLLAPSED_THREADS_STORAGE_KEY =
-  "bb.plugin.thread-status.collapsedThreads";
+const COLLAPSED_THREADS_STORAGE_KEY = "bb.sidebar.collapsedThreads";
 const THREAD_STATUS_SET: ReadonlySet<string> = new Set(THREAD_STATUSES);
 
 interface OrganizationState {
@@ -236,108 +239,106 @@ function ThreadRow({
             style={{ left: 16 + level * 24 }}
           />
         ))}
-        <>
-          <a
-            {...splitProps}
-            aria-label={`Open ${accessibleTitle}`}
-            className="absolute inset-0 rounded-md outline-none ring-sidebar-ring focus-visible:ring-2"
-            data-sidebar-thread-id={thread.id}
-            data-sidebar-thread-shortcut-target=""
-            href={`/projects/${encodeURIComponent(thread.projectId)}/threads/${encodeURIComponent(thread.id)}`}
-            onClick={openThread}
-          />
-          <span className="relative flex min-w-0 flex-1 items-center gap-1.5">
-            <span className="min-w-0 truncate" title={accessibleTitle}>
-              {title}
+        <a
+          {...splitProps}
+          aria-label={`Open ${accessibleTitle}`}
+          className="absolute inset-0 rounded-md outline-none ring-sidebar-ring focus-visible:ring-2"
+          data-sidebar-thread-id={thread.id}
+          data-sidebar-thread-shortcut-target=""
+          href={`/projects/${encodeURIComponent(thread.projectId)}/threads/${encodeURIComponent(thread.id)}`}
+          onClick={openThread}
+        />
+        <span className="relative flex min-w-0 flex-1 items-center gap-1.5">
+          <span className="min-w-0 truncate" title={accessibleTitle}>
+            {title}
+          </span>
+          {projectName ? (
+            <span
+              className="max-w-24 shrink truncate text-[11px] text-subtle-foreground/75"
+              title={projectName}
+            >
+              {projectName}
             </span>
-            {projectName ? (
+          ) : null}
+          {hasChildren ? (
+            <button
+              type="button"
+              aria-expanded={!childrenCollapsed}
+              aria-label={
+                childrenCollapsed
+                  ? `Expand ${title} threads`
+                  : `Collapse ${title} threads`
+              }
+              className="bb-sidebar-hover-actions relative z-20 inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onToggleChildren();
+              }}
+            >
+              <Icon
+                name="ChevronRight"
+                className={`size-3 transition-transform duration-150 ${
+                  childrenCollapsed ? "" : "rotate-90"
+                }`}
+                aria-hidden
+              />
+            </button>
+          ) : null}
+        </span>
+        <span className="relative flex h-7 w-7 shrink-0 items-center justify-end max-md:pointer-coarse:h-9 max-md:pointer-coarse:w-9">
+          <span
+            data-sidebar-hover-actions-open={actionsOpen ? "true" : undefined}
+            className="bb-sidebar-hover-actions-fade absolute inset-0 flex items-center justify-center text-subtle-foreground"
+          >
+            {layout ? (
               <span
-                className="max-w-24 shrink truncate text-[11px] text-subtle-foreground/75"
-                title={projectName}
+                data-sidebar-thread-trailing-indicator=""
+                className="inline-flex size-4 shrink-0 items-center justify-center"
               >
-                {projectName}
-              </span>
-            ) : null}
-            {hasChildren ? (
-              <button
-                type="button"
-                aria-expanded={!childrenCollapsed}
-                aria-label={
-                  childrenCollapsed
-                    ? `Expand ${title} threads`
-                    : `Collapse ${title} threads`
-                }
-                className="bb-sidebar-hover-actions relative z-20 inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onToggleChildren();
-                }}
-              >
-                <Icon
-                  name="ChevronRight"
-                  className={`size-3 transition-transform duration-150 ${
-                    childrenCollapsed ? "" : "rotate-90"
-                  }`}
-                  aria-hidden
+                <SplitPaneMiniMap
+                  layout={layout}
+                  label={
+                    indicatorThread.indicatorLabel
+                      ? `${title} — open in split; ${indicatorThread.indicatorLabel}`
+                      : `${title} — open in split`
+                  }
+                  isWorking={[
+                    "working-draft",
+                    "workflow",
+                    "background-agent",
+                    "background-command",
+                    "plan-mode",
+                    "goal",
+                    "runtime",
+                  ].includes(indicatorThread.indicator)}
                 />
-              </button>
+              </span>
+            ) : indicatorThread.indicator !== "none" ? (
+              <span
+                data-sidebar-thread-trailing-indicator=""
+                className="inline-flex size-4 shrink-0 items-center justify-center"
+              >
+                <ThreadIndicator
+                  indicator={indicatorThread.indicator}
+                  label={indicatorThread.indicatorLabel}
+                />
+              </span>
             ) : null}
           </span>
-        </>
-        <span className="relative flex h-7 w-7 shrink-0 items-center justify-end max-md:pointer-coarse:h-9 max-md:pointer-coarse:w-9">
+          {!thread.isArchived ? (
             <span
-              data-sidebar-hover-actions-open={actionsOpen ? "true" : undefined}
-              className="bb-sidebar-hover-actions-fade absolute inset-0 flex items-center justify-center text-subtle-foreground"
+              data-sidebar-hover-actions-open={
+                actionsOpen ? "true" : undefined
+              }
+              className="bb-sidebar-hover-actions absolute inset-0 z-10 flex items-center justify-end max-md:pointer-coarse:hidden"
             >
-              {layout ? (
-                <span
-                  data-sidebar-thread-trailing-indicator=""
-                  className="inline-flex size-4 shrink-0 items-center justify-center"
-                >
-                  <SplitPaneMiniMap
-                    layout={layout}
-                    label={
-                      indicatorThread.indicatorLabel
-                        ? `${title} — open in split; ${indicatorThread.indicatorLabel}`
-                        : `${title} — open in split`
-                    }
-                    isWorking={[
-                      "working-draft",
-                      "workflow",
-                      "background-agent",
-                      "background-command",
-                      "plan-mode",
-                      "goal",
-                      "runtime",
-                    ].includes(indicatorThread.indicator)}
-                  />
-                </span>
-              ) : indicatorThread.indicator !== "none" ? (
-                <span
-                  data-sidebar-thread-trailing-indicator=""
-                  className="inline-flex size-4 shrink-0 items-center justify-center"
-                >
-                  <ThreadIndicator
-                    indicator={indicatorThread.indicator}
-                    label={indicatorThread.indicatorLabel}
-                  />
-                </span>
-              ) : null}
+              <ThreadActionsDropdown
+                {...commonMenuProps}
+                onOpenChange={setDropdownOpen}
+              />
             </span>
-            {!thread.isArchived ? (
-              <span
-                data-sidebar-hover-actions-open={
-                  actionsOpen ? "true" : undefined
-                }
-                className="bb-sidebar-hover-actions absolute inset-0 z-10 flex items-center justify-end max-md:pointer-coarse:hidden"
-              >
-                <ThreadActionsDropdown
-                  {...commonMenuProps}
-                  onOpenChange={setDropdownOpen}
-                />
-              </span>
-            ) : null}
+          ) : null}
         </span>
       </div>
     </li>
@@ -408,7 +409,11 @@ function TaskStatusSection({
           <button
             type="button"
             aria-expanded={!collapsed}
-            aria-label={collapsed ? `Expand ${status} section` : `Collapse ${status} section`}
+            aria-label={
+              collapsed
+                ? `Expand ${status} section`
+                : `Collapse ${status} section`
+            }
             className={`relative z-20 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 ${
               collapsed ? "" : "bb-sidebar-hover-actions"
             }`}
@@ -826,18 +831,15 @@ function ThreadStatusList({
                   const fullIndex = allThreads.findIndex(
                     (item) => item.id === thread.id,
                   );
-                  const effectiveParentId =
-                    thread.parentThreadId !== null &&
-                    idsInStatus.has(thread.parentThreadId)
-                      ? thread.parentThreadId
-                      : null;
+                  const effectiveParentId = effectiveHierarchyParentId(
+                    thread,
+                    idsInStatus,
+                  );
                   const siblings = allThreads.filter((item) => {
-                    const parentId =
-                      item.parentThreadId !== null &&
-                      idsInStatus.has(item.parentThreadId)
-                        ? item.parentThreadId
-                        : null;
-                    return parentId === effectiveParentId;
+                    return (
+                      effectiveHierarchyParentId(item, idsInStatus) ===
+                      effectiveParentId
+                    );
                   });
                   const siblingIndex = siblings.findIndex(
                     (item) => item.id === thread.id,
@@ -869,6 +871,22 @@ function ThreadStatusList({
                       }}
                       onDragEnd={clearDrag}
                       onDragOver={(event) => {
+                        const draggedThread = taskThreads.find(
+                          (item) => item.id === draggingThreadId,
+                        );
+                        if (
+                          draggedThread === undefined ||
+                          !canDropThreadBeside(
+                            draggedThread,
+                            thread,
+                            idsInStatus,
+                          )
+                        ) {
+                          setDropStatus(null);
+                          setDropBefore(null);
+                          setDropAfter(null);
+                          return;
+                        }
                         setDropStatus(status);
                         const bounds =
                           event.currentTarget.getBoundingClientRect();
@@ -891,6 +909,20 @@ function ThreadStatusList({
                         event.preventDefault();
                         event.stopPropagation();
                         if (!draggingThreadId) return;
+                        const draggedThread = taskThreads.find(
+                          (item) => item.id === draggingThreadId,
+                        );
+                        if (
+                          draggedThread === undefined ||
+                          !canDropThreadBeside(
+                            draggedThread,
+                            thread,
+                            idsInStatus,
+                          )
+                        ) {
+                          clearDrag();
+                          return;
+                        }
                         void commitMove(draggingThreadId, status, dropBefore);
                       }}
                       onMoveDown={() => {
@@ -944,7 +976,8 @@ export default definePluginApp((app) => {
   app.slots.experimental_threadList({
     id: "thread-status",
     title: "Thread Tasks",
-    description: "Treat threads as manually ordered tasks grouped by task status.",
+    description:
+      "Treat threads as manually ordered tasks grouped by task status.",
     component: ThreadStatusList,
   });
 });

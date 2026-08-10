@@ -10,6 +10,27 @@ export interface ThreadHierarchyRow<Thread extends HierarchyThread> {
   descendants: readonly Thread[];
 }
 
+export function effectiveHierarchyParentId(
+  thread: HierarchyThread,
+  threadIdsInGroup: ReadonlySet<string>,
+): string | null {
+  return thread.parentThreadId !== null &&
+    threadIdsInGroup.has(thread.parentThreadId)
+    ? thread.parentThreadId
+    : null;
+}
+
+export function canDropThreadBeside(
+  draggedThread: HierarchyThread,
+  targetThread: HierarchyThread,
+  destinationThreadIds: ReadonlySet<string>,
+): boolean {
+  return (
+    effectiveHierarchyParentId(draggedThread, destinationThreadIds) ===
+    effectiveHierarchyParentId(targetThread, destinationThreadIds)
+  );
+}
+
 export function flattenThreadHierarchy<Thread extends HierarchyThread>(
   threads: readonly Thread[],
   collapsedThreadIds: ReadonlySet<string>,
