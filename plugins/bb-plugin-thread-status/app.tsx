@@ -229,7 +229,7 @@ function ThreadRow({
         />
       ) : null}
       <div
-        className={`bb-sidebar-hover-actions-row group/thread-row relative flex h-10 w-full items-center gap-2 rounded-md pr-0 text-sm transition-colors max-md:pointer-coarse:h-12 ${
+        className={`bb-sidebar-hover-actions-row group/thread-row relative flex h-11 w-full items-center gap-2 rounded-md py-0.5 pr-0 text-sm transition-colors max-md:pointer-coarse:h-[52px] ${
           active
             ? "bg-state-active text-sidebar-foreground"
             : "cursor-pointer text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:text-sidebar-foreground"
