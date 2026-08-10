@@ -1,6 +1,12 @@
 {
   "name": "bb-plugin-project-header-breadcrumb",
   "version": "0.1.0",
+  "license": "MIT",
+  "files": [
+    "app.tsx",
+    "dist",
+    "server.ts"
+  ],
   "type": "module",
   "engines": {
     "bb": ">=0.36",
@@ -18,6 +24,10 @@
   },
   "scripts": {
     "build": "bb plugin build",
+    "verify:dist": "node ../../scripts/verify-dist.mjs",
+    "verify:package": "node ../../scripts/verify-package.mjs",
+    "release:check": "npm test && npm run typecheck && npm run verify:dist && npm run verify:package",
+    "prepublishOnly": "npm run release:check",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
@@ -38,6 +48,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.2.4",
+    "bb-app": "0.36.0",
     "better-sqlite3": "^12.0.0",
     "hono": "^4.11.9",
     "jsdom": "^30.0.1",
