@@ -47,10 +47,8 @@ import { usePersistentStringSet } from "./persistent-string-set";
 import { shouldSyncThreads } from "./task-sync";
 import {
   currentThreadId,
-  reorderTargetId,
   taskReorderShortcut,
   taskStatusShortcut,
-  type ReorderIntent,
 } from "./task-shortcuts";
 import {
   canDropThreadBeside,
@@ -839,89 +837,6 @@ function ThreadStatusList({
     [clearDrag, mutationPending, pinnedRootIds, pinnedRootThreads, rpc],
   );
 
-  const reorderActiveTask = useCallback(
-    (intent: ReorderIntent) => {
-      if (activeThreadId === null || Boolean(normalizedSearch)) return;
-      const status =
-        assignmentByThreadId.get(activeThreadId)?.taskStatus ??
-        DEFAULT_THREAD_STATUS;
-
-      if (intent.scope === "status") {
-        const nextStatus =
-          THREAD_STATUSES[THREAD_STATUSES.indexOf(status) + intent.direction];
-        if (nextStatus === undefined) return;
-        void commitMove(activeThreadId, nextStatus, null);
-        return;
-      }
-
-      if (pinnedRootIds.has(activeThreadId)) {
-        const pinnedIds = pinnedRootThreads.map((thread) => thread.id);
-        const target = reorderTargetId(
-          pinnedIds,
-          pinnedIds,
-          activeThreadId,
-          intent.scope,
-          intent.direction,
-        );
-        if (target === null) return;
-        void commitPinnedMove(activeThreadId, target.beforeThreadId);
-        return;
-      }
-
-      const threadsInStatus = groups[status];
-      const idsInStatus = new Set(threadsInStatus.map((thread) => thread.id));
-      const activeThread = threadsInStatus.find(
-        (thread) => thread.id === activeThreadId,
-      );
-      if (activeThread === undefined) return;
-      const parentId = effectiveHierarchyParentId(activeThread, idsInStatus);
-      const target = reorderTargetId(
-        threadsInStatus.map((thread) => thread.id),
-        threadsInStatus
-          .filter(
-            (thread) =>
-              effectiveHierarchyParentId(thread, idsInStatus) === parentId,
-          )
-          .map((thread) => thread.id),
-        activeThreadId,
-        intent.scope,
-        intent.direction,
-      );
-      if (target === null) return;
-      void commitMove(activeThreadId, status, target.beforeThreadId);
-    },
-    [
-      activeThreadId,
-      assignmentByThreadId,
-      commitMove,
-      commitPinnedMove,
-      groups,
-      normalizedSearch,
-      pinnedRootIds,
-      pinnedRootThreads,
-    ],
-  );
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent): void {
-      const intent = taskReorderShortcut(event);
-      if (intent === null || activeThreadId === null) return;
-
-      // Claim the chord everywhere, including editors.
-      event.preventDefault();
-      event.stopPropagation();
-      notifyNativeShortcutHandled(
-        window,
-        (type, init) => new KeyboardEvent(type, init),
-      );
-      reorderActiveTask(intent);
-    }
-    window.addEventListener("keydown", onKeyDown, { capture: true });
-    return () => {
-      window.removeEventListener("keydown", onKeyDown, { capture: true });
-    };
-  }, [activeThreadId, reorderActiveTask]);
-
   function toggleCollapsed(group: SidebarGroup): void {
     setCollapsedSections((current) => {
       const next = new Set(current);
@@ -1315,17 +1230,17 @@ function rpcErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-async function setTaskStatus(
+async function callTaskRpc(
   pluginId: string,
-  threadId: string,
-  taskStatus: ThreadStatus,
+  method: "setTaskStatus" | "reorderTask",
+  input: Record<string, unknown>,
 ): Promise<void> {
   const response = await fetch(
-    `/api/v1/plugins/${encodeURIComponent(pluginId)}/rpc/setTaskStatus`,
+    `/api/v1/plugins/${encodeURIComponent(pluginId)}/rpc/${method}`,
     {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ taskStatus, threadId }),
+      body: JSON.stringify(input),
       credentials: "same-origin",
     },
   );
@@ -1333,8 +1248,8 @@ async function setTaskStatus(
   if (!response.ok || !envelope.ok) {
     throw new Error(
       !envelope.ok
-        ? rpcErrorMessage(envelope.error, "Failed to update task status")
-        : `Task status request failed (${response.status})`,
+        ? rpcErrorMessage(envelope.error, "Failed to move the task")
+        : `Task request failed (${response.status})`,
     );
   }
 }
@@ -1357,7 +1272,8 @@ export default definePluginApp((app) => {
         "keydown",
         (event) => {
           const taskStatus = taskStatusShortcut(event);
-          if (taskStatus === null) return;
+          const reorder = taskReorderShortcut(event);
+          if (taskStatus === null && reorder === null) return;
           const threadId = currentThreadId(window.location.pathname);
           if (threadId === null) return;
 
@@ -1365,13 +1281,17 @@ export default definePluginApp((app) => {
           event.preventDefault();
           event.stopPropagation();
           notifyNativeShortcutHandled(window, createKeyboardEvent);
-          void setTaskStatus(pluginId, threadId, taskStatus).catch(
-            (error: unknown) => {
-              toast.error(
-                rpcErrorMessage(error, "Failed to update task status"),
-              );
-            },
-          );
+          const request =
+            reorder === null
+              ? callTaskRpc(pluginId, "setTaskStatus", { taskStatus, threadId })
+              : callTaskRpc(pluginId, "reorderTask", {
+                  threadId,
+                  scope: reorder.scope,
+                  direction: reorder.direction,
+                });
+          void request.catch((error: unknown) => {
+            toast.error(rpcErrorMessage(error, "Failed to move the task"));
+          });
         },
         { capture: true, signal },
       );

@@ -46,9 +46,10 @@ Arrow chords move the current task within the sidebar:
 
 A move that would leave a task where it already is does nothing, and moving to
 another status appends the task to that section. Reordering follows the
-sidebar: it moves a task among the rows shown at its own depth, and reorders a
-pinned thread within the pinned section. It needs the Thread tasks sidebar
-mounted and is unavailable while a sidebar search is active.
+sidebar's layout: it moves a task among the rows at its own depth, skipping a
+neighbor's nested threads, and reorders a pinned thread within the pinned
+section. The backend resolves each move, so every shortcut works on the open
+thread from anywhere in bb, whichever sidebar is displayed.
 
 All of these shortcuts work while an input, editor, or composer has focus; they
 use exact modifier matching, ignore held-key repeats, and stop matched key

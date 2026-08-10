@@ -14550,6 +14550,14 @@ var STATUS_BY_KEY = new Map(
 function parseThreadStatus(value) {
   return STATUS_BY_KEY.get(statusKey(value)) ?? null;
 }
+function destinationOrder(currentThreadIds, movingThreadId, beforeThreadId) {
+  if (beforeThreadId === movingThreadId) return [...currentThreadIds];
+  const withoutMoving = currentThreadIds.filter((id) => id !== movingThreadId);
+  const insertionIndex = beforeThreadId === null ? -1 : withoutMoving.indexOf(beforeThreadId);
+  const next = [...withoutMoving];
+  next.splice(insertionIndex < 0 ? next.length : insertionIndex, 0, movingThreadId);
+  return next;
+}
 
 // cli.ts
 var STATUS_LABELS = THREAD_STATUSES.join(", ");
@@ -14824,6 +14832,63 @@ function sortExplicitPinnedThreadIds(threads) {
     return compareCodepoint(left.id, right.id);
   }).map((item) => item.id);
 }
+function buildPinnedThreadState(threads, pinnedThreadIds) {
+  const byId = new Map(threads.map((item) => [item.id, item]));
+  const childrenByParentId = /* @__PURE__ */ new Map();
+  const explicitlyPinnedIds = new Set(
+    threads.filter((item) => item.isPinned).map((item) => item.id)
+  );
+  for (const item of threads) {
+    if (item.parentThreadId === null || item.parentThreadId === item.id) continue;
+    const children = childrenByParentId.get(item.parentThreadId) ?? [];
+    children.push(item);
+    childrenByParentId.set(item.parentThreadId, children);
+  }
+  const effectivePinnedThreadIds = new Set(explicitlyPinnedIds);
+  function includeDescendants(threadId, path) {
+    if (path.has(threadId)) return;
+    const nextPath = new Set(path);
+    nextPath.add(threadId);
+    for (const child of childrenByParentId.get(threadId) ?? []) {
+      effectivePinnedThreadIds.add(child.id);
+      includeDescendants(child.id, nextPath);
+    }
+  }
+  for (const threadId of explicitlyPinnedIds) {
+    includeDescendants(threadId, /* @__PURE__ */ new Set());
+  }
+  const orderedExplicitIds = [];
+  const orderedExplicitIdSet = /* @__PURE__ */ new Set();
+  for (const threadId of pinnedThreadIds) {
+    if (!explicitlyPinnedIds.has(threadId) || orderedExplicitIdSet.has(threadId)) {
+      continue;
+    }
+    orderedExplicitIds.push(threadId);
+    orderedExplicitIdSet.add(threadId);
+  }
+  for (const item of threads) {
+    if (!item.isPinned || orderedExplicitIdSet.has(item.id)) continue;
+    orderedExplicitIds.push(item.id);
+    orderedExplicitIdSet.add(item.id);
+  }
+  const rootIds = orderedExplicitIds.filter((threadId) => {
+    const parentThreadId = byId.get(threadId)?.parentThreadId ?? null;
+    return parentThreadId === null || !effectivePinnedThreadIds.has(parentThreadId);
+  });
+  const pinnedThreads = [];
+  const visited = /* @__PURE__ */ new Set();
+  function visit(threadId) {
+    if (visited.has(threadId) || !effectivePinnedThreadIds.has(threadId)) return;
+    const item = byId.get(threadId);
+    if (!item) return;
+    visited.add(threadId);
+    pinnedThreads.push(item);
+    for (const child of childrenByParentId.get(threadId) ?? []) visit(child.id);
+  }
+  for (const threadId of rootIds) visit(threadId);
+  for (const item of threads) visit(item.id);
+  return { effectivePinnedThreadIds, pinnedThreads };
+}
 
 // search-results.ts
 function sidebarThreadsFromSearchResult(result) {
@@ -14845,6 +14910,156 @@ function sidebarThreadsFromSearchResult(result) {
       ];
     }
   );
+}
+
+// task-shortcuts.ts
+function reorderTargetId(orderedIds, siblingIds, threadId, scope, direction) {
+  const index = siblingIds.indexOf(threadId);
+  if (index === -1) return null;
+  if (direction === -1) {
+    if (index === 0) return null;
+    return {
+      beforeThreadId: (scope === "edge" ? siblingIds[0] : siblingIds[index - 1]) ?? null
+    };
+  }
+  if (index === siblingIds.length - 1) return null;
+  const anchorIndex = scope === "edge" ? siblingIds.length - 1 : index + 1;
+  const nextSibling = siblingIds[anchorIndex + 1];
+  if (nextSibling !== void 0) return { beforeThreadId: nextSibling };
+  const anchorId = siblingIds[anchorIndex];
+  const anchorPosition = anchorId === void 0 ? -1 : orderedIds.indexOf(anchorId);
+  return {
+    beforeThreadId: anchorPosition === -1 ? null : orderedIds[anchorPosition + 1] ?? null
+  };
+}
+
+// thread-hierarchy.ts
+function effectiveHierarchyParentId(thread, threadIdsInGroup) {
+  return thread.parentThreadId !== null && threadIdsInGroup.has(thread.parentThreadId) ? thread.parentThreadId : null;
+}
+function flattenThreadHierarchy(threads, collapsedThreadIds) {
+  const byId = new Map(threads.map((thread) => [thread.id, thread]));
+  const childrenByParent = /* @__PURE__ */ new Map();
+  const roots = [];
+  for (const thread of threads) {
+    const parentId = thread.parentThreadId;
+    if (parentId === null || parentId === thread.id || !byId.has(parentId)) {
+      roots.push(thread);
+      continue;
+    }
+    const children = childrenByParent.get(parentId) ?? [];
+    children.push(thread);
+    childrenByParent.set(parentId, children);
+  }
+  const rows = [];
+  const visited = /* @__PURE__ */ new Set();
+  function descendantsOf(thread, path) {
+    const descendants = [];
+    for (const child of childrenByParent.get(thread.id) ?? []) {
+      if (path.has(child.id)) continue;
+      descendants.push(child);
+      const nextPath = new Set(path);
+      nextPath.add(child.id);
+      descendants.push(...descendantsOf(child, nextPath));
+    }
+    return descendants;
+  }
+  function visit(thread, depth) {
+    if (visited.has(thread.id)) return;
+    visited.add(thread.id);
+    const children = childrenByParent.get(thread.id) ?? [];
+    const isCollapsed = collapsedThreadIds.has(thread.id);
+    const descendants = isCollapsed ? descendantsOf(thread, /* @__PURE__ */ new Set([thread.id])) : [];
+    rows.push({
+      thread,
+      depth,
+      hasChildren: children.length > 0,
+      descendants
+    });
+    if (isCollapsed) {
+      for (const descendant of descendants) visited.add(descendant.id);
+      return;
+    }
+    for (const child of children) visit(child, depth + 1);
+  }
+  for (const root of roots) visit(root, 0);
+  for (const thread of threads) visit(thread, 0);
+  return rows;
+}
+
+// task-reorder.ts
+function neighbors(orderedIds, threadId, beforeThreadId) {
+  const order = destinationOrder(orderedIds, threadId, beforeThreadId);
+  const index = order.indexOf(threadId);
+  return {
+    previousThreadId: order[index - 1] ?? null,
+    nextThreadId: order[index + 1] ?? null
+  };
+}
+function resolveTaskReorder({
+  threads,
+  assignments,
+  threadId,
+  taskStatus,
+  intent
+}) {
+  if (intent.scope === "status") {
+    const nextStatus = THREAD_STATUSES[THREAD_STATUSES.indexOf(taskStatus) + intent.direction];
+    return nextStatus === void 0 ? { kind: "none" } : { kind: "status", taskStatus: nextStatus };
+  }
+  const listed = threads.filter(
+    (thread) => thread.visibility === "visible" && thread.archivedAt === null
+  );
+  if (!listed.some((thread) => thread.id === threadId)) return { kind: "none" };
+  const pinnedState = buildPinnedThreadState(
+    listed.map((thread) => ({
+      id: thread.id,
+      isPinned: thread.pinnedAt !== null,
+      parentThreadId: thread.parentThreadId
+    })),
+    sortExplicitPinnedThreadIds(listed)
+  );
+  if (pinnedState.effectivePinnedThreadIds.has(threadId)) {
+    const pinnedRootIds = flattenThreadHierarchy(
+      pinnedState.pinnedThreads,
+      /* @__PURE__ */ new Set()
+    ).filter(({ depth }) => depth === 0).map(({ thread }) => thread.id);
+    const target2 = reorderTargetId(
+      pinnedRootIds,
+      pinnedRootIds,
+      threadId,
+      intent.scope,
+      intent.direction
+    );
+    if (target2 === null) return { kind: "none" };
+    return {
+      kind: "pinned",
+      ...neighbors(pinnedRootIds, threadId, target2.beforeThreadId)
+    };
+  }
+  const threadById = new Map(listed.map((thread) => [thread.id, thread]));
+  const orderedIds = assignments.filter((item) => item.taskStatus === taskStatus).map((item) => item.threadId).filter(
+    (id) => threadById.has(id) && !pinnedState.effectivePinnedThreadIds.has(id)
+  );
+  const idsInStatus = new Set(orderedIds);
+  const parentIdOf = (id) => {
+    const thread = threadById.get(id);
+    return thread === void 0 ? null : effectiveHierarchyParentId(thread, idsInStatus);
+  };
+  const parentId = parentIdOf(threadId);
+  const target = reorderTargetId(
+    orderedIds,
+    orderedIds.filter((id) => parentIdOf(id) === parentId),
+    threadId,
+    intent.scope,
+    intent.direction
+  );
+  if (target === null) return { kind: "none" };
+  return {
+    kind: "order",
+    taskStatus,
+    ...neighbors(orderedIds, threadId, target.beforeThreadId)
+  };
 }
 
 // order-keys.ts
@@ -15557,6 +15772,14 @@ var rpcContract = defineRpcContract({
       taskStatus: threadStatusSchema
     }).strict(),
     output: stateSchema
+  },
+  reorderTask: {
+    input: external_exports.object({
+      threadId: external_exports.string().min(1).max(256),
+      scope: external_exports.enum(["step", "edge", "status"]),
+      direction: external_exports.union([external_exports.literal(-1), external_exports.literal(1)])
+    }).strict(),
+    output: stateSchema
   }
 });
 function plugin(bb) {
@@ -15598,6 +15821,34 @@ function plugin(bb) {
     },
     setTaskStatus({ threadId, taskStatus }) {
       const state = store.setStatus(threadId, taskStatus);
+      bb.realtime.publish("state-changed", { threadId });
+      return state;
+    },
+    async reorderTask({ threadId, scope, direction }) {
+      store.ensureThreads([threadId]);
+      const move = resolveTaskReorder({
+        threads: await bb.sdk.threads.list({ archived: false }),
+        assignments: store.listState().assignments,
+        threadId,
+        taskStatus: store.get(threadId).taskStatus,
+        intent: { scope, direction }
+      });
+      if (move.kind === "none") return store.listState();
+      if (move.kind === "pinned") {
+        await bb.sdk.threads.reorderPinned({
+          threadId,
+          previousThreadId: move.previousThreadId,
+          nextThreadId: move.nextThreadId
+        });
+        bb.realtime.publish("state-changed", { threadId });
+        return store.listState();
+      }
+      const state = move.kind === "status" ? store.setStatus(threadId, move.taskStatus) : store.reorderThread({
+        threadId,
+        taskStatus: move.taskStatus,
+        previousThreadId: move.previousThreadId,
+        nextThreadId: move.nextThreadId
+      });
       bb.realtime.publish("state-changed", { threadId });
       return state;
     }

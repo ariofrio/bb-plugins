@@ -3,6 +3,7 @@ import { z } from "zod";
 import { runTaskCli } from "./cli";
 import { sortExplicitPinnedThreadIds } from "./pinned-threads";
 import { sidebarThreadsFromSearchResult } from "./search-results";
+import { resolveTaskReorder } from "./task-reorder";
 import {
   THREAD_STATUS_MIGRATIONS,
   createThreadStatusStore,
@@ -114,6 +115,16 @@ export const rpcContract = defineRpcContract({
       .strict(),
     output: stateSchema,
   },
+  reorderTask: {
+    input: z
+      .object({
+        threadId: z.string().min(1).max(256),
+        scope: z.enum(["step", "edge", "status"]),
+        direction: z.union([z.literal(-1), z.literal(1)]),
+      })
+      .strict(),
+    output: stateSchema,
+  },
 });
 
 export default function plugin(bb: BbPluginApi) {
@@ -156,6 +167,37 @@ export default function plugin(bb: BbPluginApi) {
     },
     setTaskStatus({ threadId, taskStatus }) {
       const state = store.setStatus(threadId, taskStatus);
+      bb.realtime.publish("state-changed", { threadId });
+      return state;
+    },
+    async reorderTask({ threadId, scope, direction }) {
+      store.ensureThreads([threadId]);
+      const move = resolveTaskReorder({
+        threads: await bb.sdk.threads.list({ archived: false }),
+        assignments: store.listState().assignments,
+        threadId,
+        taskStatus: store.get(threadId).taskStatus,
+        intent: { scope, direction },
+      });
+      if (move.kind === "none") return store.listState();
+      if (move.kind === "pinned") {
+        await bb.sdk.threads.reorderPinned({
+          threadId,
+          previousThreadId: move.previousThreadId,
+          nextThreadId: move.nextThreadId,
+        });
+        bb.realtime.publish("state-changed", { threadId });
+        return store.listState();
+      }
+      const state =
+        move.kind === "status"
+          ? store.setStatus(threadId, move.taskStatus)
+          : store.reorderThread({
+              threadId,
+              taskStatus: move.taskStatus,
+              previousThreadId: move.previousThreadId,
+              nextThreadId: move.nextThreadId,
+            });
       bb.realtime.publish("state-changed", { threadId });
       return state;
     },
