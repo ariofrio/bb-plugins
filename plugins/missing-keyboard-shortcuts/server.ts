@@ -6,33 +6,6 @@ import { selectReusableTerminalId } from "./terminal-selection";
 const DEFAULT_TERMINAL_COLS = 100;
 const DEFAULT_TERMINAL_ROWS = 30;
 
-function terminalTabId(terminalId: string): string {
-  return `terminal:${encodeURIComponent(terminalId)}:none`;
-}
-
-async function ensureThreadTerminalTab(
-  bb: BbPluginApi,
-  threadId: string,
-  terminalId: string,
-): Promise<void> {
-  const id = terminalTabId(terminalId);
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const current = await bb.sdk.threads.tabs.get({ threadId });
-    if (current.tabs.some((tab) => tab.id === id)) return;
-
-    try {
-      await bb.sdk.threads.tabs.update({
-        expectedRevision: current.revision,
-        tabs: [...current.tabs, { id, kind: "terminal", terminalId }],
-        threadId,
-      });
-      return;
-    } catch (error) {
-      if (attempt === 1) throw error;
-    }
-  }
-}
-
 async function ensureThreadSideChatTab(
   bb: BbPluginApi,
   parentThreadId: string,
@@ -136,7 +109,6 @@ export default function plugin(bb: BbPluginApi) {
         created = true;
       }
 
-      await ensureThreadTerminalTab(bb, threadId, terminalId);
       return { terminalId, created };
     },
     async ensureSideChatTab({ childThreadId, parentThreadId }) {
