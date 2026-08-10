@@ -30,6 +30,7 @@ import {
 } from "./thread-status";
 import { buildPinnedThreadState } from "./pinned-threads";
 import { Icon } from "./components/Icon";
+import { TaskStatusIcon } from "./components/TaskStatusIcon";
 import {
   ThreadActionsContextMenu,
   ThreadActionsDropdown,
@@ -415,6 +416,9 @@ function SidebarSection({
         className="bb-sidebar-hover-actions-row sticky top-0 z-[60] flex h-6 items-center rounded-md bg-sidebar pl-2 pr-0 text-xs font-normal leading-5 text-subtle-foreground/75 transition-colors max-md:pointer-coarse:h-9"
       >
         <span className="relative z-10 flex min-w-0 flex-1 items-center gap-1 text-left">
+          {label === PINNED_SECTION ? null : (
+            <TaskStatusIcon status={label} className="mr-1 size-4 shrink-0" />
+          )}
           <span id={id} className="min-w-0 truncate" title={label}>
             {label}
           </span>
