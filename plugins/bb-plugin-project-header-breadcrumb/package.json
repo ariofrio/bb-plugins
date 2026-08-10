@@ -7,7 +7,7 @@
     "bbPluginSdk": "^0.4.1"
   },
   "bb": {
-    "name": "Project Header Breadcrumb",
+    "name": "Project header breadcrumb",
     "description": "Adds the current project and its actions menu to thread headers.",
     "branding": {
       "icon": "Folder"

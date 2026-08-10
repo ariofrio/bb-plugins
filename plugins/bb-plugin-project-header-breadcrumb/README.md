@@ -1,4 +1,4 @@
-# Project Header Breadcrumb
+# Project header breadcrumb
 
 Adds the current project to each standard-project thread header:
 
