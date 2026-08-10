@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   installBreadcrumbPortal,
-  requestNativeProjectAction,
+  navigateToProjectSettings,
 } from "./header-dom";
 
 function installThreadHeaderFixture() {
@@ -65,48 +65,18 @@ describe("installBreadcrumbPortal", () => {
   });
 });
 
-describe("requestNativeProjectAction", () => {
+describe("navigateToProjectSettings", () => {
   beforeEach(() => {
-    document.body.innerHTML = "";
+    window.history.replaceState(null, "", "/");
   });
 
-  it("opens bb's project menu and selects the requested native action", async () => {
-    const rename = vi.fn();
-    const trigger = document.createElement("button");
-    trigger.id = "native-project-actions";
-    trigger.setAttribute("aria-haspopup", "menu");
-    trigger.setAttribute("aria-label", "bb-plugins actions");
-    trigger.addEventListener("pointerdown", () => {
-      const menu = document.createElement("div");
-      menu.id = "native-project-menu";
-      menu.setAttribute("role", "menu");
-      menu.setAttribute("aria-labelledby", trigger.id);
-      const item = document.createElement("div");
-      item.setAttribute("role", "menuitem");
-      item.textContent = "Rename";
-      item.addEventListener("click", rename);
-      menu.append(item);
-      document.body.append(menu);
-    });
-    document.body.append(trigger);
+  it("pushes the project settings route through browser history", () => {
+    const popstate = vi.fn();
+    window.addEventListener("popstate", popstate, { once: true });
 
-    await expect(
-      requestNativeProjectAction(document, "bb-plugins", "Rename"),
-    ).resolves.toBe(true);
-    expect(rename).toHaveBeenCalledOnce();
-  });
+    navigateToProjectSettings(window, "proj_1");
 
-  it("ignores the plugin's own trigger and reports a missing native menu", async () => {
-    const pluginRoot = document.createElement("span");
-    pluginRoot.dataset.projectHeaderBreadcrumbRoot = "";
-    const trigger = document.createElement("button");
-    trigger.setAttribute("aria-haspopup", "menu");
-    trigger.setAttribute("aria-label", "bb-plugins actions");
-    pluginRoot.append(trigger);
-    document.body.append(pluginRoot);
-
-    await expect(
-      requestNativeProjectAction(document, "bb-plugins", "Remove"),
-    ).resolves.toBe(false);
+    expect(window.location.pathname).toBe("/projects/proj_1/settings");
+    expect(popstate).toHaveBeenCalledOnce();
   });
 });

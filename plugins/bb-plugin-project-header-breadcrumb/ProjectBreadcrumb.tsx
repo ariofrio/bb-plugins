@@ -6,17 +6,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  requestNativeProjectAction,
-  type NativeProjectAction,
-} from "./header-dom";
+import { useState } from "react";
+import { RemoveProjectDialog, RenameProjectDialog } from "./ProjectDialogs";
+
+type ProjectAction = "Project settings" | "Rename" | "Remove";
 
 interface ProjectBreadcrumbProps {
   projectName: string;
+  onOpenSettings(): void;
+  onRename(name: string): Promise<void>;
+  onRemove(): Promise<void>;
 }
 
 const projectActions: ReadonlyArray<{
-  label: NativeProjectAction;
+  label: ProjectAction;
   icon: "Settings" | "Edit" | "Trash2";
   destructive?: boolean;
 }> = [
@@ -25,11 +28,22 @@ const projectActions: ReadonlyArray<{
   { label: "Remove", icon: "Trash2", destructive: true },
 ];
 
-export function ProjectBreadcrumb({ projectName }: ProjectBreadcrumbProps) {
-  const runAction = (action: NativeProjectAction) => {
-    window.setTimeout(() => {
-      void requestNativeProjectAction(document, projectName, action);
-    }, 0);
+export function ProjectBreadcrumb({
+  projectName,
+  onOpenSettings,
+  onRename,
+  onRemove,
+}: ProjectBreadcrumbProps) {
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const runAction = (action: ProjectAction) => {
+    if (action === "Project settings") {
+      onOpenSettings();
+    } else if (action === "Rename") {
+      setRenameOpen(true);
+    } else {
+      setRemoveOpen(true);
+    }
   };
 
   return (
@@ -63,6 +77,19 @@ export function ProjectBreadcrumb({ projectName }: ProjectBreadcrumbProps) {
         name="ChevronRight"
         className="size-3.5 shrink-0 text-subtle-foreground"
         aria-hidden="true"
+      />
+      <RenameProjectDialog
+        key={`rename-${projectName}`}
+        open={renameOpen}
+        projectName={projectName}
+        onOpenChange={setRenameOpen}
+        onRename={onRename}
+      />
+      <RemoveProjectDialog
+        open={removeOpen}
+        projectName={projectName}
+        onOpenChange={setRemoveOpen}
+        onRemove={onRemove}
       />
     </>
   );
