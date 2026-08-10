@@ -1,6 +1,6 @@
 ---
 name: thread-tasks
-description: Treat every bb thread as a task. Use when inspecting, organizing, or changing a thread's task status or position.
+description: Treat every bb thread as a task. Use when inspecting, organizing, or changing a thread's task status or position. Do not archive a thread to mark it as done or completed.
 ---
 
 # Thread tasks
