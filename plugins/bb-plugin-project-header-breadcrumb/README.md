@@ -39,26 +39,38 @@ standard Project settings/Rename/Remove action set.
 
 ## Install
 
-After the package is published to npm:
+Clone the repository and install this directory:
 
 ```sh
-bb plugin install npm:bb-plugin-project-header-breadcrumb@0.1.0 --yes
+git clone https://github.com/ariofrio/bb-plugins.git
+cd bb-plugins/plugins/bb-plugin-project-header-breadcrumb
+npm install
+bb plugin install . --yes
 ```
 
-Update an installed copy with `bb plugin update project-header-breadcrumb`.
+A direct `bb plugin install git:...` reads the plugin from the repository root,
+so it cannot reach a plugin that lives in a subdirectory
+([get-bb/bb#1097](https://github.com/get-bb/bb/issues/1097) tracks multi-plugin
+repositories). Update an installed copy with:
+
+```sh
+git pull
+npm install
+npm run build
+bb plugin reload project-header-breadcrumb
+```
 
 ## Development
 
 ```sh
-npm install
 npm run release:check
-bb plugin install . --yes
 bb plugin reload project-header-breadcrumb
 ```
 
 `release:check` runs the tests and typecheck, rebuilds from a clean `dist/`,
 fails if the generated files differ from Git, and installs the packed npm
-artifact in a temporary directory to validate its contents.
+artifact in a temporary directory to validate its contents. The package is not
+published to npm yet, but it stays publishable so it can be.
 
 ## License
 

@@ -14,15 +14,28 @@ Personal plugins for [bb](https://github.com/ymichael/bb).
   manually ordered tasks in Done, To do, Working, Waiting, Deferred, and
   Canceled groups.
 
-Each plugin is an independently published npm package, installed with
-`bb plugin install npm:<package>@<version> --yes`. See a plugin's README for
-its package name.
+## Install
+
+Install a plugin from its own directory in a clone of this repository:
+
+```sh
+git clone https://github.com/ariofrio/bb-plugins.git
+cd bb-plugins/plugins/<plugin>
+npm install
+bb plugin install . --yes
+```
+
+`bb plugin install git:...` installs the plugin at a repository root, so it
+cannot reach these plugins until bb supports multi-plugin repositories
+([get-bb/bb#1097](https://github.com/get-bb/bb/issues/1097)). Nothing here is
+published to npm yet either. Each plugin's README covers its own setup.
 
 ## Releases
 
 Every plugin owns its lockfile, pinned `bb-app` build dependency, `LICENSE`,
-`files` allowlist, and `prepublishOnly` hook, so each one builds and publishes
-on its own. Two repository scripts enforce the shared release contract:
+`files` allowlist, and `prepublishOnly` hook, so each one builds and packages
+on its own and stays ready to publish. Two repository scripts enforce the
+shared release contract:
 
 - `scripts/verify-dist.mjs` rebuilds from a clean `dist/` and fails when the
   committed `dist/` and `types/` differ from that build.
