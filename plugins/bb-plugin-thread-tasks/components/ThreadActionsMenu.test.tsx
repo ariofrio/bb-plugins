@@ -68,7 +68,7 @@ describe("ThreadActionsDropdown", () => {
         onRename={vi.fn()}
         onSetTaskStatus={vi.fn()}
         splitAvailable
-        taskStatus="To Do"
+        taskStatus="To do"
         thread={thread()}
       />,
     );
@@ -110,7 +110,7 @@ describe("ThreadActionsContextMenu", () => {
         onRename={vi.fn()}
         onSetTaskStatus={vi.fn()}
         splitAvailable
-        taskStatus="To Do"
+        taskStatus="To do"
         thread={thread()}
       >
         <button type="button">Thread row</button>

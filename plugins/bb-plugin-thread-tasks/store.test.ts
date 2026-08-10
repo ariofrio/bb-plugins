@@ -18,10 +18,10 @@ describe("thread status store", () => {
 
   afterEach(() => db.close());
 
-  it("returns To Do for a thread with no explicit assignment", () => {
+  it("returns To do for a thread with no explicit assignment", () => {
     expect(store.get("thr_new")).toEqual({
       threadId: "thr_new",
-      taskStatus: "To Do",
+      taskStatus: "To do",
       sortKey: null,
       updatedAt: null,
       explicit: false,
@@ -93,10 +93,10 @@ describe("thread status store", () => {
     expect(store.get("thr_a").taskStatus).toBe("Waiting");
   });
 
-  it("moves a Working task to To Do when work stops without undoing an override", () => {
+  it("moves a Working task to To do when work stops without undoing an override", () => {
     store.observeWorkingState("thr_finished", true);
     store.observeWorkingState("thr_finished", false);
-    expect(store.get("thr_finished").taskStatus).toBe("To Do");
+    expect(store.get("thr_finished").taskStatus).toBe("To do");
 
     store.observeWorkingState("thr_overridden", true);
     store.setStatus("thr_overridden", "Deferred");
@@ -114,12 +114,12 @@ describe("thread status store", () => {
     expect(reloadedStore.get("thr_a").taskStatus).toBe("Canceled");
   });
 
-  it("reconciles a previously unobserved idle Working task to To Do", () => {
+  it("reconciles a previously unobserved idle Working task to To do", () => {
     store.setStatus("thr_a", "Working");
 
     store.observeWorkingState("thr_a", false);
 
-    expect(store.get("thr_a").taskStatus).toBe("To Do");
+    expect(store.get("thr_a").taskStatus).toBe("To do");
   });
 
   it("persists one derived message preview per thread", () => {
@@ -144,7 +144,7 @@ describe("thread status store", () => {
 
     const after = store.reorderThread({
       threadId: "thr_c",
-      taskStatus: "To Do",
+      taskStatus: "To do",
       previousThreadId: "thr_a",
       nextThreadId: "thr_b",
     });
@@ -165,7 +165,7 @@ describe("thread status store", () => {
 
     const after = store.reorderThread({
       threadId: "thr_b",
-      taskStatus: "To Do",
+      taskStatus: "To do",
       previousThreadId: null,
       nextThreadId: null,
     });
@@ -222,7 +222,7 @@ describe("thread status store", () => {
     expect(() =>
       store.reorderThread({
         threadId: "thr_c",
-        taskStatus: "To Do",
+        taskStatus: "To do",
         previousThreadId: "thr_missing",
         nextThreadId: null,
       }),
@@ -230,7 +230,7 @@ describe("thread status store", () => {
     expect(() =>
       store.reorderThread({
         threadId: "thr_c",
-        taskStatus: "To Do",
+        taskStatus: "To do",
         previousThreadId: "thr_b",
         nextThreadId: "thr_a",
       }),
@@ -238,7 +238,7 @@ describe("thread status store", () => {
     expect(() =>
       store.reorderThread({
         threadId: "thr_c",
-        taskStatus: "To Do",
+        taskStatus: "To do",
         previousThreadId: "thr_c",
         nextThreadId: null,
       }),
@@ -270,6 +270,42 @@ describe("thread status store", () => {
         { threadId: "thr_a", sortKey: "0000000000001024" },
         { threadId: "thr_b", sortKey: "0000000000002048" },
       ]);
+    } finally {
+      migrationDb.close();
+    }
+  });
+
+  it("renames stored To Do assignments to To do", () => {
+    const migrationDb = new Database(":memory:");
+    try {
+      // The first four migrations predate the To do rename.
+      for (const migration of THREAD_STATUS_MIGRATIONS.slice(0, 4)) {
+        migrationDb.exec(migration);
+      }
+      migrationDb
+        .prepare(
+          "INSERT INTO thread_organization(thread_id, status, position, updated_at, sort_key) VALUES (?, ?, ?, ?, ?)",
+        )
+        .run("thr_legacy", "To Do", 1024, 1, "a1");
+      migrationDb
+        .prepare(
+          "INSERT INTO thread_organization(thread_id, status, position, updated_at, sort_key) VALUES (?, ?, ?, ?, ?)",
+        )
+        .run("thr_waiting", "Waiting", 2048, 1, "a2");
+      for (const migration of THREAD_STATUS_MIGRATIONS.slice(4)) {
+        migrationDb.exec(migration);
+      }
+
+      const migrated = createThreadStatusStore(migrationDb);
+      expect(migrated.listState().assignments).toMatchObject([
+        { threadId: "thr_legacy", taskStatus: "To do", sortKey: "a1" },
+        { threadId: "thr_waiting", taskStatus: "Waiting", sortKey: "a2" },
+      ]);
+      expect(() =>
+        migrationDb
+          .prepare("UPDATE thread_organization SET status = ? WHERE thread_id = ?")
+          .run("To Do", "thr_legacy"),
+      ).toThrow();
     } finally {
       migrationDb.close();
     }

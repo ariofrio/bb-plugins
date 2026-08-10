@@ -32,13 +32,13 @@ describe("task CLI", () => {
   it("shows the effective default as human and JSON output", () => {
     expect(runTaskCli(store, ["show", "thr_a"])).toEqual({
       exitCode: 0,
-      stdout: "Task: thr_a\n  Task Status: To Do (default)\n  Order: -\n",
+      stdout: "Task: thr_a\n  Task Status: To do (default)\n  Order: -\n",
     });
     const result = runTaskCli(store, ["show", "thr_a", "--json"]);
     const task = JSON.parse(result.stdout ?? "");
     expect(task).toMatchObject({
       id: "thr_a",
-      taskStatus: "To Do",
+      taskStatus: "To do",
       sortKey: null,
       explicit: false,
     });
@@ -156,7 +156,7 @@ describe("task CLI", () => {
     ).toEqual(["thr_a", "thr_c", "thr_b"]);
     expect(JSON.parse(result.stdout ?? "")).toMatchObject({
       id: "thr_c",
-      taskStatus: "To Do",
+      taskStatus: "To do",
     });
   });
 
@@ -190,7 +190,7 @@ describe("task CLI", () => {
       "update",
       "thr_middle",
       "--status",
-      "To Do",
+      "To do",
       "--json",
     ]);
 
@@ -304,6 +304,6 @@ describe("task CLI", () => {
       "blocked",
     ]);
     expect(invalid.exitCode).toBe(1);
-    expect(invalid.stderr).toContain("Done, To Do, Working");
+    expect(invalid.stderr).toContain("Done, To do, Working");
   });
 });

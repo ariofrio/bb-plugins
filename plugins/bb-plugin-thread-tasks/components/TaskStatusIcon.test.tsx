@@ -9,7 +9,7 @@ afterEach(cleanup);
 describe("TaskStatusIcon", () => {
   it.each([
     ["Done", "CheckmarkCircle"],
-    ["To Do", "Circle"],
+    ["To do", "Circle"],
     ["Working", "Loading"],
     ["Waiting", "Clock"],
     ["Deferred", "DashedCircle"],

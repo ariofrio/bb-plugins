@@ -114,7 +114,7 @@ describe("task workflow", () => {
       lifecycleStatus = "idle";
       changed?.({ id: "thr_a", changes: ["status-changed"] });
       await vi.waitFor(() =>
-        expect(store.get("thr_a").taskStatus).toBe("To Do"),
+        expect(store.get("thr_a").taskStatus).toBe("To do"),
       );
 
       abort.abort();

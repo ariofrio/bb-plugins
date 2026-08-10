@@ -14530,13 +14530,13 @@ config(en_default());
 // thread-status.ts
 var THREAD_STATUSES = [
   "Done",
-  "To Do",
+  "To do",
   "Working",
   "Waiting",
   "Deferred",
   "Canceled"
 ];
-var DEFAULT_THREAD_STATUS = "To Do";
+var DEFAULT_THREAD_STATUS = "To do";
 function statusKey(value) {
   return value.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
@@ -14958,6 +14958,28 @@ var THREAD_STATUS_MIGRATIONS = [
       preview TEXT,
       updated_at INTEGER NOT NULL
     );
+  `,
+  `
+    CREATE TABLE thread_organization_renamed (
+      thread_id TEXT PRIMARY KEY,
+      status TEXT NOT NULL CHECK (status IN ('Done', 'To do', 'Working', 'Waiting', 'Deferred', 'Canceled')),
+      position INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      sort_key TEXT
+    );
+    INSERT INTO thread_organization_renamed(thread_id, status, position, updated_at, sort_key)
+      SELECT thread_id,
+        CASE status WHEN 'To Do' THEN 'To do' ELSE status END,
+        position,
+        updated_at,
+        sort_key
+      FROM thread_organization;
+    DROP TABLE thread_organization;
+    ALTER TABLE thread_organization_renamed RENAME TO thread_organization;
+    CREATE INDEX IF NOT EXISTS thread_organization_status_position
+      ON thread_organization(status, position, thread_id);
+    CREATE INDEX IF NOT EXISTS thread_organization_status_sort_key
+      ON thread_organization(status, sort_key, thread_id);
   `
 ];
 function assignmentFromRow(row) {
@@ -14981,7 +15003,7 @@ function createThreadStatusStore(db) {
     ORDER BY
       CASE status
         WHEN 'Done' THEN 0
-        WHEN 'To Do' THEN 1
+        WHEN 'To do' THEN 1
         WHEN 'Working' THEN 2
         WHEN 'Waiting' THEN 3
         WHEN 'Deferred' THEN 4
@@ -15105,7 +15127,7 @@ function createThreadStatusStore(db) {
       } else if (!isWorking && previous?.is_working !== 0) {
         const assignment = getAssignment.get(threadId);
         if (assignment?.status === "Working") {
-          taskStatusChanged = moveToStatus(threadId, "To Do");
+          taskStatusChanged = moveToStatus(threadId, "To do");
         }
       }
       upsertWorkingState.run(threadId, isWorking ? 1 : 0, Date.now());

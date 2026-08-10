@@ -3,7 +3,7 @@ import { Icon, type IconName } from "./Icon";
 
 const TASK_STATUS_ICONS: Record<ThreadStatus, IconName> = {
   Done: "CheckmarkCircle",
-  "To Do": "Circle",
+  "To do": "Circle",
   Working: "Loading",
   Waiting: "Clock",
   Deferred: "DashedCircle",

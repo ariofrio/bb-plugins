@@ -2,12 +2,12 @@
 
 A bb sidebar that treats threads as tasks. It preserves bb's pinned-thread and
 subthread behavior, then groups the remaining threads into manually ordered
-**Done**, **To Do**, **Working**, **Waiting**, **Deferred**, and **Canceled**
+**Done**, **To do**, **Working**, **Waiting**, **Deferred**, and **Canceled**
 sections.
 
 Drag tasks to reorder or change their task status. Task order uses fractional
 keys, so a move updates only the moved task. Threads automatically enter
-**Working** when they start and return to **To Do** when they stop, unless you
+**Working** when they start and return to **To do** when they stop, unless you
 manually move them after the transition.
 
 ## Install

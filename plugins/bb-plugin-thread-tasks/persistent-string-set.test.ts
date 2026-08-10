@@ -14,7 +14,7 @@ describe("parseStoredStringSet", () => {
     expect([
       ...parseStoredStringSet(
         '["Done","Not a status"]',
-        new Set(["Done", "To Do"]),
+        new Set(["Done", "To do"]),
       ),
     ]).toEqual(["Done"]);
   });

@@ -1,6 +1,6 @@
 export const THREAD_STATUSES = [
   "Done",
-  "To Do",
+  "To do",
   "Working",
   "Waiting",
   "Deferred",
@@ -21,7 +21,7 @@ export interface SidebarThreadLike {
   updatedAt: number;
 }
 
-export const DEFAULT_THREAD_STATUS: ThreadStatus = "To Do";
+export const DEFAULT_THREAD_STATUS: ThreadStatus = "To do";
 
 function statusKey(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -49,7 +49,7 @@ export function groupThreadsByStatus<Thread extends SidebarThreadLike>(
   const sourceIndex = new Map(threads.map((thread, index) => [thread.id, index]));
   const groups: Record<ThreadStatus, Thread[]> = {
     Done: [],
-    "To Do": [],
+    "To do": [],
     Working: [],
     Waiting: [],
     Deferred: [],

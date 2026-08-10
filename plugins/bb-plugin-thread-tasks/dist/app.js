@@ -77,13 +77,13 @@ var {
 // thread-status.ts
 var THREAD_STATUSES = [
   "Done",
-  "To Do",
+  "To do",
   "Working",
   "Waiting",
   "Deferred",
   "Canceled"
 ];
-var DEFAULT_THREAD_STATUS = "To Do";
+var DEFAULT_THREAD_STATUS = "To do";
 function statusKey(value) {
   return value.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
@@ -101,7 +101,7 @@ function groupThreadsByStatus(threads, assignments) {
   const sourceIndex = new Map(threads.map((thread, index) => [thread.id, index]));
   const groups = {
     Done: [],
-    "To Do": [],
+    "To do": [],
     Working: [],
     Waiting: [],
     Deferred: [],
@@ -444,7 +444,7 @@ function Icon({
 // components/TaskStatusIcon.tsx
 var TASK_STATUS_ICONS = {
   Done: "CheckmarkCircle",
-  "To Do": "Circle",
+  "To do": "Circle",
   Working: "Loading",
   Waiting: "Clock",
   Deferred: "DashedCircle",

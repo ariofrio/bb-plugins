@@ -11,19 +11,19 @@ describe("thread statuses", () => {
   it("keeps the supported labels stable and accepts friendly CLI spellings", () => {
     expect(THREAD_STATUSES).toEqual([
       "Done",
-      "To Do",
+      "To do",
       "Working",
       "Waiting",
       "Deferred",
       "Canceled",
     ]);
-    expect(parseThreadStatus("to-do")).toBe("To Do");
-    expect(parseThreadStatus("TODO")).toBe("To Do");
+    expect(parseThreadStatus("to-do")).toBe("To do");
+    expect(parseThreadStatus("TODO")).toBe("To do");
     expect(parseThreadStatus("cancelled")).toBe("Canceled");
     expect(parseThreadStatus("not started")).toBeNull();
   });
 
-  it("defaults unassigned threads to To Do and honors explicit sort keys", () => {
+  it("defaults unassigned threads to To do and honors explicit sort keys", () => {
     const threads = [
       { id: "unassigned", updatedAt: 30 },
       { id: "second", updatedAt: 20 },
@@ -31,8 +31,8 @@ describe("thread statuses", () => {
       { id: "working", updatedAt: 5 },
     ];
     const assignments: ThreadAssignment[] = [
-      { threadId: "second", taskStatus: "To Do", sortKey: "k", updatedAt: 2 },
-      { threadId: "first", taskStatus: "To Do", sortKey: "U", updatedAt: 1 },
+      { threadId: "second", taskStatus: "To do", sortKey: "k", updatedAt: 2 },
+      { threadId: "first", taskStatus: "To do", sortKey: "U", updatedAt: 1 },
       {
         threadId: "working",
         taskStatus: "Working",
@@ -43,7 +43,7 @@ describe("thread statuses", () => {
 
     const groups = groupThreadsByStatus(threads, assignments);
 
-    expect(groups["To Do"].map((thread) => thread.id)).toEqual([
+    expect(groups["To do"].map((thread) => thread.id)).toEqual([
       "first",
       "second",
       "unassigned",

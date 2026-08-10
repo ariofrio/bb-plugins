@@ -11,7 +11,7 @@ Personal plugins for [bb](https://github.com/ymichael/bb).
   adds the current project and its native actions menu before each thread
   title.
 - [Thread tasks](plugins/bb-plugin-thread-tasks) — treats sidebar threads as
-  manually ordered tasks in Done, To Do, Working, Waiting, Deferred, and
+  manually ordered tasks in Done, To do, Working, Waiting, Deferred, and
   Canceled groups.
 
 Each plugin is an independently published npm package, installed with
