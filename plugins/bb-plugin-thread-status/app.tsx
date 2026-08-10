@@ -219,7 +219,7 @@ function ThreadRow({
         />
       ) : null}
       <div
-        className={`bb-sidebar-hover-actions-row group/thread-row relative flex h-7 w-full items-center gap-2 rounded-md pr-0 text-sm transition-colors max-md:pointer-coarse:h-9 ${
+        className={`bb-sidebar-hover-actions-row group/thread-row relative flex h-10 w-full items-center gap-2 rounded-md pr-0 text-sm transition-colors max-md:pointer-coarse:h-12 ${
           active
             ? "bg-state-active text-sidebar-foreground"
             : "cursor-pointer text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:text-sidebar-foreground"
@@ -249,17 +249,19 @@ function ThreadRow({
           onClick={openThread}
         />
         <span className="relative flex min-w-0 flex-1 items-center gap-1.5">
-          <span className="min-w-0 truncate" title={accessibleTitle}>
-            {title}
-          </span>
-          {projectName ? (
-            <span
-              className="max-w-24 shrink truncate text-[11px] text-subtle-foreground/75"
-              title={projectName}
-            >
-              {projectName}
+          <span className="flex min-w-0 flex-1 flex-col justify-center leading-none">
+            <span className="truncate leading-5" title={accessibleTitle}>
+              {title}
             </span>
-          ) : null}
+            {projectName ? (
+              <span
+                className="truncate text-[11px] leading-4 text-subtle-foreground/75"
+                title={projectName}
+              >
+                {projectName}
+              </span>
+            ) : null}
+          </span>
           {hasChildren ? (
             <button
               type="button"
@@ -286,7 +288,7 @@ function ThreadRow({
             </button>
           ) : null}
         </span>
-        <span className="relative flex h-7 w-7 shrink-0 items-center justify-end max-md:pointer-coarse:h-9 max-md:pointer-coarse:w-9">
+        <span className="relative flex h-10 w-7 shrink-0 items-center justify-end max-md:pointer-coarse:h-12 max-md:pointer-coarse:w-9">
           <span
             data-sidebar-hover-actions-open={actionsOpen ? "true" : undefined}
             className="bb-sidebar-hover-actions-fade absolute inset-0 flex items-center justify-center text-subtle-foreground"
@@ -780,7 +782,7 @@ function ThreadStatusList({
       data-sidebar="group"
       data-sidebar-sticky-stack=""
       data-sidebar-sticky-density="compact-actions"
-      className="relative flex w-full min-w-0 flex-col px-2 pb-3"
+      className="relative flex w-full min-w-0 flex-col"
       onDragEnd={clearDrag}
     >
       {error ? (
@@ -788,186 +790,188 @@ function ThreadStatusList({
           {error}
         </div>
       ) : null}
-      {THREAD_STATUSES.map((status) => {
-        const allThreads = groups[status];
-        const shownThreads = allThreads;
-        const idsInStatus = new Set(allThreads.map((thread) => thread.id));
-        const hierarchyRows = normalizedSearch
-          ? shownThreads.map((thread) => ({
-              thread,
-              depth: 0,
-              hasChildren: false,
-              descendants: [] as readonly PluginSidebarThread[],
-            }))
-          : flattenThreadHierarchy(shownThreads, collapsedThreads);
-        const isCollapsed = collapsedStatuses.has(status);
-        if (normalizedSearch && shownThreads.length === 0) return null;
-        return (
-          <TaskStatusSection
-            key={status}
-            status={status}
-            threads={shownThreads}
-            collapsed={isCollapsed}
-            dropTarget={
-              dropStatus === status && dropBefore === null && dropAfter === null
-            }
-            onToggle={() => toggleCollapsed(status)}
-            onDragOverEnd={(event) => {
-              if (!draggingThreadId) return;
-              event.preventDefault();
-              setDropStatus(status);
-              setDropBefore(null);
-              setDropAfter(null);
-            }}
-            onDropAtEnd={(event) => {
-              if (!draggingThreadId) return;
-              event.preventDefault();
-              void commitMove(draggingThreadId, status, null);
-            }}
-          >
-            <ul>
-              {hierarchyRows.map(
-                ({ thread, depth, hasChildren, descendants }) => {
-                  const fullIndex = allThreads.findIndex(
-                    (item) => item.id === thread.id,
-                  );
-                  const effectiveParentId = effectiveHierarchyParentId(
-                    thread,
-                    idsInStatus,
-                  );
-                  const siblings = allThreads.filter((item) => {
-                    return (
-                      effectiveHierarchyParentId(item, idsInStatus) ===
-                      effectiveParentId
+      <div className="space-y-4">
+        {THREAD_STATUSES.map((status) => {
+          const allThreads = groups[status];
+          const shownThreads = allThreads;
+          const idsInStatus = new Set(allThreads.map((thread) => thread.id));
+          const hierarchyRows = normalizedSearch
+            ? shownThreads.map((thread) => ({
+                thread,
+                depth: 0,
+                hasChildren: false,
+                descendants: [] as readonly PluginSidebarThread[],
+              }))
+            : flattenThreadHierarchy(shownThreads, collapsedThreads);
+          const isCollapsed = collapsedStatuses.has(status);
+          if (normalizedSearch && shownThreads.length === 0) return null;
+          return (
+            <TaskStatusSection
+              key={status}
+              status={status}
+              threads={shownThreads}
+              collapsed={isCollapsed}
+              dropTarget={
+                dropStatus === status && dropBefore === null && dropAfter === null
+              }
+              onToggle={() => toggleCollapsed(status)}
+              onDragOverEnd={(event) => {
+                if (!draggingThreadId) return;
+                event.preventDefault();
+                setDropStatus(status);
+                setDropBefore(null);
+                setDropAfter(null);
+              }}
+              onDropAtEnd={(event) => {
+                if (!draggingThreadId) return;
+                event.preventDefault();
+                void commitMove(draggingThreadId, status, null);
+              }}
+            >
+              <ul>
+                {hierarchyRows.map(
+                  ({ thread, depth, hasChildren, descendants }) => {
+                    const fullIndex = allThreads.findIndex(
+                      (item) => item.id === thread.id,
                     );
-                  });
-                  const siblingIndex = siblings.findIndex(
-                    (item) => item.id === thread.id,
-                  );
-                  const childrenCollapsed = collapsedThreads.has(thread.id);
-                  const indicatorThread =
-                    childrenCollapsed && hasChildren
-                      ? (groupIndicator([thread, ...descendants]) ?? thread)
-                      : thread;
-                  return (
-                    <ThreadRow
-                      key={thread.id}
-                      actions={actions}
-                      active={thread.id === activeThreadId}
-                      canMoveDown={siblingIndex < siblings.length - 1}
-                      canMoveUp={siblingIndex > 0}
-                      childrenCollapsed={childrenCollapsed}
-                      depth={depth}
-                      disabled={
-                        Boolean(normalizedSearch) ||
-                        mutationPending ||
-                        unsyncedThreadIds.length > 0
-                      }
-                      dragging={thread.id === draggingThreadId}
-                      hasChildren={hasChildren}
-                      indicatorThread={indicatorThread}
-                      onChangeStatus={(nextStatus) => {
-                        void commitMove(thread.id, nextStatus, null);
-                      }}
-                      onDragEnd={clearDrag}
-                      onDragOver={(event) => {
-                        const draggedThread = taskThreads.find(
-                          (item) => item.id === draggingThreadId,
-                        );
-                        if (
-                          draggedThread === undefined ||
-                          !canDropThreadBeside(
-                            draggedThread,
-                            thread,
-                            idsInStatus,
-                          )
-                        ) {
-                          setDropStatus(null);
-                          setDropBefore(null);
-                          setDropAfter(null);
-                          return;
+                    const effectiveParentId = effectiveHierarchyParentId(
+                      thread,
+                      idsInStatus,
+                    );
+                    const siblings = allThreads.filter((item) => {
+                      return (
+                        effectiveHierarchyParentId(item, idsInStatus) ===
+                        effectiveParentId
+                      );
+                    });
+                    const siblingIndex = siblings.findIndex(
+                      (item) => item.id === thread.id,
+                    );
+                    const childrenCollapsed = collapsedThreads.has(thread.id);
+                    const indicatorThread =
+                      childrenCollapsed && hasChildren
+                        ? (groupIndicator([thread, ...descendants]) ?? thread)
+                        : thread;
+                    return (
+                      <ThreadRow
+                        key={thread.id}
+                        actions={actions}
+                        active={thread.id === activeThreadId}
+                        canMoveDown={siblingIndex < siblings.length - 1}
+                        canMoveUp={siblingIndex > 0}
+                        childrenCollapsed={childrenCollapsed}
+                        depth={depth}
+                        disabled={
+                          Boolean(normalizedSearch) ||
+                          mutationPending ||
+                          unsyncedThreadIds.length > 0
                         }
-                        setDropStatus(status);
-                        const bounds =
-                          event.currentTarget.getBoundingClientRect();
-                        const isAfter =
-                          event.clientY > bounds.top + bounds.height / 2;
-                        if (isAfter) {
-                          setDropBefore(allThreads[fullIndex + 1]?.id ?? null);
-                          setDropAfter(thread.id);
-                        } else {
-                          setDropBefore(thread.id);
-                          setDropAfter(null);
+                        dragging={thread.id === draggingThreadId}
+                        hasChildren={hasChildren}
+                        indicatorThread={indicatorThread}
+                        onChangeStatus={(nextStatus) => {
+                          void commitMove(thread.id, nextStatus, null);
+                        }}
+                        onDragEnd={clearDrag}
+                        onDragOver={(event) => {
+                          const draggedThread = taskThreads.find(
+                            (item) => item.id === draggingThreadId,
+                          );
+                          if (
+                            draggedThread === undefined ||
+                            !canDropThreadBeside(
+                              draggedThread,
+                              thread,
+                              idsInStatus,
+                            )
+                          ) {
+                            setDropStatus(null);
+                            setDropBefore(null);
+                            setDropAfter(null);
+                            return;
+                          }
+                          setDropStatus(status);
+                          const bounds =
+                            event.currentTarget.getBoundingClientRect();
+                          const isAfter =
+                            event.clientY > bounds.top + bounds.height / 2;
+                          if (isAfter) {
+                            setDropBefore(allThreads[fullIndex + 1]?.id ?? null);
+                            setDropAfter(thread.id);
+                          } else {
+                            setDropBefore(thread.id);
+                            setDropAfter(null);
+                          }
+                        }}
+                        onDragStart={(event) => {
+                          event.dataTransfer.effectAllowed = "move";
+                          event.dataTransfer.setData("text/plain", thread.id);
+                          setDraggingThreadId(thread.id);
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          if (!draggingThreadId) return;
+                          const draggedThread = taskThreads.find(
+                            (item) => item.id === draggingThreadId,
+                          );
+                          if (
+                            draggedThread === undefined ||
+                            !canDropThreadBeside(
+                              draggedThread,
+                              thread,
+                              idsInStatus,
+                            )
+                          ) {
+                            clearDrag();
+                            return;
+                          }
+                          void commitMove(draggingThreadId, status, dropBefore);
+                        }}
+                        onMoveDown={() => {
+                          const afterNextSibling = siblings[siblingIndex + 2];
+                          const before =
+                            afterNextSibling?.id ??
+                            allThreads[
+                              allThreads.findIndex(
+                                (item) =>
+                                  item.id === siblings[siblingIndex + 1]?.id,
+                              ) + 1
+                            ]?.id ??
+                            null;
+                          void commitMove(thread.id, status, before);
+                        }}
+                        onMoveUp={() => {
+                          void commitMove(
+                            thread.id,
+                            status,
+                            siblings[siblingIndex - 1]?.id ?? null,
+                          );
+                        }}
+                        onNavigate={onNavigate}
+                        onToggleChildren={() =>
+                          toggleThreadCollapsed(thread.id)
                         }
-                      }}
-                      onDragStart={(event) => {
-                        event.dataTransfer.effectAllowed = "move";
-                        event.dataTransfer.setData("text/plain", thread.id);
-                        setDraggingThreadId(thread.id);
-                      }}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        if (!draggingThreadId) return;
-                        const draggedThread = taskThreads.find(
-                          (item) => item.id === draggingThreadId,
-                        );
-                        if (
-                          draggedThread === undefined ||
-                          !canDropThreadBeside(
-                            draggedThread,
-                            thread,
-                            idsInStatus,
-                          )
-                        ) {
-                          clearDrag();
-                          return;
+                        projectName={projectNames.get(thread.projectId) ?? null}
+                        showDropAfter={
+                          dropStatus === status && dropAfter === thread.id
                         }
-                        void commitMove(draggingThreadId, status, dropBefore);
-                      }}
-                      onMoveDown={() => {
-                        const afterNextSibling = siblings[siblingIndex + 2];
-                        const before =
-                          afterNextSibling?.id ??
-                          allThreads[
-                            allThreads.findIndex(
-                              (item) =>
-                                item.id === siblings[siblingIndex + 1]?.id,
-                            ) + 1
-                          ]?.id ??
-                          null;
-                        void commitMove(thread.id, status, before);
-                      }}
-                      onMoveUp={() => {
-                        void commitMove(
-                          thread.id,
-                          status,
-                          siblings[siblingIndex - 1]?.id ?? null,
-                        );
-                      }}
-                      onNavigate={onNavigate}
-                      onToggleChildren={() =>
-                        toggleThreadCollapsed(thread.id)
-                      }
-                      projectName={projectNames.get(thread.projectId) ?? null}
-                      showDropAfter={
-                        dropStatus === status && dropAfter === thread.id
-                      }
-                      showDropBefore={
-                        dropStatus === status &&
-                        dropAfter === null &&
-                        dropBefore === thread.id
-                      }
-                      taskStatus={status}
-                      thread={thread}
-                    />
-                  );
-                },
-              )}
-            </ul>
-          </TaskStatusSection>
-        );
-      })}
+                        showDropBefore={
+                          dropStatus === status &&
+                          dropAfter === null &&
+                          dropBefore === thread.id
+                        }
+                        taskStatus={status}
+                        thread={thread}
+                      />
+                    );
+                  },
+                )}
+              </ul>
+            </TaskStatusSection>
+          );
+        })}
+      </div>
     </div>
   );
 }

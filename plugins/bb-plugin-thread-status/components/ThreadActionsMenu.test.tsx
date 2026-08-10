@@ -70,7 +70,9 @@ describe("ThreadActionsDropdown", () => {
       />,
     );
 
-    fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
+    const trigger = screen.getByLabelText("Thread actions");
+    expect(trigger.className).toContain("cursor-pointer");
+    fireEvent.keyDown(trigger, { key: "Enter" });
     expect(screen.getByText("Open in split")).toBeDefined();
     expect(screen.getByText("Mark read")).toBeDefined();
     expect(screen.getByText("Pin")).toBeDefined();
