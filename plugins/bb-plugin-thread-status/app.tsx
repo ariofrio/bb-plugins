@@ -988,6 +988,7 @@ function ThreadStatusList({
                         }
                       }}
                       onDragStart={(event) => {
+                        event.stopPropagation();
                         event.dataTransfer.effectAllowed = "move";
                         event.dataTransfer.setData("text/plain", thread.id);
                         setDraggingThreadId(thread.id);
@@ -1165,6 +1166,7 @@ function ThreadStatusList({
                           }
                         }}
                         onDragStart={(event) => {
+                          event.stopPropagation();
                           event.dataTransfer.effectAllowed = "move";
                           event.dataTransfer.setData("text/plain", thread.id);
                           setDraggingThreadId(thread.id);
