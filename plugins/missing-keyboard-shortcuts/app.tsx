@@ -350,10 +350,27 @@ export default definePluginApp((app) => {
   app.contentScripts.register({
     id: "missing-keyboard-shortcuts",
     mount({ pluginId, signal }) {
-      let sideChatInFlight = false;
-      let terminalInFlight = false;
-      let stopPendingSideChatAction = () => {};
-      let stopPendingTerminalAction = () => {};
+      const sideChatInFlightThreads = new Set<string>();
+      const terminalInFlightThreads = new Set<string>();
+      const pendingSideChatActions = new Map<string, () => void>();
+      const pendingTerminalActions = new Map<string, () => void>();
+      const stopPendingAction = (
+        actions: Map<string, () => void>,
+        threadId: string,
+      ) => {
+        actions.get(threadId)?.();
+        actions.delete(threadId);
+      };
+      signal.addEventListener(
+        "abort",
+        () => {
+          for (const stop of pendingSideChatActions.values()) stop();
+          for (const stop of pendingTerminalActions.values()) stop();
+          pendingSideChatActions.clear();
+          pendingTerminalActions.clear();
+        },
+        { once: true },
+      );
       const nativeThreadNewCommand = createNativeCommandDelegate({
         command: "thread.new",
         createEvent: (type, init) => new KeyboardEvent(type, init),
@@ -479,7 +496,7 @@ export default definePluginApp((app) => {
 
             event.preventDefault();
             event.stopPropagation();
-            stopPendingSideChatAction();
+            stopPendingAction(pendingSideChatActions, threadId);
             const panel = readSideChatPanelSnapshot(
               window.localStorage,
               threadId,
@@ -509,17 +526,20 @@ export default definePluginApp((app) => {
                 threadId,
                 sideChat.id,
               );
-              stopPendingSideChatAction = focusSideChatComposer(
-                signal,
+              pendingSideChatActions.set(
                 threadId,
-                sideChat.childThreadId,
-                null,
+                focusSideChatComposer(
+                  signal,
+                  threadId,
+                  sideChat.childThreadId,
+                  null,
+                ),
               );
               return;
             }
-            if (sideChatInFlight) return;
+            if (sideChatInFlightThreads.has(threadId)) return;
 
-            sideChatInFlight = true;
+            sideChatInFlightThreads.add(threadId);
             void createSideChat(pluginId, threadId)
               .then(({ threadId: childThreadId }) => {
                 const tab = createSideChatPanelTab(threadId, childThreadId);
@@ -528,12 +548,15 @@ export default definePluginApp((app) => {
                   threadId,
                   tab.id,
                 );
-                stopPendingSideChatAction();
-                stopPendingSideChatAction = focusSideChatComposer(
-                  signal,
+                stopPendingAction(pendingSideChatActions, threadId);
+                pendingSideChatActions.set(
                   threadId,
-                  childThreadId,
-                  tab,
+                  focusSideChatComposer(
+                    signal,
+                    threadId,
+                    childThreadId,
+                    tab,
+                  ),
                 );
               })
               .catch((error: unknown) => {
@@ -542,7 +565,7 @@ export default definePluginApp((app) => {
                 );
               })
               .finally(() => {
-                sideChatInFlight = false;
+                sideChatInFlightThreads.delete(threadId);
               });
             return;
           }
@@ -553,7 +576,7 @@ export default definePluginApp((app) => {
 
             event.preventDefault();
             event.stopPropagation();
-            stopPendingTerminalAction();
+            stopPendingAction(pendingTerminalActions, threadId);
             const panel = readTerminalPanelSnapshot(
               window.localStorage,
               threadId,
@@ -565,7 +588,7 @@ export default definePluginApp((app) => {
               focusPrimaryComposer(threadId);
               return;
             }
-            if (terminalInFlight) return;
+            if (terminalInFlightThreads.has(threadId)) return;
 
             const rememberedTerminalId = readRecentTerminalId(
               window.localStorage,
@@ -577,7 +600,7 @@ export default definePluginApp((app) => {
                 panel.terminalIds.includes(rememberedTerminalId)
                 ? rememberedTerminalId
                 : null);
-            terminalInFlight = true;
+            terminalInFlightThreads.add(threadId);
             void openTerminal(pluginId, threadId, preferredTerminalId)
               .then(({ terminalId }) => {
                 rememberRecentTerminalId(
@@ -585,18 +608,17 @@ export default definePluginApp((app) => {
                   threadId,
                   terminalId,
                 );
-                stopPendingTerminalAction();
-                stopPendingTerminalAction = focusTerminal(
-                  signal,
+                stopPendingAction(pendingTerminalActions, threadId);
+                pendingTerminalActions.set(
                   threadId,
-                  terminalId,
+                  focusTerminal(signal, threadId, terminalId),
                 );
               })
               .catch((error: unknown) => {
                 toast.error(rpcErrorMessage(error, "Failed to open terminal"));
               })
               .finally(() => {
-                terminalInFlight = false;
+                terminalInFlightThreads.delete(threadId);
               });
             return;
           }
