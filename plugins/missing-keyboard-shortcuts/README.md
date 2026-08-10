@@ -36,12 +36,27 @@ the fallback ordering when the client has not focused one yet.
 
 ## Install
 
-From this directory:
+After the package is published to npm:
+
+```sh
+bb plugin install npm:bb-plugin-missing-keyboard-shortcuts@0.1.0 --yes
+```
+
+Update an installed copy with `bb plugin update missing-keyboard-shortcuts`.
+
+## Development
 
 ```sh
 npm install
-npm test
-npm run typecheck
-npm run build
+npm run release:check
 bb plugin install . --yes
+bb plugin reload missing-keyboard-shortcuts
 ```
+
+`release:check` runs the tests and typecheck, rebuilds from a clean `dist/`,
+fails if the generated files differ from Git, and installs the packed npm
+artifact in a temporary directory to validate its contents.
+
+## License
+
+[MIT](LICENSE)

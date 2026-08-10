@@ -1,6 +1,3 @@
 .scratch/
 node_modules/
-dist/
-!plugins/bb-plugin-thread-tasks/dist/
-!plugins/bb-plugin-thread-tasks/dist/**
 .DS_Store
