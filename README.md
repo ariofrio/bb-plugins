@@ -4,15 +4,15 @@ Personal plugins for [bb](https://github.com/ymichael/bb).
 
 ## Plugins
 
-- [Missing keyboard shortcuts](plugins/missing-keyboard-shortcuts) — adds
-  shortcuts for starting threads, navigating history, focusing the primary
-  composer, and toggling a side chat or thread terminal.
-- [Project header breadcrumb](plugins/bb-plugin-project-header-breadcrumb) —
-  adds the current project and its native actions menu before each thread
+- [Missing keyboard shortcuts](plugins/missing-keyboard-shortcuts#readme) —
+  adds shortcuts for starting threads, navigating history, focusing the
+  primary composer, and toggling a side chat or thread terminal.
+- [Project header breadcrumb](plugins/bb-plugin-project-header-breadcrumb#readme)
+  — adds the current project and its native actions menu before each thread
   title.
-- [Thread tasks](plugins/bb-plugin-thread-tasks) — treats sidebar threads as
-  manually ordered tasks in Done, To do, Working, Waiting, Deferred, and
-  Canceled groups.
+- [Thread tasks](plugins/bb-plugin-thread-tasks#readme) — treats sidebar
+  threads as manually ordered tasks in Done, To do, Working, Waiting,
+  Deferred, and Canceled groups.
 
 ## Install
 
