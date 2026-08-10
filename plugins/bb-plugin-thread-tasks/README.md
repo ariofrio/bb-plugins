@@ -21,6 +21,24 @@ bb plugin install npm:bb-plugin-thread-tasks@0.5.0 --yes
 Then select **Thread tasks** in **Settings → Appearance → Sidebar**. Update an
 installed copy with `bb plugin update thread-tasks`.
 
+## Keyboard shortcuts
+
+On a thread route, `.` chords set the current thread's task status:
+
+| Shortcut               | Task status |
+| ---------------------- | ----------- |
+| `Command-.`            | Done        |
+| `Command-Shift-.`      | To do       |
+| `Control-Command-.`    | Deferred    |
+| `Control-Shift-Command-.` | Waiting  |
+| `Option-Command-.`     | Canceled    |
+
+**Working** has no shortcut because the task workflow assigns it automatically.
+Marking a task **Done** does not archive its thread. The shortcuts work while
+an input, editor, or composer has focus; they use exact modifier matching,
+ignore held-key repeats, and stop matched key events from propagating to
+downstream BB or editor handlers.
+
 ## CLI
 
 ```sh

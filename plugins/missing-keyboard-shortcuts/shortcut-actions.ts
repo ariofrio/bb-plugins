@@ -34,14 +34,6 @@ export function historyDirection(event: ShortcutKeyEvent): -1 | 1 | null {
   return null;
 }
 
-export function isArchiveShortcut(event: ShortcutKeyEvent): boolean {
-  return (
-    exactCommandChord(event) &&
-    !event.shiftKey &&
-    event.key === "."
-  );
-}
-
 export function isTerminalShortcut(event: ShortcutKeyEvent): boolean {
   return (
     event.ctrlKey &&

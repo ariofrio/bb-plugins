@@ -6,7 +6,6 @@ import {
 } from "./panel-tab-selection";
 
 type FocusComposer = () => void;
-type ArchiveThread = () => void;
 
 interface PrimaryPanelTabHost {
   createObserver(callback: () => void): PanelTabObserver;
@@ -28,7 +27,6 @@ const primaryComposersByThread = new Map<
   string | null,
   PrimaryComposerRegistration[]
 >();
-const archiveThreadByThread = new Map<string, ArchiveThread[]>();
 const secondaryComposersByParent = new Map<
   string,
   Map<string, SecondaryComposerRegistration[]>
@@ -37,32 +35,6 @@ const secondaryComposerReadyListeners = new Map<
   string,
   Map<string, Set<() => void>>
 >();
-
-export function registerThreadArchive(
-  threadId: string,
-  archiveThread: ArchiveThread,
-): () => void {
-  const actions = archiveThreadByThread.get(threadId) ?? [];
-  actions.push(archiveThread);
-  archiveThreadByThread.set(threadId, actions);
-  return () => {
-    const index = actions.lastIndexOf(archiveThread);
-    if (index !== -1) actions.splice(index, 1);
-    if (
-      actions.length === 0 &&
-      archiveThreadByThread.get(threadId) === actions
-    ) {
-      archiveThreadByThread.delete(threadId);
-    }
-  };
-}
-
-export function archiveRegisteredThread(threadId: string): boolean {
-  const archiveThread = archiveThreadByThread.get(threadId)?.at(-1);
-  if (archiveThread === undefined) return false;
-  archiveThread();
-  return true;
-}
 
 export function registerPrimaryComposerFocus(
   threadId: string | null,

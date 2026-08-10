@@ -3,7 +3,6 @@ import {
   composerShortcutTarget,
   currentThreadId,
   historyDirection,
-  isArchiveShortcut,
   isTerminalShortcut,
   newThreadTarget,
 } from "./shortcut-actions";
@@ -28,29 +27,6 @@ describe("historyDirection", () => {
     expect(historyDirection({ ...baseChord, key: "]", ctrlKey: true })).toBeNull();
     expect(historyDirection({ ...baseChord, key: "[", shiftKey: true })).toBeNull();
     expect(historyDirection({ ...baseChord, key: "]", repeat: true })).toBeNull();
-  });
-});
-
-const archiveChord = {
-  ...baseChord,
-  key: ".",
-};
-
-describe("isArchiveShortcut", () => {
-  it("matches Command-.", () => {
-    expect(isArchiveShortcut(archiveChord)).toBe(true);
-  });
-
-  it("rejects extra modifiers and held-key repeats", () => {
-    expect(isArchiveShortcut({ ...archiveChord, altKey: true })).toBe(false);
-    expect(isArchiveShortcut({ ...archiveChord, ctrlKey: true })).toBe(false);
-    expect(isArchiveShortcut({ ...archiveChord, repeat: true })).toBe(false);
-  });
-
-  it("rejects other chords", () => {
-    expect(isArchiveShortcut({ ...archiveChord, key: "B" })).toBe(false);
-    expect(isArchiveShortcut({ ...archiveChord, metaKey: false })).toBe(false);
-    expect(isArchiveShortcut({ ...archiveChord, shiftKey: true })).toBe(false);
   });
 });
 

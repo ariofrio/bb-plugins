@@ -74,6 +74,18 @@ var {
   version
 } = mod2;
 
+// bb-plugin-runtime-shim:sonner
+var runtime3 = globalThis.__bbPluginRuntime;
+if (runtime3 == null || runtime3.sonner == null) {
+  throw new Error('Cannot load "sonner": this bundle must be loaded by the BB app, which provides the shared plugin runtime (globalThis.__bbPluginRuntime).');
+}
+var mod3 = runtime3.sonner;
+var {
+  Toaster,
+  toast,
+  useSonner
+} = mod3;
+
 // thread-status.ts
 var THREAD_STATUSES = [
   "Done",
@@ -379,16 +391,16 @@ var WorkflowCircle03Icon = [
 ];
 
 // bb-plugin-runtime-shim:react/jsx-runtime
-var runtime3 = globalThis.__bbPluginRuntime;
-if (runtime3 == null || runtime3.jsxRuntime == null) {
+var runtime4 = globalThis.__bbPluginRuntime;
+if (runtime4 == null || runtime4.jsxRuntime == null) {
   throw new Error('Cannot load "react/jsx-runtime": this bundle must be loaded by the BB app, which provides the shared plugin runtime (globalThis.__bbPluginRuntime).');
 }
-var mod3 = runtime3.jsxRuntime;
+var mod4 = runtime4.jsxRuntime;
 var {
   Fragment: Fragment2,
   jsx,
   jsxs
-} = mod3;
+} = mod4;
 
 // components/Icon.tsx
 var ICONS = {
@@ -465,11 +477,11 @@ function TaskStatusIcon({
 }
 
 // bb-plugin-runtime-shim:@radix-ui/react-context-menu
-var runtime4 = globalThis.__bbPluginRuntime;
-if (runtime4 == null || runtime4.radixContextMenu == null) {
+var runtime5 = globalThis.__bbPluginRuntime;
+if (runtime5 == null || runtime5.radixContextMenu == null) {
   throw new Error('Cannot load "@radix-ui/react-context-menu": this bundle must be loaded by the BB app, which provides the shared plugin runtime (globalThis.__bbPluginRuntime).');
 }
-var mod4 = runtime4.radixContextMenu;
+var mod5 = runtime5.radixContextMenu;
 var {
   Arrow,
   CheckboxItem,
@@ -504,14 +516,14 @@ var {
   SubTrigger,
   Trigger,
   createContextMenuScope
-} = mod4;
+} = mod5;
 
 // bb-plugin-runtime-shim:@radix-ui/react-dropdown-menu
-var runtime5 = globalThis.__bbPluginRuntime;
-if (runtime5 == null || runtime5.radixDropdownMenu == null) {
+var runtime6 = globalThis.__bbPluginRuntime;
+if (runtime6 == null || runtime6.radixDropdownMenu == null) {
   throw new Error('Cannot load "@radix-ui/react-dropdown-menu": this bundle must be loaded by the BB app, which provides the shared plugin runtime (globalThis.__bbPluginRuntime).');
 }
-var mod5 = runtime5.radixDropdownMenu;
+var mod6 = runtime6.radixDropdownMenu;
 var {
   Arrow: Arrow2,
   CheckboxItem: CheckboxItem2,
@@ -546,7 +558,7 @@ var {
   SubTrigger: SubTrigger2,
   Trigger: Trigger2,
   createDropdownMenuScope
-} = mod5;
+} = mod6;
 
 // lib/portal-scope.ts
 function portalScopeProps() {
@@ -990,11 +1002,11 @@ function SplitPaneMiniMap({
 }
 
 // bb-plugin-runtime-shim:@radix-ui/react-dialog
-var runtime6 = globalThis.__bbPluginRuntime;
-if (runtime6 == null || runtime6.radixDialog == null) {
+var runtime7 = globalThis.__bbPluginRuntime;
+if (runtime7 == null || runtime7.radixDialog == null) {
   throw new Error('Cannot load "@radix-ui/react-dialog": this bundle must be loaded by the BB app, which provides the shared plugin runtime (globalThis.__bbPluginRuntime).');
 }
-var mod6 = runtime6.radixDialog;
+var mod7 = runtime7.radixDialog;
 var {
   Close,
   Content: Content3,
@@ -1014,7 +1026,7 @@ var {
   Trigger: Trigger3,
   WarningProvider,
   createDialogScope
-} = mod6;
+} = mod7;
 
 // components/ThreadRenameDialog.tsx
 function ThreadRenameDialog({
@@ -1140,6 +1152,18 @@ function ThreadRenameDialog({
   ] }) });
 }
 
+// native-command-hints.ts
+function notifyNativeShortcutHandled(target, createEvent) {
+  target.dispatchEvent(
+    createEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      code: "Unidentified",
+      key: "Unidentified"
+    })
+  );
+}
+
 // persistent-string-set.ts
 function parseStoredStringSet(raw, allowedValues) {
   if (raw === null) return /* @__PURE__ */ new Set();
@@ -1200,6 +1224,39 @@ function shouldSyncThreads({
   unsyncedCount
 }) {
   return hasOrganization && loadError === null && sidebarStatus === "ready" && !syncInFlight && unsyncedCount > 0;
+}
+
+// task-shortcuts.ts
+var STATUS_CHORDS = [
+  { altKey: false, ctrlKey: false, shiftKey: false, status: "Done" },
+  { altKey: false, ctrlKey: false, shiftKey: true, status: "To do" },
+  { altKey: false, ctrlKey: true, shiftKey: true, status: "Waiting" },
+  { altKey: false, ctrlKey: true, shiftKey: false, status: "Deferred" },
+  { altKey: true, ctrlKey: false, shiftKey: false, status: "Canceled" }
+];
+function taskStatusShortcut(event) {
+  if (!event.metaKey || event.repeat || event.key !== ".") return null;
+  return STATUS_CHORDS.find(
+    (chord) => chord.altKey === event.altKey && chord.ctrlKey === event.ctrlKey && chord.shiftKey === event.shiftKey
+  )?.status ?? null;
+}
+function decodePathSegment(segment) {
+  if (!segment) return null;
+  try {
+    return decodeURIComponent(segment) || null;
+  } catch {
+    return null;
+  }
+}
+function currentThreadId(pathname) {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 2 && segments[0] === "threads") {
+    return decodePathSegment(segments[1]);
+  }
+  if (segments.length === 4 && segments[0] === "projects" && segments[2] === "threads") {
+    return decodePathSegment(segments[3]);
+  }
+  return null;
 }
 
 // thread-hierarchy.ts
@@ -2251,12 +2308,62 @@ function ThreadStatusList({
     }
   );
 }
+function rpcErrorMessage(error, fallback) {
+  if (typeof error === "string") return error;
+  if (error !== null && typeof error === "object" && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return fallback;
+}
+async function setTaskStatus(pluginId, threadId, taskStatus) {
+  const response = await fetch(
+    `/api/v1/plugins/${encodeURIComponent(pluginId)}/rpc/setTaskStatus`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ taskStatus, threadId }),
+      credentials: "same-origin"
+    }
+  );
+  const envelope = await response.json();
+  if (!response.ok || !envelope.ok) {
+    throw new Error(
+      !envelope.ok ? rpcErrorMessage(envelope.error, "Failed to update task status") : `Task status request failed (${response.status})`
+    );
+  }
+}
 var app_default = definePluginApp((app) => {
   app.slots.experimental_threadList({
     id: "thread-status",
     title: "Thread tasks",
     description: "Treat threads as manually ordered tasks grouped by task status.",
     component: ThreadStatusList
+  });
+  app.contentScripts.register({
+    id: "task-shortcuts",
+    mount({ pluginId, signal }) {
+      const createKeyboardEvent = (type, init) => new KeyboardEvent(type, init);
+      window.addEventListener(
+        "keydown",
+        (event) => {
+          const taskStatus = taskStatusShortcut(event);
+          if (taskStatus === null) return;
+          const threadId = currentThreadId(window.location.pathname);
+          if (threadId === null) return;
+          event.preventDefault();
+          event.stopPropagation();
+          notifyNativeShortcutHandled(window, createKeyboardEvent);
+          void setTaskStatus(pluginId, threadId, taskStatus).catch(
+            (error) => {
+              toast.error(
+                rpcErrorMessage(error, "Failed to update task status")
+              );
+            }
+          );
+        },
+        { capture: true, signal }
+      );
+    }
   });
 });
 export {

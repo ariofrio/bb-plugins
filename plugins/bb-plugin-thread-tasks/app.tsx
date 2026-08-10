@@ -19,6 +19,7 @@ import {
   type DragEvent,
   type MouseEvent,
 } from "react";
+import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import {
   DEFAULT_THREAD_STATUS,
@@ -41,8 +42,10 @@ import {
 } from "./components/ThreadIndicator";
 import { SplitPaneMiniMap } from "./components/SplitPaneMiniMap";
 import { ThreadRenameDialog } from "./components/ThreadRenameDialog";
+import { notifyNativeShortcutHandled } from "./native-command-hints";
 import { usePersistentStringSet } from "./persistent-string-set";
 import { shouldSyncThreads } from "./task-sync";
+import { currentThreadId, taskStatusShortcut } from "./task-shortcuts";
 import {
   canDropThreadBeside,
   effectiveHierarchyParentId,
@@ -1269,6 +1272,47 @@ function ThreadStatusList({
   );
 }
 
+type RpcEnvelope<Result> =
+  | { ok: true; result: Result }
+  | { ok: false; error: unknown };
+
+function rpcErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "string") return error;
+  if (
+    error !== null &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return fallback;
+}
+
+async function setTaskStatus(
+  pluginId: string,
+  threadId: string,
+  taskStatus: ThreadStatus,
+): Promise<void> {
+  const response = await fetch(
+    `/api/v1/plugins/${encodeURIComponent(pluginId)}/rpc/setTaskStatus`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ taskStatus, threadId }),
+      credentials: "same-origin",
+    },
+  );
+  const envelope = (await response.json()) as RpcEnvelope<unknown>;
+  if (!response.ok || !envelope.ok) {
+    throw new Error(
+      !envelope.ok
+        ? rpcErrorMessage(envelope.error, "Failed to update task status")
+        : `Task status request failed (${response.status})`,
+    );
+  }
+}
+
 export default definePluginApp((app) => {
   app.slots.experimental_threadList({
     id: "thread-status",
@@ -1276,5 +1320,35 @@ export default definePluginApp((app) => {
     description:
       "Treat threads as manually ordered tasks grouped by task status.",
     component: ThreadStatusList,
+  });
+
+  app.contentScripts.register({
+    id: "task-shortcuts",
+    mount({ pluginId, signal }) {
+      const createKeyboardEvent = (type: string, init: KeyboardEventInit) =>
+        new KeyboardEvent(type, init);
+      window.addEventListener(
+        "keydown",
+        (event) => {
+          const taskStatus = taskStatusShortcut(event);
+          if (taskStatus === null) return;
+          const threadId = currentThreadId(window.location.pathname);
+          if (threadId === null) return;
+
+          // Claim the chord everywhere, including editors and composers.
+          event.preventDefault();
+          event.stopPropagation();
+          notifyNativeShortcutHandled(window, createKeyboardEvent);
+          void setTaskStatus(pluginId, threadId, taskStatus).catch(
+            (error: unknown) => {
+              toast.error(
+                rpcErrorMessage(error, "Failed to update task status"),
+              );
+            },
+          );
+        },
+        { capture: true, signal },
+      );
+    },
   });
 });

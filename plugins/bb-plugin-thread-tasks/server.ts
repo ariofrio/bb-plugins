@@ -105,6 +105,15 @@ export const rpcContract = defineRpcContract({
       .strict(),
     output: stateSchema,
   },
+  setTaskStatus: {
+    input: z
+      .object({
+        threadId: z.string().min(1).max(256),
+        taskStatus: threadStatusSchema,
+      })
+      .strict(),
+    output: stateSchema,
+  },
 });
 
 export default function plugin(bb: BbPluginApi) {
@@ -143,6 +152,11 @@ export default function plugin(bb: BbPluginApi) {
     moveThread(input) {
       const state = store.reorderThread(input);
       bb.realtime.publish("state-changed", { threadId: input.threadId });
+      return state;
+    },
+    setTaskStatus({ threadId, taskStatus }) {
+      const state = store.setStatus(threadId, taskStatus);
+      bb.realtime.publish("state-changed", { threadId });
       return state;
     },
   });

@@ -1,6 +1,5 @@
 import {
   definePluginApp,
-  experimental_useSidebarThreadActions,
   useBbContext,
   useComposer,
   useComposerView,
@@ -8,7 +7,6 @@ import {
 import { createElement, useEffect, useLayoutEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
-  archiveRegisteredThread,
   focusedSecondaryComposerThreadId,
   focusPrimaryComposer,
   focusSecondaryComposerWhenReady,
@@ -16,7 +14,6 @@ import {
   isSecondaryComposerFocused,
   registerPrimaryComposerFocus,
   registerSecondaryComposer,
-  registerThreadArchive,
   selectPrimaryPanelTabWhenReady,
 } from "./composer-navigation-bridge";
 import {
@@ -27,7 +24,6 @@ import {
   composerShortcutTarget,
   currentThreadId,
   historyDirection,
-  isArchiveShortcut,
   isTerminalShortcut,
   newThreadTarget,
 } from "./shortcut-actions";
@@ -90,7 +86,6 @@ function rpcErrorMessage(error: unknown, fallback: string): string {
 
 function ComposerNavigationBridge() {
   const context = useBbContext();
-  const sidebarThreadActions = experimental_useSidebarThreadActions();
   const composer = useComposer();
   const view = useComposerView();
   const markerRef = useRef<HTMLSpanElement>(null);
@@ -99,13 +94,6 @@ function ComposerNavigationBridge() {
   useEffect(() => {
     rememberThreadProject(window.localStorage, context);
   }, [context.projectId, context.threadId]);
-  useEffect(() => {
-    const threadId = context.threadId;
-    if (threadId === null) return;
-    return registerThreadArchive(threadId, () => {
-      sidebarThreadActions.archive(threadId);
-    });
-  }, [context.threadId, sidebarThreadActions]);
   useLayoutEffect(() => {
     const marker = markerRef.current;
     const composerElement = marker?.closest<HTMLElement>(
@@ -725,29 +713,13 @@ export default definePluginApp((app) => {
           }
 
           const direction = historyDirection(event);
-          if (direction !== null) {
-            // Claim the shortcut even when an editor has focus.
-            event.preventDefault();
-            event.stopPropagation();
-            notifyNativeShortcutHandled(window, createKeyboardEvent);
-            window.history.go(direction);
-            return;
-          }
+          if (direction === null) return;
 
-          if (!isArchiveShortcut(event)) return;
-
-          const threadId = currentThreadId(window.location.pathname);
-          if (threadId === null) return;
-
-          // Claim the chord everywhere, including editors.
+          // Claim the shortcut even when an editor has focus.
           event.preventDefault();
           event.stopPropagation();
           notifyNativeShortcutHandled(window, createKeyboardEvent);
-          try {
-            archiveRegisteredThread(threadId);
-          } catch (error) {
-            toast.error(rpcErrorMessage(error, "Failed to archive thread"));
-          }
+          window.history.go(direction);
         },
         { capture: true, signal },
       );

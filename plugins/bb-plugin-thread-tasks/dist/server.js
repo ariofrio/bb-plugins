@@ -15550,6 +15550,13 @@ var rpcContract = defineRpcContract({
       nextThreadId: external_exports.string().min(1).max(256).nullable()
     }).strict(),
     output: stateSchema
+  },
+  setTaskStatus: {
+    input: external_exports.object({
+      threadId: external_exports.string().min(1).max(256),
+      taskStatus: threadStatusSchema
+    }).strict(),
+    output: stateSchema
   }
 });
 function plugin(bb) {
@@ -15587,6 +15594,11 @@ function plugin(bb) {
     moveThread(input) {
       const state = store.reorderThread(input);
       bb.realtime.publish("state-changed", { threadId: input.threadId });
+      return state;
+    },
+    setTaskStatus({ threadId, taskStatus }) {
+      const state = store.setStatus(threadId, taskStatus);
+      bb.realtime.publish("state-changed", { threadId });
       return state;
     }
   });

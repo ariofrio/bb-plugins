@@ -127,27 +127,8 @@ function selectPanelTabWhenReady({
 
 // composer-navigation-bridge.ts
 var primaryComposersByThread = /* @__PURE__ */ new Map();
-var archiveThreadByThread = /* @__PURE__ */ new Map();
 var secondaryComposersByParent = /* @__PURE__ */ new Map();
 var secondaryComposerReadyListeners = /* @__PURE__ */ new Map();
-function registerThreadArchive(threadId, archiveThread) {
-  const actions = archiveThreadByThread.get(threadId) ?? [];
-  actions.push(archiveThread);
-  archiveThreadByThread.set(threadId, actions);
-  return () => {
-    const index = actions.lastIndexOf(archiveThread);
-    if (index !== -1) actions.splice(index, 1);
-    if (actions.length === 0 && archiveThreadByThread.get(threadId) === actions) {
-      archiveThreadByThread.delete(threadId);
-    }
-  };
-}
-function archiveRegisteredThread(threadId) {
-  const archiveThread = archiveThreadByThread.get(threadId)?.at(-1);
-  if (archiveThread === void 0) return false;
-  archiveThread();
-  return true;
-}
 function registerPrimaryComposerFocus(threadId, focusComposer, panelTabHost) {
   const registrations = primaryComposersByThread.get(threadId) ?? [];
   const registration = { focus: focusComposer, panelTabHost };
@@ -279,9 +260,6 @@ function historyDirection(event) {
   if (event.key === "[") return -1;
   if (event.key === "]") return 1;
   return null;
-}
-function isArchiveShortcut(event) {
-  return exactCommandChord(event) && !event.shiftKey && event.key === ".";
 }
 function isTerminalShortcut(event) {
   return event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey && !event.repeat && event.key === "`";
@@ -651,7 +629,6 @@ function rpcErrorMessage(error, fallback) {
 }
 function ComposerNavigationBridge() {
   const context = useBbContext();
-  const sidebarThreadActions = experimental_useSidebarThreadActions();
   const composer = useComposer();
   const view = useComposerView();
   const markerRef = useRef(null);
@@ -659,13 +636,6 @@ function ComposerNavigationBridge() {
   useEffect(() => {
     rememberThreadProject(window.localStorage, context);
   }, [context.projectId, context.threadId]);
-  useEffect(() => {
-    const threadId = context.threadId;
-    if (threadId === null) return;
-    return registerThreadArchive(threadId, () => {
-      sidebarThreadActions.archive(threadId);
-    });
-  }, [context.threadId, sidebarThreadActions]);
   useLayoutEffect(() => {
     const marker = markerRef.current;
     const composerElement = marker?.closest(
@@ -1066,137 +1036,124 @@ var app_default = definePluginApp((app) => {
           }
           const composerTarget = composerShortcutTarget(event);
           if (composerTarget === "primary") {
-            const threadId2 = currentThreadId(window.location.pathname);
-            if (!hasPrimaryComposer(threadId2)) return;
+            const threadId = currentThreadId(window.location.pathname);
+            if (!hasPrimaryComposer(threadId)) return;
             event.preventDefault();
             event.stopPropagation();
             notifyNativeShortcutHandled(window, createKeyboardEvent);
-            focusPrimaryComposer(threadId2);
+            focusPrimaryComposer(threadId);
             return;
           }
           if (composerTarget === "secondary") {
-            const threadId2 = currentThreadId(window.location.pathname);
-            if (threadId2 === null) return;
+            const threadId = currentThreadId(window.location.pathname);
+            if (threadId === null) return;
             event.preventDefault();
             event.stopPropagation();
             notifyNativeShortcutHandled(window, createKeyboardEvent);
-            stopPendingAction(pendingSideChatActions, threadId2);
+            stopPendingAction(pendingSideChatActions, threadId);
             const panel = readSideChatPanelSnapshot(
               window.localStorage,
-              threadId2
+              threadId
             );
             if (panel.isOpen && panel.activeSideChat !== null && isSecondaryComposerFocused(
-              threadId2,
+              threadId,
               panel.activeSideChat.childThreadId
             )) {
               notifyPanelStateChanged(
-                closePanel(window.localStorage, threadId2)
+                closePanel(window.localStorage, threadId)
               );
-              focusPrimaryComposer(threadId2);
+              focusPrimaryComposer(threadId);
               return;
             }
             const sideChat = selectSideChatPanelTab(
               panel,
-              readRecentSideChatTabId(window.localStorage, threadId2)
+              readRecentSideChatTabId(window.localStorage, threadId)
             );
-            if (sideChatInFlightThreads.has(threadId2)) return;
-            sideChatInFlightThreads.add(threadId2);
+            if (sideChatInFlightThreads.has(threadId)) return;
+            sideChatInFlightThreads.add(threadId);
             void (async () => {
               if (sideChat === null) {
-                await createAndFocusSideChat(threadId2);
+                await createAndFocusSideChat(threadId);
                 return;
               }
               const { reusable } = await validateSideChat(
                 pluginId,
-                threadId2,
+                threadId,
                 sideChat
               );
               if (reusable) {
                 rememberRecentSideChatTabId(
                   window.localStorage,
-                  threadId2,
+                  threadId,
                   sideChat.id
                 );
-                focusExistingSideChat(threadId2, sideChat.childThreadId);
+                focusExistingSideChat(threadId, sideChat.childThreadId);
                 return;
               }
               const change = removeSideChatPanelTab(
                 window.localStorage,
-                threadId2,
+                threadId,
                 sideChat.id
               );
               if (change !== null) notifyPanelStateChanged(change);
-              await createAndFocusSideChat(threadId2);
+              await createAndFocusSideChat(threadId);
             })().catch((error) => {
               toast.error(
                 rpcErrorMessage(error, "Failed to start side chat")
               );
             }).finally(() => {
-              sideChatInFlightThreads.delete(threadId2);
+              sideChatInFlightThreads.delete(threadId);
             });
             return;
           }
           if (isTerminalShortcut(event)) {
-            const threadId2 = currentThreadId(window.location.pathname);
-            if (threadId2 === null) return;
+            const threadId = currentThreadId(window.location.pathname);
+            if (threadId === null) return;
             event.preventDefault();
             event.stopPropagation();
             notifyNativeShortcutHandled(window, createKeyboardEvent);
-            stopPendingAction(pendingTerminalActions, threadId2);
+            stopPendingAction(pendingTerminalActions, threadId);
             const panel = readTerminalPanelSnapshot(
               window.localStorage,
-              threadId2
+              threadId
             );
             if (shouldCloseTerminalPanel(panel, isTerminalFocused())) {
               notifyPanelStateChanged(
-                closePanel(window.localStorage, threadId2)
+                closePanel(window.localStorage, threadId)
               );
-              focusPrimaryComposer(threadId2);
+              focusPrimaryComposer(threadId);
               return;
             }
-            if (terminalInFlightThreads.has(threadId2)) return;
+            if (terminalInFlightThreads.has(threadId)) return;
             const rememberedTerminalId = readRecentTerminalId(
               window.localStorage,
-              threadId2
+              threadId
             );
             const preferredTerminalId = panel.activeTerminalId ?? (rememberedTerminalId !== null && panel.terminalIds.includes(rememberedTerminalId) ? rememberedTerminalId : null);
-            terminalInFlightThreads.add(threadId2);
-            void openTerminal(pluginId, threadId2, preferredTerminalId).then(({ terminalId }) => {
+            terminalInFlightThreads.add(threadId);
+            void openTerminal(pluginId, threadId, preferredTerminalId).then(({ terminalId }) => {
               rememberRecentTerminalId(
                 window.localStorage,
-                threadId2,
+                threadId,
                 terminalId
               );
               pendingTerminalActions.set(
-                threadId2,
-                activateAndFocusTerminal(signal, threadId2, terminalId)
+                threadId,
+                activateAndFocusTerminal(signal, threadId, terminalId)
               );
             }).catch((error) => {
               toast.error(rpcErrorMessage(error, "Failed to open terminal"));
             }).finally(() => {
-              terminalInFlightThreads.delete(threadId2);
+              terminalInFlightThreads.delete(threadId);
             });
             return;
           }
           const direction = historyDirection(event);
-          if (direction !== null) {
-            event.preventDefault();
-            event.stopPropagation();
-            notifyNativeShortcutHandled(window, createKeyboardEvent);
-            window.history.go(direction);
-            return;
-          }
-          if (!isArchiveShortcut(event)) return;
-          const threadId = currentThreadId(window.location.pathname);
-          if (threadId === null) return;
+          if (direction === null) return;
           event.preventDefault();
           event.stopPropagation();
           notifyNativeShortcutHandled(window, createKeyboardEvent);
-          try {
-            archiveRegisteredThread(threadId);
-          } catch (error) {
-            toast.error(rpcErrorMessage(error, "Failed to archive thread"));
-          }
+          window.history.go(direction);
         },
         { capture: true, signal }
       );
