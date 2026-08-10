@@ -254,6 +254,7 @@ function ThreadRow({
           className="absolute inset-0 rounded-md outline-none ring-sidebar-ring focus-visible:ring-2"
           data-sidebar-thread-id={thread.id}
           data-sidebar-thread-shortcut-target=""
+          draggable={false}
           href={`/projects/${encodeURIComponent(thread.projectId)}/threads/${encodeURIComponent(thread.id)}`}
           onClick={openThread}
         />
