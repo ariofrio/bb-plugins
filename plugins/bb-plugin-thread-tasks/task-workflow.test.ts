@@ -28,6 +28,7 @@ describe("task workflow", () => {
     const handlers = new Map<string, (payload: never) => unknown>();
     const services = new Map<string, { start(signal: AbortSignal): unknown }>();
     const publish = vi.fn();
+    let pendingInteractions: Array<{ status: string }> = [];
     const bb = {
       events: {
         on: (event: string, handler: (payload: never) => unknown) => {
@@ -41,6 +42,12 @@ describe("task workflow", () => {
         ) => services.set(name, service),
       },
       realtime: { publish },
+      log: { warn: vi.fn() },
+      sdk: {
+        threads: {
+          interactions: { list: async () => pendingInteractions },
+        },
+      },
     } as unknown as BbPluginApi;
 
     try {
@@ -63,6 +70,86 @@ describe("task workflow", () => {
     }
   });
 
+  it("treats a thread waiting on the user as To do while it stays active", async () => {
+    const db = new Database(":memory:");
+    for (const migration of THREAD_STATUS_MIGRATIONS) db.exec(migration);
+    const store = createThreadStatusStore(db);
+    const handlers = new Map<string, (payload: never) => unknown>();
+    let pendingInteractions: Array<{ status: string }> = [];
+    const bb = {
+      events: {
+        on: (event: string, handler: (payload: never) => unknown) => {
+          handlers.set(event, handler);
+        },
+      },
+      background: { service: () => undefined },
+      realtime: { publish: vi.fn() },
+      log: { warn: vi.fn() },
+      sdk: {
+        threads: {
+          interactions: { list: async () => pendingInteractions },
+        },
+      },
+    } as unknown as BbPluginApi;
+
+    try {
+      registerTaskWorkflow(bb, store);
+      await handlers.get("thread.active")?.({
+        thread: { id: "thr_a", status: "active" },
+      } as never);
+      expect(store.get("thr_a").taskStatus).toBe("Working");
+
+      pendingInteractions = [{ status: "pending" }];
+      await handlers.get("thread.active")?.({
+        thread: { id: "thr_a", status: "active" },
+      } as never);
+      expect(store.get("thr_a").taskStatus).toBe("To do");
+
+      // Answering it puts the thread back to work without a status change.
+      pendingInteractions = [];
+      await handlers.get("thread.active")?.({
+        thread: { id: "thr_a", status: "active" },
+      } as never);
+      expect(store.get("thr_a").taskStatus).toBe("Working");
+    } finally {
+      db.close();
+    }
+  });
+
+  it("ignores interactions that are no longer pending", async () => {
+    const db = new Database(":memory:");
+    for (const migration of THREAD_STATUS_MIGRATIONS) db.exec(migration);
+    const store = createThreadStatusStore(db);
+    const handlers = new Map<string, (payload: never) => unknown>();
+    const bb = {
+      events: {
+        on: (event: string, handler: (payload: never) => unknown) => {
+          handlers.set(event, handler);
+        },
+      },
+      background: { service: () => undefined },
+      realtime: { publish: vi.fn() },
+      log: { warn: vi.fn() },
+      sdk: {
+        threads: {
+          interactions: {
+            list: async () => [{ status: "resolving" }, { status: "resolved" }],
+          },
+        },
+      },
+    } as unknown as BbPluginApi;
+
+    try {
+      registerTaskWorkflow(bb, store);
+      await handlers.get("thread.active")?.({
+        thread: { id: "thr_a", status: "active" },
+      } as never);
+      expect(store.get("thr_a").taskStatus).toBe("Working");
+    } finally {
+      db.close();
+    }
+  });
+
   it("reconciles starting and stopping through thread status changes", async () => {
     const db = new Database(":memory:");
     for (const migration of THREAD_STATUS_MIGRATIONS) db.exec(migration);
@@ -72,6 +159,7 @@ describe("task workflow", () => {
       changes: readonly string[];
     }) => void) | null = null;
     let lifecycleStatus = "stopping" as "stopping" | "idle";
+    let pendingInteractions: Array<{ status: string }> = [];
     let service: { start(signal: AbortSignal): unknown } | null = null;
     const bb = {
       events: { on: () => undefined },
@@ -91,6 +179,7 @@ describe("task workflow", () => {
           return () => undefined;
         },
         threads: {
+          interactions: { list: async () => pendingInteractions },
           list: async () => [],
           get: async ({ threadId }: { threadId: string }) => ({
             id: threadId,
@@ -111,6 +200,13 @@ describe("task workflow", () => {
         expect(store.get("thr_a").taskStatus).toBe("Working"),
       );
 
+      pendingInteractions = [{ status: "pending" }];
+      changed?.({ id: "thr_a", changes: ["interactions-changed"] });
+      await vi.waitFor(() =>
+        expect(store.get("thr_a").taskStatus).toBe("To do"),
+      );
+
+      pendingInteractions = [];
       lifecycleStatus = "idle";
       changed?.({ id: "thr_a", changes: ["status-changed"] });
       await vi.waitFor(() =>

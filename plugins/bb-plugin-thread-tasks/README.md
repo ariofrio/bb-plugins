@@ -8,7 +8,8 @@ sections.
 Drag tasks to reorder or change their task status. Task order uses fractional
 keys, so a move updates only the moved task. Threads automatically enter
 **Working** when they start and return to **To do** when they stop, unless you
-manually move them after the transition.
+manually move them after the transition. A thread blocked on a question or an
+approval counts as **To do** while it waits, because the next move is yours.
 
 ## Install
 

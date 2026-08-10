@@ -31,11 +31,25 @@ export function registerTaskWorkflow(
   bb: BbPluginApi,
   store: ThreadStatusStore,
 ): void {
-  const observe = (thread: WorkflowThread) => {
-    const result = store.observeWorkingState(
-      thread.id,
-      isWorkingThreadStatus(thread.status),
-    );
+  // A thread blocked on a question or an approval stays `active`, but it is
+  // waiting on the user rather than working.
+  const isWaitingOnUser = async (threadId: string): Promise<boolean> => {
+    try {
+      const interactions = await bb.sdk.threads.interactions.list({ threadId });
+      return interactions.some(({ status }) => status === "pending");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      bb.log.warn(
+        `Could not read pending interactions for ${threadId}: ${message}`,
+      );
+      return false;
+    }
+  };
+
+  const observe = async (thread: WorkflowThread) => {
+    const isWorking =
+      isWorkingThreadStatus(thread.status) && !(await isWaitingOnUser(thread.id));
+    const result = store.observeWorkingState(thread.id, isWorking);
     if (result.taskStatusChanged) {
       bb.realtime.publish("state-changed", { threadId: thread.id });
     }
@@ -54,7 +68,7 @@ export function registerTaskWorkflow(
           .then(async () => {
             if (signal.aborted) return;
             const thread = await bb.sdk.threads.get({ threadId, signal });
-            observe(thread);
+            await observe(thread);
           })
           .catch((error: unknown) => {
             if (!signal.aborted) {
@@ -70,7 +84,11 @@ export function registerTaskWorkflow(
       const unsubscribe = bb.sdk.subscribe({
         event: "thread:changed",
         callback(event) {
-          if (event.id && event.changes.includes("status-changed")) {
+          if (
+            event.id &&
+            (event.changes.includes("status-changed") ||
+              event.changes.includes("interactions-changed"))
+          ) {
             enqueue(event.id);
           }
         },
