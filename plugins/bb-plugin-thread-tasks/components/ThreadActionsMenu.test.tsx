@@ -5,7 +5,10 @@ import type {
   PluginSidebarThread,
   PluginSidebarThreadActions,
 } from "@bb/plugin-sdk/app";
-import { ThreadActionsDropdown } from "./ThreadActionsMenu";
+import {
+  ThreadActionsContextMenu,
+  ThreadActionsDropdown,
+} from "./ThreadActionsMenu";
 
 function thread(): PluginSidebarThread {
   return {
@@ -81,5 +84,43 @@ describe("ThreadActionsDropdown", () => {
     expect(screen.getByText("Move up").closest("[data-disabled]")).not.toBeNull();
     expect(screen.getByText("Archive")).toBeDefined();
     expect(screen.getByText("Delete")).toBeDefined();
+  });
+});
+
+describe("ThreadActionsContextMenu", () => {
+  it("portals the task status submenu outside the parent menu", () => {
+    const actions = {
+      open: vi.fn(),
+      openNewThread: vi.fn(),
+      setPinned: vi.fn(async () => {}),
+      setRead: vi.fn(async () => {}),
+      rename: vi.fn(async () => {}),
+      archive: vi.fn(),
+      requestDelete: vi.fn(),
+    } satisfies PluginSidebarThreadActions;
+    render(
+      <ThreadActionsContextMenu
+        actions={actions}
+        canMoveDown
+        canMoveUp
+        disabled={false}
+        onMoveDown={vi.fn()}
+        onMoveUp={vi.fn()}
+        onOpenChange={vi.fn()}
+        onRename={vi.fn()}
+        onSetTaskStatus={vi.fn()}
+        splitAvailable
+        taskStatus="To Do"
+        thread={thread()}
+      >
+        <button type="button">Thread row</button>
+      </ThreadActionsContextMenu>,
+    );
+
+    fireEvent.contextMenu(screen.getByRole("button", { name: "Thread row" }));
+    const parentMenu = screen.getByRole("menu", { name: "Thread actions" });
+    fireEvent.click(screen.getByText("Task status"));
+
+    expect(parentMenu.contains(screen.getByText("Done"))).toBe(false);
   });
 });

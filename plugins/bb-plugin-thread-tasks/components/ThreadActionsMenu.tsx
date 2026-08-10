@@ -129,23 +129,25 @@ function ContextMenuItems(props: CommonMenuProps) {
           Task status
           <Icon name="ChevronRight" className="ml-auto" aria-hidden />
         </ContextMenu.SubTrigger>
-        <ContextMenu.SubContent
-          {...portalScopeProps()}
-          className={SUB_CONTENT_CLASS}
-        >
-          {THREAD_STATUSES.map((status) => (
-            <ContextMenu.Item
-              key={status}
-              className={ITEM_CLASS}
-              onSelect={() => {
-                if (status !== taskStatus) props.onSetTaskStatus(status);
-              }}
-            >
-              <span className="w-4">{status === taskStatus ? <Icon name="Check" aria-hidden /> : null}</span>
-              {status}
-            </ContextMenu.Item>
-          ))}
-        </ContextMenu.SubContent>
+        <ContextMenu.Portal>
+          <ContextMenu.SubContent
+            {...portalScopeProps()}
+            className={SUB_CONTENT_CLASS}
+          >
+            {THREAD_STATUSES.map((status) => (
+              <ContextMenu.Item
+                key={status}
+                className={ITEM_CLASS}
+                onSelect={() => {
+                  if (status !== taskStatus) props.onSetTaskStatus(status);
+                }}
+              >
+                <span className="w-4">{status === taskStatus ? <Icon name="Check" aria-hidden /> : null}</span>
+                {status}
+              </ContextMenu.Item>
+            ))}
+          </ContextMenu.SubContent>
+        </ContextMenu.Portal>
       </ContextMenu.Sub>
       <ContextItem
         disabled={disabled || !props.canMoveUp}
