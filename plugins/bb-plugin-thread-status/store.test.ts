@@ -82,6 +82,46 @@ describe("thread status store", () => {
     expect(working[0]?.sortKey < (working[1]?.sortKey ?? "")).toBe(true);
   });
 
+  it("moves a task to Working only when it enters a working lifecycle", () => {
+    store.ensureThreads(["thr_a"]);
+
+    store.observeWorkingState("thr_a", true);
+    expect(store.get("thr_a").taskStatus).toBe("Working");
+
+    store.setStatus("thr_a", "Waiting");
+    store.observeWorkingState("thr_a", true);
+    expect(store.get("thr_a").taskStatus).toBe("Waiting");
+  });
+
+  it("moves a Working task to To Do when work stops without undoing an override", () => {
+    store.observeWorkingState("thr_finished", true);
+    store.observeWorkingState("thr_finished", false);
+    expect(store.get("thr_finished").taskStatus).toBe("To Do");
+
+    store.observeWorkingState("thr_overridden", true);
+    store.setStatus("thr_overridden", "Deferred");
+    store.observeWorkingState("thr_overridden", false);
+    expect(store.get("thr_overridden").taskStatus).toBe("Deferred");
+  });
+
+  it("persists the lifecycle edge across store recreation", () => {
+    store.observeWorkingState("thr_a", true);
+    store.setStatus("thr_a", "Canceled");
+
+    const reloadedStore = createThreadStatusStore(db);
+    reloadedStore.observeWorkingState("thr_a", true);
+
+    expect(reloadedStore.get("thr_a").taskStatus).toBe("Canceled");
+  });
+
+  it("reconciles a previously unobserved idle Working task to To Do", () => {
+    store.setStatus("thr_a", "Working");
+
+    store.observeWorkingState("thr_a", false);
+
+    expect(store.get("thr_a").taskStatus).toBe("To Do");
+  });
+
   it("changes only the moved row's key when reordering between neighbors", () => {
     store.ensureThreads(["thr_a", "thr_b", "thr_c"]);
     const before = new Map(
@@ -191,6 +231,7 @@ describe("thread status store", () => {
         )
         .run("thr_a", "Waiting", 1024, 1);
       migrationDb.exec(THREAD_STATUS_MIGRATIONS[1] ?? "");
+      migrationDb.exec(THREAD_STATUS_MIGRATIONS[2] ?? "");
 
       const migrated = createThreadStatusStore(migrationDb).listState();
       expect(migrated.assignments).toMatchObject([
@@ -203,10 +244,14 @@ describe("thread status store", () => {
   });
 
   it("removes organization state for deleted threads", () => {
-    store.ensureThreads(["thr_a"]);
+    store.observeWorkingState("thr_a", true);
+    store.setStatus("thr_a", "Deferred");
 
     expect(store.delete("thr_a")).toBe(true);
     expect(store.delete("thr_a")).toBe(false);
     expect(store.listState()).toEqual({ assignments: [] });
+
+    store.observeWorkingState("thr_a", true);
+    expect(store.get("thr_a").taskStatus).toBe("Working");
   });
 });

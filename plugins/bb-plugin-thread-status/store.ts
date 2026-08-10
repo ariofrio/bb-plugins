@@ -33,6 +33,13 @@ export const THREAD_STATUS_MIGRATIONS = [
     CREATE INDEX IF NOT EXISTS thread_organization_status_sort_key
       ON thread_organization(status, sort_key, thread_id);
   `,
+  `
+    CREATE TABLE IF NOT EXISTS thread_task_workflow (
+      thread_id TEXT PRIMARY KEY,
+      is_working INTEGER NOT NULL CHECK (is_working IN (0, 1)),
+      updated_at INTEGER NOT NULL
+    );
+  `,
 ];
 
 interface AssignmentRow {
@@ -61,11 +68,20 @@ export interface ReorderThreadInput {
   nextThreadId: string | null;
 }
 
+export interface WorkingStateObservation {
+  state: ThreadStatusState;
+  taskStatusChanged: boolean;
+}
+
 export interface ThreadStatusStore {
   listState(): ThreadStatusState;
   get(threadId: string): ThreadStatusLookup;
   ensureThreads(threadIds: readonly string[]): ThreadStatusState;
   setStatus(threadId: string, status: ThreadStatus): ThreadStatusState;
+  observeWorkingState(
+    threadId: string,
+    isWorking: boolean,
+  ): WorkingStateObservation;
   reorderThread(input: ReorderThreadInput): ThreadStatusState;
   delete(threadId: string): boolean;
 }
@@ -131,6 +147,19 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
   const deleteAssignment = db.prepare(
     "DELETE FROM thread_organization WHERE thread_id = ?",
   );
+  const getWorkingState = db.prepare(
+    "SELECT is_working FROM thread_task_workflow WHERE thread_id = ?",
+  );
+  const upsertWorkingState = db.prepare(`
+    INSERT INTO thread_task_workflow(thread_id, is_working, updated_at)
+    VALUES (?, ?, ?)
+    ON CONFLICT(thread_id) DO UPDATE SET
+      is_working = excluded.is_working,
+      updated_at = excluded.updated_at
+  `);
+  const deleteWorkingState = db.prepare(
+    "DELETE FROM thread_task_workflow WHERE thread_id = ?",
+  );
 
   function listState(): ThreadStatusState {
     return {
@@ -172,16 +201,44 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
     },
   );
 
+  function moveToStatus(threadId: string, status: ThreadStatus): boolean {
+    const existing = getAssignment.get(threadId) as AssignmentRow | undefined;
+    if (existing?.status === status) return false;
+    const last = lastAssignment.get(status) as AssignmentRow | undefined;
+    const sortKey = last
+      ? createOrderKeyAfter({ previousKey: last.sort_key })
+      : createOrderKeyBetween({ previousKey: null, nextKey: null });
+    upsertAssignment.run(threadId, status, Date.now(), sortKey);
+    return true;
+  }
+
   const setStatusTransaction = db.transaction(
     (threadId: string, status: ThreadStatus): ThreadStatusState => {
-      const existing = getAssignment.get(threadId) as AssignmentRow | undefined;
-      if (existing?.status === status) return listState();
-      const last = lastAssignment.get(status) as AssignmentRow | undefined;
-      const sortKey = last
-        ? createOrderKeyAfter({ previousKey: last.sort_key })
-        : createOrderKeyBetween({ previousKey: null, nextKey: null });
-      upsertAssignment.run(threadId, status, Date.now(), sortKey);
+      moveToStatus(threadId, status);
       return listState();
+    },
+  );
+
+  const observeWorkingStateTransaction = db.transaction(
+    (threadId: string, isWorking: boolean): WorkingStateObservation => {
+      const previous = getWorkingState.get(threadId) as
+        | { is_working: number }
+        | undefined;
+      let taskStatusChanged = false;
+
+      if (isWorking && previous?.is_working !== 1) {
+        taskStatusChanged = moveToStatus(threadId, "Working");
+      } else if (!isWorking && previous?.is_working !== 0) {
+        const assignment = getAssignment.get(threadId) as
+          | AssignmentRow
+          | undefined;
+        if (assignment?.status === "Working") {
+          taskStatusChanged = moveToStatus(threadId, "To Do");
+        }
+      }
+
+      upsertWorkingState.run(threadId, isWorking ? 1 : 0, Date.now());
+      return { state: listState(), taskStatusChanged };
     },
   );
 
@@ -268,6 +325,10 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
       }
       return setStatusTransaction.immediate(threadId, status);
     },
+    observeWorkingState(threadId, isWorking) {
+      assertThreadId(threadId);
+      return observeWorkingStateTransaction.immediate(threadId, isWorking);
+    },
     reorderThread(input) {
       assertThreadId(input.threadId);
       if (input.previousThreadId) assertThreadId(input.previousThreadId);
@@ -279,7 +340,13 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
     },
     delete(threadId) {
       assertThreadId(threadId);
-      return db.transaction(() => deleteAssignment.run(threadId).changes > 0).immediate();
+      return db
+        .transaction(() => {
+          const assignmentDeleted = deleteAssignment.run(threadId).changes > 0;
+          const workflowDeleted = deleteWorkingState.run(threadId).changes > 0;
+          return assignmentDeleted || workflowDeleted;
+        })
+        .immediate();
     },
   };
 }

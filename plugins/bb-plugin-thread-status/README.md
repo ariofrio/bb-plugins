@@ -35,6 +35,14 @@ and updates only the moved row inside an immediate SQLite transaction. This
 avoids renumbering a whole task-status group and reduces conflicts between
 concurrent moves.
 
+Task status follows the thread lifecycle at workflow boundaries. When a thread
+enters `starting`, `active`, or `stopping`, its task moves to the bottom of
+**Working**. A manual move after that is preserved while the thread keeps
+working. When a task still in **Working** later enters `idle` or `error`, it
+moves to the bottom of **To Do**. The last observed working state is persisted,
+so reloading the plugin neither repeats an entry transition nor erases a manual
+override.
+
 The sidebar remains opt-in after installation. Select **Thread tasks** under
 **Settings → Appearance → Sidebar**.
 

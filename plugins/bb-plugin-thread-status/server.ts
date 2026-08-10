@@ -7,6 +7,7 @@ import {
   THREAD_STATUS_MIGRATIONS,
   createThreadStatusStore,
 } from "./store";
+import { registerTaskWorkflow } from "./task-workflow";
 import { THREAD_STATUSES } from "./thread-status";
 
 const threadStatusSchema = z.enum(THREAD_STATUSES);
@@ -176,6 +177,8 @@ export default function plugin(bb: BbPluginApi) {
       bb.realtime.publish("state-changed", { threadId: thread.id });
     }
   });
+
+  registerTaskWorkflow(bb, store);
 
   bb.log.info("Thread tasks loaded");
 }
