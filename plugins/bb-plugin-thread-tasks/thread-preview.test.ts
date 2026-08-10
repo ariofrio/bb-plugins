@@ -36,7 +36,7 @@ const error = {
 describe("thread preview", () => {
   it("renders Markdown message content as plain-text subtitle text", () => {
     expect(
-      deriveThreadPreview("active", [
+      deriveThreadPreview([
         {
           ...user,
           text: [
@@ -53,7 +53,7 @@ describe("thread preview", () => {
 
   it("keeps readable content from fenced code, images, and setext headings", () => {
     expect(
-      deriveThreadPreview("idle", [
+      deriveThreadPreview([
         {
           ...assistant,
           text: [
@@ -73,7 +73,7 @@ describe("thread preview", () => {
 
   it("strips nested quotes, task markers, and reference-style image syntax", () => {
     expect(
-      deriveThreadPreview("active", [
+      deriveThreadPreview([
         {
           ...user,
           text: [
@@ -87,36 +87,35 @@ describe("thread preview", () => {
     ).toBe("Details Complete");
   });
 
-  it.each([
-    ["starting", "Latest user message"],
-    ["active", "Latest user message"],
-    ["stopping", "Stopping: Latest assistant message"],
-  ] as const)("formats a %s thread", (status, expected) => {
-    expect(deriveThreadPreview(status, [user, assistant])).toBe(expected);
+  it("shows the latest message whichever side sent it", () => {
+    expect(deriveThreadPreview([user, assistant])).toBe(
+      "Latest assistant message",
+    );
+    expect(
+      deriveThreadPreview([assistant, { ...user, sourceSeqEnd: 30 }]),
+    ).toBe("Latest user message");
   });
 
-  it.each([
-    ["completed", "Latest assistant message"],
-    ["interrupted", "Interrupted: Latest assistant message"],
-    ["error", "Error: Provider error"],
-  ] as const)("formats an idle %s turn", (turnStatus, expected) => {
+  it("finds messages nested inside turns", () => {
     expect(
-      deriveThreadPreview("idle", [
+      deriveThreadPreview([
         {
           id: "turn",
           kind: "turn",
-          status: turnStatus,
+          status: "completed",
           sourceSeqEnd: 40,
-          children: [user, assistant, error],
+          children: [user, assistant],
         },
       ]),
-    ).toBe(expected);
+    ).toBe("Latest assistant message");
   });
 
-  it("formats a thread lifecycle error independently of turn status", () => {
-    expect(deriveThreadPreview("error", [user, assistant, error])).toBe(
-      "Error: Provider error",
+  it("ignores rows that are not conversation messages", () => {
+    expect(deriveThreadPreview([user, assistant, error])).toBe(
+      "Latest assistant message",
     );
+    expect(deriveThreadPreview([error])).toBeNull();
+    expect(deriveThreadPreview([])).toBeNull();
   });
 
   it("reconciles and publishes persisted previews from bb timelines", async () => {
@@ -151,7 +150,6 @@ describe("thread preview", () => {
         },
         threads: {
           list: async () => [{ id: "thr_a" }],
-          get: async () => ({ id: "thr_a", status: "active" }),
           timeline,
         },
       },
@@ -164,7 +162,7 @@ describe("thread preview", () => {
 
       await vi.waitFor(() =>
         expect(store.listPreviews()).toEqual([
-          { threadId: "thr_a", preview: "Latest user message" },
+          { threadId: "thr_a", preview: "Latest assistant message" },
         ]),
       );
       await vi.waitFor(() =>

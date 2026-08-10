@@ -1,19 +1,13 @@
 import type { BbPluginApi } from "@bb/plugin-sdk";
 import type { ThreadStatusStore } from "./store";
-import type { ThreadLifecycleStatus } from "./task-workflow";
 
 const MAX_PREVIEW_LENGTH = 500;
 
 export interface ThreadPreviewRow {
-  id: string;
   kind: string;
   sourceSeqEnd: number;
   role?: "user" | "assistant";
   text?: string;
-  status?: "pending" | "completed" | "error" | "interrupted";
-  systemKind?: string;
-  title?: string;
-  detail?: string | null;
   children?: readonly ThreadPreviewRow[] | null;
 }
 
@@ -53,10 +47,6 @@ function oneLine(value: string | null | undefined): string | null {
   return normalized ? normalized.slice(0, MAX_PREVIEW_LENGTH) : null;
 }
 
-function prefixed(label: string, value: string | null): string {
-  return (value ? `${label}: ${value}` : label).slice(0, MAX_PREVIEW_LENGTH);
-}
-
 function flattenRows(rows: readonly ThreadPreviewRow[]): ThreadPreviewRow[] {
   const flattened: ThreadPreviewRow[] = [];
   for (const row of rows) {
@@ -82,50 +72,17 @@ function latest(
   return result;
 }
 
+/** The subtitle is the newest message, whether the user or the agent sent it. */
 export function deriveThreadPreview(
-  threadStatus: ThreadLifecycleStatus,
   rows: readonly ThreadPreviewRow[],
 ): string | null {
-  const flattened = flattenRows(rows);
-  const latestUser = oneLine(
-    latest(
-      flattened,
-      (row) => row.kind === "conversation" && row.role === "user",
-    )?.text,
+  const latestMessage = latest(
+    flattenRows(rows),
+    (row) =>
+      row.kind === "conversation" &&
+      (row.role === "user" || row.role === "assistant"),
   );
-  const latestAssistant = oneLine(
-    latest(
-      flattened,
-      (row) => row.kind === "conversation" && row.role === "assistant",
-    )?.text,
-  );
-  const latestError = latest(
-    flattened,
-    (row) => row.kind === "system" && row.systemKind === "error",
-  );
-  const errorMessage = oneLine(latestError?.title ?? latestError?.detail);
-
-  if (threadStatus === "active" || threadStatus === "starting") {
-    return latestUser;
-  }
-  if (threadStatus === "stopping") {
-    return prefixed("Stopping", latestAssistant);
-  }
-  if (threadStatus === "error") {
-    return prefixed("Error", errorMessage);
-  }
-
-  const turnStatus = latest(
-    flattened,
-    (row) => row.kind === "turn" && row.status !== undefined,
-  )?.status;
-  if (turnStatus === "interrupted") {
-    return prefixed("Interrupted", latestAssistant);
-  }
-  if (turnStatus === "error") {
-    return prefixed("Error", errorMessage);
-  }
-  return latestAssistant;
+  return oneLine(latestMessage?.text);
 }
 
 export function registerThreadPreviews(
@@ -157,17 +114,13 @@ export function registerThreadPreviews(
         queue = queue
           .then(async () => {
             if (signal.aborted) return;
-            const [thread, timeline] = await Promise.all([
-              bb.sdk.threads.get({ threadId, signal }),
-              bb.sdk.threads.timeline({
-                threadId,
-                includeNestedRows: "true",
-                segmentLimit: "1",
-                signal,
-              }),
-            ]);
+            const timeline = await bb.sdk.threads.timeline({
+              threadId,
+              includeNestedRows: "true",
+              segmentLimit: "1",
+              signal,
+            });
             const preview = deriveThreadPreview(
-              thread.status,
               timeline.rows as ThreadPreviewRow[],
             );
             if (store.setPreview(threadId, preview)) {
