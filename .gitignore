@@ -1,4 +1,5 @@
 .scratch/
 node_modules/
-.DS_Store
+dist/
 .claude/
+.DS_Store

@@ -1,7 +1,7 @@
 // Installs every plugin in this repository into the running bb, and rebuilds
 // and reloads the ones already installed from these directories, so the same
-// command serves a fresh clone and a `git pull`, and leaves the checked-in
-// bundles untouched. Usage: npm run install:plugins
+// command serves a fresh clone and a `git pull`.
+// Usage: npm run install:plugins
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -64,9 +64,7 @@ for (const plugin of plugins) {
   if (existing === undefined) {
     run(bb, ["plugin", "install", plugin.directory, "--yes"], repositoryRoot);
   }
-  // Installing a path rebuilds dist/app.js with module comments relative to
-  // the installing machine, and reloading does not rebuild at all, so build
-  // the canonical bundle either way and load it.
+  // Reloading never rebuilds, so build before loading an updated plugin.
   run("npm", ["run", "build"], plugin.directory);
   run(bb, ["plugin", "reload", plugin.id], repositoryRoot);
 }

@@ -68,10 +68,11 @@ npm run release:check
 bb plugin reload missing-keyboard-shortcuts
 ```
 
-`release:check` runs the tests and typecheck, rebuilds from a clean `dist/`,
-fails if the generated files differ from Git, and installs the packed npm
-artifact in a temporary directory to validate its contents. The package is not
-published to npm yet, but it stays publishable so it can be.
+`release:check` runs the tests and typecheck, checks the committed SDK
+declarations are current, builds, and installs the packed npm artifact in a
+temporary directory to validate its contents. `dist/` is built, never
+committed. The package is not published to npm yet, but it stays publishable
+so it can be.
 
 ## License
 
