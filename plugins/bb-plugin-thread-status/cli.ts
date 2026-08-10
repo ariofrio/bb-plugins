@@ -270,10 +270,7 @@ export function runTaskCli(
           previousThreadId,
           nextThreadId,
         });
-      } else if (
-        current.taskStatus !== status ||
-        typeof rawStatus === "string"
-      ) {
+      } else if (current.taskStatus !== status) {
         store.setStatus(taskId, status);
       }
       const task = store.get(taskId);

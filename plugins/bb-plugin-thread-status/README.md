@@ -67,8 +67,9 @@ arranged by each task's fractional order within the group; the internal order
 keys are not displayed.
 
 `update` changes task status, position, or both. A task-status change without a
-position flag puts the task at the bottom of its destination group. Override
-that placement with the immediately preceding task in `--after`, the
+position flag puts the task at the bottom of its destination group. Repeating
+the task's current status without a position is a no-op. Override placement
+with the immediately preceding task in `--after`, the
 immediately following task in `--before`, or both. Without `--status`, those
 flags reorder the task within its current group. A neighbor outside the
 destination task-status group is ignored with a warning. `--self` resolves to

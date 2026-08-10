@@ -61,13 +61,13 @@ describe("task CLI", () => {
       "update",
       "thr_a",
       "--status",
-      "to-do",
+      "Working",
     ]);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Task thr_a updated");
     expect(store.get("thr_a")).toMatchObject({
-      taskStatus: "To Do",
+      taskStatus: "Working",
       explicit: true,
     });
   });
@@ -180,6 +180,25 @@ describe("task CLI", () => {
         .assignments.filter((assignment) => assignment.taskStatus === "Working")
         .map((assignment) => assignment.threadId),
     ).toEqual(["thr_first", "thr_second", "thr_moved"]);
+  });
+
+  it("preserves position when updating to the current status without position flags", () => {
+    store.ensureThreads(["thr_first", "thr_middle", "thr_last"]);
+    const before = store.get("thr_middle");
+
+    const result = runTaskCli(store, [
+      "update",
+      "thr_middle",
+      "--status",
+      "To Do",
+      "--json",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(
+      store.listState().assignments.map((assignment) => assignment.threadId),
+    ).toEqual(["thr_first", "thr_middle", "thr_last"]);
+    expect(store.get("thr_middle")).toEqual(before);
   });
 
   it("overrides status-change position through update", () => {

@@ -159,6 +159,25 @@ describe("thread status store", () => {
     expect(store.get("thr_c").sortKey).not.toBe(before.get("thr_c"));
   });
 
+  it("preserves position when reordering within the same status without neighbors", () => {
+    store.ensureThreads(["thr_a", "thr_b", "thr_c"]);
+    const before = store.get("thr_b");
+
+    const after = store.reorderThread({
+      threadId: "thr_b",
+      taskStatus: "To Do",
+      previousThreadId: null,
+      nextThreadId: null,
+    });
+
+    expect(after.assignments.map((assignment) => assignment.threadId)).toEqual([
+      "thr_a",
+      "thr_b",
+      "thr_c",
+    ]);
+    expect(store.get("thr_b")).toEqual(before);
+  });
+
   it("changes status and order in one transaction", () => {
     store.ensureThreads(["thr_a", "thr_b"]);
     store.setStatus("thr_b", "Working");

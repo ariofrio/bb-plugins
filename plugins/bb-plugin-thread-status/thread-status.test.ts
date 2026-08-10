@@ -69,4 +69,12 @@ describe("thread statuses", () => {
       "c",
     ]);
   });
+
+  it("preserves the order when a task is dropped onto its current position", () => {
+    expect(destinationOrder(["a", "b", "c"], "b", "b")).toEqual([
+      "a",
+      "b",
+      "c",
+    ]);
+  });
 });

@@ -85,6 +85,7 @@ export function destinationOrder(
   movingThreadId: string,
   beforeThreadId: string | null,
 ): string[] {
+  if (beforeThreadId === movingThreadId) return [...currentThreadIds];
   const withoutMoving = currentThreadIds.filter((id) => id !== movingThreadId);
   const insertionIndex =
     beforeThreadId === null ? -1 : withoutMoving.indexOf(beforeThreadId);

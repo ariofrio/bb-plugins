@@ -276,10 +276,17 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
 
   const reorderThreadTransaction = db.transaction(
     (input: ReorderThreadInput): ThreadStatusState => {
+      const moved = getAssignment.get(input.threadId) as AssignmentRow | undefined;
+      if (
+        moved?.status === input.taskStatus &&
+        input.previousThreadId === null &&
+        input.nextThreadId === null
+      ) {
+        return listState();
+      }
       const current = listStatusAssignments
         .all(input.taskStatus)
         .map((row) => assignmentFromRow(row as AssignmentRow));
-      const moved = getAssignment.get(input.threadId) as AssignmentRow | undefined;
       if (
         input.previousThreadId === input.threadId ||
         input.nextThreadId === input.threadId
