@@ -4,6 +4,7 @@ import {
   focusedSecondaryComposerThreadId,
   focusPrimaryComposer,
   focusSecondaryComposer,
+  focusSecondaryComposerWhenReady,
   hasPrimaryComposer,
   isSecondaryComposerFocused,
   registerPrimaryComposerFocus,
@@ -74,7 +75,10 @@ describe("composer navigation bridge", () => {
 
   it("focuses only the requested visible secondary composer", () => {
     const hidden = vi.fn();
-    const visible = vi.fn();
+    let visibleFocused = false;
+    const visible = vi.fn(() => {
+      visibleFocused = true;
+    });
     disposers.push(
       registerSecondaryComposer("thr_parent", "thr_hidden", {
         focus: hidden,
@@ -85,7 +89,7 @@ describe("composer navigation bridge", () => {
     disposers.push(
       registerSecondaryComposer("thr_parent", "thr_visible", {
         focus: visible,
-        isFocused: () => false,
+        isFocused: () => visibleFocused,
         isVisible: () => true,
       }),
     );
@@ -94,6 +98,43 @@ describe("composer navigation bridge", () => {
     expect(focusSecondaryComposer("thr_parent", "thr_visible")).toBe(true);
     expect(hidden).not.toHaveBeenCalled();
     expect(visible).toHaveBeenCalledOnce();
+  });
+
+  it("does not report success when a focus callback leaves DOM focus elsewhere", () => {
+    disposers.push(
+      registerSecondaryComposer("thr_parent", "thr_side", {
+        focus: vi.fn(),
+        isFocused: () => false,
+        isVisible: () => true,
+      }),
+    );
+
+    expect(focusSecondaryComposer("thr_parent", "thr_side")).toBe(false);
+  });
+
+  it("focuses a secondary composer when its registration becomes ready", () => {
+    const controller = new AbortController();
+    let focused = false;
+    const focus = vi.fn(() => {
+      focused = true;
+    });
+    disposers.push(
+      focusSecondaryComposerWhenReady("thr_parent", "thr_side", {
+        isCurrent: () => true,
+        signal: controller.signal,
+      }),
+    );
+
+    expect(focus).not.toHaveBeenCalled();
+    disposers.push(
+      registerSecondaryComposer("thr_parent", "thr_side", {
+        focus,
+        isFocused: () => focused,
+        isVisible: () => true,
+      }),
+    );
+
+    expect(focus).toHaveBeenCalledOnce();
   });
 
   it("reports which exact secondary composer owns DOM focus", () => {
@@ -124,12 +165,18 @@ describe("composer navigation bridge", () => {
   });
 
   it("falls back to an earlier secondary registration after unmount", () => {
-    const first = vi.fn();
-    const second = vi.fn();
+    let firstFocused = false;
+    let secondFocused = false;
+    const first = vi.fn(() => {
+      firstFocused = true;
+    });
+    const second = vi.fn(() => {
+      secondFocused = true;
+    });
     disposers.push(
       registerSecondaryComposer("thr_parent", "thr_side", {
         focus: first,
-        isFocused: () => false,
+        isFocused: () => firstFocused,
         isVisible: () => true,
       }),
     );
@@ -138,7 +185,7 @@ describe("composer navigation bridge", () => {
       "thr_side",
       {
         focus: second,
-        isFocused: () => false,
+        isFocused: () => secondFocused,
         isVisible: () => true,
       },
     );

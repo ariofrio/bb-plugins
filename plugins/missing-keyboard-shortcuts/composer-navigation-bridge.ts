@@ -13,6 +13,10 @@ const secondaryComposersByParent = new Map<
   string,
   Map<string, SecondaryComposerRegistration[]>
 >();
+const secondaryComposerReadyListeners = new Map<
+  string,
+  Map<string, Set<() => void>>
+>();
 
 export function registerThreadArchive(
   threadId: string,
@@ -83,6 +87,11 @@ export function registerSecondaryComposer(
   const registrations = byChild.get(childThreadId) ?? [];
   registrations.push(registration);
   byChild.set(childThreadId, registrations);
+  for (const listener of secondaryComposerReadyListeners
+    .get(parentThreadId)
+    ?.get(childThreadId) ?? []) {
+    listener();
+  }
   return () => {
     const index = registrations.lastIndexOf(registration);
     if (index !== -1) registrations.splice(index, 1);
@@ -103,10 +112,55 @@ export function focusSecondaryComposer(
     const registration = registrations[index];
     if (registration?.isVisible()) {
       registration.focus();
-      return true;
+      return registration.isFocused();
     }
   }
   return false;
+}
+
+interface FocusSecondaryComposerWhenReadyOptions {
+  isCurrent(): boolean;
+  signal: AbortSignal;
+}
+
+export function focusSecondaryComposerWhenReady(
+  parentThreadId: string,
+  childThreadId: string,
+  { isCurrent, signal }: FocusSecondaryComposerWhenReadyOptions,
+): () => void {
+  if (signal.aborted) return () => {};
+
+  let byChild = secondaryComposerReadyListeners.get(parentThreadId);
+  if (byChild === undefined) {
+    byChild = new Map();
+    secondaryComposerReadyListeners.set(parentThreadId, byChild);
+  }
+  const listeners = byChild.get(childThreadId) ?? new Set<() => void>();
+  byChild.set(childThreadId, listeners);
+  let stopped = false;
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    listeners.delete(attempt);
+    if (listeners.size === 0) byChild?.delete(childThreadId);
+    if (byChild?.size === 0) {
+      secondaryComposerReadyListeners.delete(parentThreadId);
+    }
+    signal.removeEventListener("abort", stop);
+  };
+  const attempt = () => {
+    if (stopped) return;
+    if (
+      !isCurrent() ||
+      focusSecondaryComposer(parentThreadId, childThreadId)
+    ) {
+      stop();
+    }
+  };
+  listeners.add(attempt);
+  signal.addEventListener("abort", stop, { once: true });
+  attempt();
+  return stop;
 }
 
 export function isSecondaryComposerFocused(
