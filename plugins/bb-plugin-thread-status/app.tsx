@@ -125,7 +125,7 @@ interface ThreadRowProps {
   onMoveUp: () => void;
   onNavigate: () => void;
   onToggleChildren: () => void;
-  projectName: string | null;
+  preview: string | null;
   reorderable: boolean;
   showDropAfter: boolean;
   showDropBefore: boolean;
@@ -157,7 +157,7 @@ function ThreadRow({
   onMoveUp,
   onNavigate,
   onToggleChildren,
-  projectName,
+  preview,
   reorderable,
   showDropAfter,
   showDropBefore,
@@ -170,7 +170,7 @@ function ThreadRow({
   const [contextOpen, setContextOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const title = threadTitle(thread);
-  const accessibleTitle = projectName ? `${projectName} — ${title}` : title;
+  const accessibleTitle = preview ? `${title} — ${preview}` : title;
   const actionsOpen = dropdownOpen || contextOpen;
 
   function openThread(event: MouseEvent<HTMLAnchorElement>): void {
@@ -263,12 +263,12 @@ function ThreadRow({
             <span className="truncate leading-5" title={accessibleTitle}>
               {title}
             </span>
-            {projectName ? (
+            {preview ? (
               <span
                 className="truncate text-[11px] leading-4 text-subtle-foreground/75"
-                title={projectName}
+                title={preview}
               >
-                {projectName}
+                {preview}
               </span>
             ) : null}
           </span>
@@ -519,6 +519,9 @@ function ThreadStatusList({
   const [organization, setOrganization] = useState<OrganizationState | null>(
     null,
   );
+  const [previews, setPreviews] = useState<ReadonlyMap<string, string | null>>(
+    () => new Map(),
+  );
   const organizationLoaded = useRef(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -565,18 +568,43 @@ function ThreadStatusList({
     }
   }, [rpc]);
 
+  const refreshPreviews = useCallback(async () => {
+    try {
+      const result = await rpc.call("listPreviews", null);
+      setPreviews(
+        new Map(
+          result.previews.map((preview) => [
+            preview.threadId,
+            preview.preview,
+          ]),
+        ),
+      );
+    } catch {
+      // A missing preview is a valid transient state while the backend catches
+      // up; task organization remains usable without secondary text.
+    }
+  }, [rpc]);
+
   useEffect(() => {
     void refresh();
-  }, [refresh]);
+    void refreshPreviews();
+  }, [refresh, refreshPreviews]);
 
   useRealtime("state-changed", () => {
     void refresh();
   });
 
+  useRealtime("previews-changed", () => {
+    void refreshPreviews();
+  });
+
   useEffect(() => {
-    if (connectionState === "connected" && wasConnected.current) void refresh();
+    if (connectionState === "connected" && wasConnected.current) {
+      void refresh();
+      void refreshPreviews();
+    }
     wasConnected.current = connectionState === "connected";
-  }, [connectionState, refresh]);
+  }, [connectionState, refresh, refreshPreviews]);
 
   const taskThreads = useMemo(
     () => sidebar.threads.filter((thread) => !thread.isArchived),
@@ -725,10 +753,6 @@ function ThreadStatusList({
         ]),
       ),
     [organization?.assignments],
-  );
-  const projectNames = useMemo(
-    () => new Map(sidebar.projects.map((project) => [project.id, project.name])),
-    [sidebar.projects],
   );
   const pinnedHierarchyRows = useMemo(
     () => flattenThreadHierarchy(pinnedState.pinnedThreads, collapsedThreads),
@@ -1022,7 +1046,7 @@ function ThreadStatusList({
                       onToggleChildren={() =>
                         toggleThreadCollapsed(thread.id)
                       }
-                      projectName={projectNames.get(thread.projectId) ?? null}
+                      preview={previews.get(thread.id) ?? null}
                       reorderable={isRoot && !Boolean(normalizedSearch)}
                       showDropAfter={
                         dropGroup === PINNED_SECTION &&
@@ -1216,7 +1240,7 @@ function ThreadStatusList({
                         onToggleChildren={() =>
                           toggleThreadCollapsed(thread.id)
                         }
-                        projectName={projectNames.get(thread.projectId) ?? null}
+                        preview={previews.get(thread.id) ?? null}
                         reorderable={!Boolean(normalizedSearch)}
                         showDropAfter={
                           dropGroup === status && dropAfter === thread.id

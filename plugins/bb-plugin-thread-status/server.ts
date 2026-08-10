@@ -8,6 +8,7 @@ import {
   createThreadStatusStore,
 } from "./store";
 import { registerTaskWorkflow } from "./task-workflow";
+import { registerThreadPreviews } from "./thread-preview";
 import { THREAD_STATUSES } from "./thread-status";
 
 const threadStatusSchema = z.enum(THREAD_STATUSES);
@@ -22,6 +23,18 @@ const assignmentSchema = z
 const stateSchema = z
   .object({
     assignments: z.array(assignmentSchema),
+  })
+  .strict();
+const previewsSchema = z
+  .object({
+    previews: z.array(
+      z
+        .object({
+          threadId: z.string(),
+          preview: z.string().max(500).nullable(),
+        })
+        .strict(),
+    ),
   })
   .strict();
 const searchResultSchema = z
@@ -46,6 +59,10 @@ export const rpcContract = defineRpcContract({
   listState: {
     input: z.null(),
     output: stateSchema,
+  },
+  listPreviews: {
+    input: z.null(),
+    output: previewsSchema,
   },
   listPinnedThreadIds: {
     input: z.null(),
@@ -97,6 +114,7 @@ export default function plugin(bb: BbPluginApi) {
 
   bb.rpc.register(rpcContract, {
     listState: () => store.listState(),
+    listPreviews: () => ({ previews: store.listPreviews() }),
     async listPinnedThreadIds() {
       const threads = await bb.sdk.threads.list({ archived: false });
       return { threadIds: sortExplicitPinnedThreadIds(threads) };
@@ -179,6 +197,7 @@ export default function plugin(bb: BbPluginApi) {
   });
 
   registerTaskWorkflow(bb, store);
+  registerThreadPreviews(bb, store);
 
   bb.log.info("Thread tasks loaded");
 }

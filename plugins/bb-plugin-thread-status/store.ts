@@ -40,6 +40,13 @@ export const THREAD_STATUS_MIGRATIONS = [
       updated_at INTEGER NOT NULL
     );
   `,
+  `
+    CREATE TABLE IF NOT EXISTS thread_task_preview (
+      thread_id TEXT PRIMARY KEY,
+      preview TEXT,
+      updated_at INTEGER NOT NULL
+    );
+  `,
 ];
 
 interface AssignmentRow {
@@ -73,8 +80,14 @@ export interface WorkingStateObservation {
   taskStatusChanged: boolean;
 }
 
+export interface ThreadPreview {
+  threadId: string;
+  preview: string | null;
+}
+
 export interface ThreadStatusStore {
   listState(): ThreadStatusState;
+  listPreviews(): ThreadPreview[];
   get(threadId: string): ThreadStatusLookup;
   ensureThreads(threadIds: readonly string[]): ThreadStatusState;
   setStatus(threadId: string, status: ThreadStatus): ThreadStatusState;
@@ -82,6 +95,7 @@ export interface ThreadStatusStore {
     threadId: string,
     isWorking: boolean,
   ): WorkingStateObservation;
+  setPreview(threadId: string, preview: string | null): boolean;
   reorderThread(input: ReorderThreadInput): ThreadStatusState;
   delete(threadId: string): boolean;
 }
@@ -159,6 +173,24 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
   `);
   const deleteWorkingState = db.prepare(
     "DELETE FROM thread_task_workflow WHERE thread_id = ?",
+  );
+  const listPreviewRows = db.prepare(`
+    SELECT thread_id, preview
+    FROM thread_task_preview
+    ORDER BY thread_id
+  `);
+  const getPreview = db.prepare(
+    "SELECT preview FROM thread_task_preview WHERE thread_id = ?",
+  );
+  const upsertPreview = db.prepare(`
+    INSERT INTO thread_task_preview(thread_id, preview, updated_at)
+    VALUES (?, ?, ?)
+    ON CONFLICT(thread_id) DO UPDATE SET
+      preview = excluded.preview,
+      updated_at = excluded.updated_at
+  `);
+  const deletePreview = db.prepare(
+    "DELETE FROM thread_task_preview WHERE thread_id = ?",
   );
 
   function listState(): ThreadStatusState {
@@ -300,6 +332,14 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
 
   return {
     listState,
+    listPreviews() {
+      return (
+        listPreviewRows.all() as Array<{
+          thread_id: string;
+          preview: string | null;
+        }>
+      ).map((row) => ({ threadId: row.thread_id, preview: row.preview }));
+    },
     get(threadId) {
       assertThreadId(threadId);
       const row = getAssignment.get(threadId) as AssignmentRow | undefined;
@@ -329,6 +369,18 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
       assertThreadId(threadId);
       return observeWorkingStateTransaction.immediate(threadId, isWorking);
     },
+    setPreview(threadId, preview) {
+      assertThreadId(threadId);
+      if (preview !== null && preview.length > 500) {
+        throw new Error("Thread preview must contain at most 500 characters.");
+      }
+      const existing = getPreview.get(threadId) as
+        | { preview: string | null }
+        | undefined;
+      if (existing && existing.preview === preview) return false;
+      upsertPreview.run(threadId, preview, Date.now());
+      return true;
+    },
     reorderThread(input) {
       assertThreadId(input.threadId);
       if (input.previousThreadId) assertThreadId(input.previousThreadId);
@@ -344,7 +396,8 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
         .transaction(() => {
           const assignmentDeleted = deleteAssignment.run(threadId).changes > 0;
           const workflowDeleted = deleteWorkingState.run(threadId).changes > 0;
-          return assignmentDeleted || workflowDeleted;
+          const previewDeleted = deletePreview.run(threadId).changes > 0;
+          return assignmentDeleted || workflowDeleted || previewDeleted;
         })
         .immediate();
     },

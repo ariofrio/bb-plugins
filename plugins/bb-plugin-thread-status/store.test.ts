@@ -122,6 +122,17 @@ describe("thread status store", () => {
     expect(store.get("thr_a").taskStatus).toBe("To Do");
   });
 
+  it("persists one derived message preview per thread", () => {
+    expect(store.setPreview("thr_a", "Latest message")).toBe(true);
+    expect(store.setPreview("thr_a", "Latest message")).toBe(false);
+    expect(store.setPreview("thr_b", null)).toBe(true);
+
+    expect(store.listPreviews()).toEqual([
+      { threadId: "thr_a", preview: "Latest message" },
+      { threadId: "thr_b", preview: null },
+    ]);
+  });
+
   it("changes only the moved row's key when reordering between neighbors", () => {
     store.ensureThreads(["thr_a", "thr_b", "thr_c"]);
     const before = new Map(
@@ -231,7 +242,9 @@ describe("thread status store", () => {
         )
         .run("thr_a", "Waiting", 1024, 1);
       migrationDb.exec(THREAD_STATUS_MIGRATIONS[1] ?? "");
-      migrationDb.exec(THREAD_STATUS_MIGRATIONS[2] ?? "");
+      for (const migration of THREAD_STATUS_MIGRATIONS.slice(2)) {
+        migrationDb.exec(migration);
+      }
 
       const migrated = createThreadStatusStore(migrationDb).listState();
       expect(migrated.assignments).toMatchObject([
