@@ -2,12 +2,12 @@ import type { ThreadStatus } from "../thread-status";
 import { Icon, type IconName } from "./Icon";
 
 const TASK_STATUS_ICONS: Record<ThreadStatus, IconName> = {
-  Done: "CheckmarkCircle",
-  "To do": "Circle",
-  Working: "Loading",
-  Waiting: "Clock",
-  Deferred: "DashedCircle",
-  Canceled: "CancelCircle",
+  Done: "CheckmarkSquare",
+  "To do": "Square",
+  Working: "Diamond",
+  Waiting: "ClockSquare",
+  Deferred: "DashedSquare",
+  Canceled: "CancelSquare",
 };
 
 export function TaskStatusIcon({

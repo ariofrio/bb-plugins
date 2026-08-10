@@ -8,12 +8,12 @@ afterEach(cleanup);
 
 describe("TaskStatusIcon", () => {
   it.each([
-    ["Done", "CheckmarkCircle"],
-    ["To do", "Circle"],
-    ["Working", "Loading"],
-    ["Waiting", "Clock"],
-    ["Deferred", "DashedCircle"],
-    ["Canceled", "CancelCircle"],
+    ["Done", "CheckmarkSquare"],
+    ["To do", "Square"],
+    ["Working", "Diamond"],
+    ["Waiting", "ClockSquare"],
+    ["Deferred", "DashedSquare"],
+    ["Canceled", "CancelSquare"],
   ] as const)("renders the requested icon for %s", (status, iconName) => {
     const { container } = render(<TaskStatusIcon status={status} />);
 
