@@ -248,7 +248,7 @@ function ThreadRow({
           href={`/projects/${encodeURIComponent(thread.projectId)}/threads/${encodeURIComponent(thread.id)}`}
           onClick={openThread}
         />
-        <span className="relative flex min-w-0 flex-1 items-center gap-1.5">
+        <span className="flex min-w-0 flex-1 items-center gap-1.5">
           <span className="flex min-w-0 flex-1 flex-col justify-center leading-none">
             <span className="truncate leading-5" title={accessibleTitle}>
               {title}
