@@ -1,5 +1,5 @@
 {
-  "name": "bb-plugin-thread-status",
+  "name": "bb-plugin-thread-tasks",
   "version": "0.5.0",
   "private": true,
   "type": "module",
