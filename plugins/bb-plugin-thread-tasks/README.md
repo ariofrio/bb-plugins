@@ -37,26 +37,26 @@ bb plugin reload thread-tasks
 
 ## Keyboard shortcuts
 
-On a thread route, `.` chords set the current thread's task status:
+On a thread route, `.` chords set the open thread's task status:
 
-| Shortcut               | Task status |
-| ---------------------- | ----------- |
-| `Command-.`            | Done        |
-| `Command-Shift-.`      | To do       |
-| `Control-Command-.`    | Deferred    |
-| `Control-Shift-Command-.` | Waiting  |
-| `Option-Command-.`     | Canceled    |
+| Shortcut | Task status |
+| -------: | ----------- |
+|       ⌘. | Done        |
+|      ⇧⌘. | To do       |
+|     ⌃⇧⌘. | Waiting     |
+|      ⌃⌘. | Deferred    |
+|      ⌥⌘. | Canceled    |
 
-**Working** has no shortcut because the task workflow assigns it automatically.
+**Working** has no chord because the task workflow assigns it automatically.
 Marking a task **Done** does not archive its thread.
 
-Arrow chords move the current task within the sidebar:
+Arrow chords move the open thread's task:
 
-| Shortcut                    | Action                                   |
-| --------------------------- | ---------------------------------------- |
-| `Option-Command-↑` / `↓`    | Move one position within its status       |
-| `Option-Shift-Command-↑` / `↓` | Move to the top or bottom of its status |
-| `Control-Command-↑` / `↓`   | Move to the status above or below         |
+|    Shortcut | Move                               |
+| ----------: | ---------------------------------- |
+|   ⌥⌘↑ / ⌥⌘↓ | One position within its status     |
+| ⌥⇧⌘↑ / ⌥⇧⌘↓ | To the top or bottom of its status |
+|   ⌃⌘↑ / ⌃⌘↓ | To the status above or below       |
 
 A move that would leave a task where it already is does nothing, and moving to
 another status appends the task to that section. Reordering follows the
@@ -65,7 +65,7 @@ neighbor's nested threads, and reorders a pinned thread within the pinned
 section. The backend resolves each move, so every shortcut works on the open
 thread from anywhere in bb, whichever sidebar is displayed.
 
-All of these shortcuts work while an input, editor, or composer has focus; they
+All of these shortcuts work while an input, editor, or composer has focus. They
 use exact modifier matching, ignore held-key repeats, and stop matched key
 events from propagating to downstream BB or editor handlers.
 
