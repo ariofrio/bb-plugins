@@ -4,6 +4,7 @@ import {
   pinnedThreadIds,
   type ReorderThreadLike,
 } from "./task-reorder";
+import { flattenThreadHierarchy } from "./thread-hierarchy";
 import type { ThreadAssignment, ThreadStatus } from "./thread-status";
 
 /** Where the client should go once the chord has been applied. */
@@ -65,15 +66,28 @@ export function resolveStatusChord({
     };
   }
 
+  // Walk the To do section the way the sidebar renders it, so "the row below"
+  // means the row below on screen.
+  const threadById = new Map(listed.map((thread) => [thread.id, thread]));
   const pinned = pinnedThreadIds(listed);
-  const listedIds = new Set(listed.map((thread) => thread.id));
-  const nextThreadId = assignments.find(
-    (assignment) =>
-      assignment.taskStatus === "To do" &&
-      assignment.threadId !== threadId &&
-      listedIds.has(assignment.threadId) &&
-      !pinned.has(assignment.threadId),
-  )?.threadId;
+  const toDo = assignments
+    .filter(
+      (assignment) =>
+        assignment.taskStatus === "To do" &&
+        threadById.has(assignment.threadId) &&
+        !pinned.has(assignment.threadId),
+    )
+    .flatMap((assignment) => threadById.get(assignment.threadId) ?? []);
+  const rows = flattenThreadHierarchy(toDo, new Set<string>()).map(
+    ({ thread }) => thread.id,
+  );
+
+  const index = rows.indexOf(threadId);
+  const nextThreadId =
+    index === -1
+      ? rows[0]
+      : // Filing the last row leaves the one above it as the new last.
+        (rows[index + 1] ?? rows[index - 1]);
 
   return {
     kind: "file",

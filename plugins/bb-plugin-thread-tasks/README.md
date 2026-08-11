@@ -43,20 +43,22 @@ Installing a path builds the plugin; reloading loads what is already built.
 On a thread route, `.` chords set the open thread's task status and move you
 on:
 
-| Shortcut | Task status | Then                        |
-| -------: | ----------- | --------------------------- |
-|       ⌘. | Done        | Go to the first To do task  |
+| Shortcut | Task status | Then                           |
+| -------: | ----------- | ------------------------------ |
+|       ⌘. | Done        | Go to the task below it        |
 |      ⇧⌘. | To do       | Stay, or undo your last filing |
-|     ⌃⇧⌘. | Waiting     | Go to the first To do task  |
-|      ⌃⌘. | Deferred    | Go to the first To do task  |
-|      ⌥⌘. | Canceled    | Go to the first To do task  |
+|     ⌃⇧⌘. | Waiting     | Go to the task below it        |
+|      ⌃⌘. | Deferred    | Go to the task below it        |
+|      ⌥⌘. | Canceled    | Go to the task below it        |
 
 **Working** has no chord because the task workflow assigns it automatically.
 Marking a task **Done** does not archive its thread.
 
-Filing a task moves you to the top of To do, skipping pinned threads, so the
-chords walk an inbox. When nothing is left to do you land on an empty composer
-with no project selected.
+Filing a task moves you down the To do section, so the chords walk it in
+place: you land on the row below the one you filed, or on the row above it
+when you file the last one. Filing a task that was not in To do starts you at
+the top instead. Pinned threads are skipped, and when To do empties you land on
+a composer with no project selected.
 
 **⇧⌘.** brings the open task back to To do and leaves you there. When the open
 task is *already* To do it undoes instead: the task you filed most recently

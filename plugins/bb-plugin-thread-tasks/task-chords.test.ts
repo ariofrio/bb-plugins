@@ -35,7 +35,7 @@ const assignments = [
 ];
 
 describe("resolveStatusChord", () => {
-  it("files the open task and moves on to the next To do task", () => {
+  it("files the open task and moves down to the task below it", () => {
     expect(
       resolveStatusChord({
         threadId: "thr_open",
@@ -49,6 +49,63 @@ describe("resolveStatusChord", () => {
       taskStatus: "Done",
       next: { kind: "thread", threadId: "thr_next" },
     });
+    expect(
+      resolveStatusChord({
+        threadId: "thr_next",
+        taskStatus: "Done",
+        threads,
+        assignments,
+        undoCandidates: [],
+      }),
+    ).toMatchObject({ next: { kind: "thread", threadId: "thr_later" } });
+  });
+
+  it("falls back to the task above when filing the last one", () => {
+    expect(
+      resolveStatusChord({
+        threadId: "thr_later",
+        taskStatus: "Done",
+        threads,
+        assignments,
+        undoCandidates: [],
+      }),
+    ).toMatchObject({ next: { kind: "thread", threadId: "thr_next" } });
+  });
+
+  it("starts at the top when the filed task was not in To do", () => {
+    expect(
+      resolveStatusChord({
+        threadId: "thr_open",
+        taskStatus: "Canceled",
+        threads,
+        assignments: [
+          assignment("thr_open", "Deferred", "a"),
+          assignment("thr_next", "To do", "b"),
+          assignment("thr_later", "To do", "c"),
+        ],
+        undoCandidates: [],
+      }),
+    ).toMatchObject({ next: { kind: "thread", threadId: "thr_next" } });
+  });
+
+  it("follows the sidebar's nesting when picking the row below", () => {
+    expect(
+      resolveStatusChord({
+        threadId: "thr_open",
+        taskStatus: "Done",
+        threads: [
+          thread("thr_open"),
+          thread("thr_child", { parentThreadId: "thr_open" }),
+          thread("thr_next"),
+        ],
+        assignments: [
+          assignment("thr_open", "To do", "a"),
+          assignment("thr_child", "To do", "b"),
+          assignment("thr_next", "To do", "c"),
+        ],
+        undoCandidates: [],
+      }),
+    ).toMatchObject({ next: { kind: "thread", threadId: "thr_child" } });
   });
 
   it("skips the filed task, pinned threads, and threads the sidebar hides", () => {
