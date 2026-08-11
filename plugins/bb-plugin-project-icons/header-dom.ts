@@ -43,10 +43,11 @@ export function installProjectIconPortal(
   const target = marker.ownerDocument.createElement("span");
   target.dataset.projectIconRoot = "";
   // This node lives in bb's header, outside the plugin's mount, so it has to
-  // carry its own scope root or none of the plugin's stylesheet reaches it —
-  // colors, sizes, and the drag-region opt-out all silently do nothing.
-  // The overlay marker is what lets Electron route clicks here rather than to
-  // the window-drag region underneath.
+  // carry its own scope root or the plugin's own stylesheet never reaches it.
+  // Utilities bb uses itself (sizing, muted text, the drag-region opt-out)
+  // come from bb's global stylesheet and work regardless; what needs the scope
+  // is anything only this plugin uses — the icon color palette. The overlay
+  // marker lets Electron route clicks here rather than to the drag region.
   target.dataset.bbPluginRoot = "";
   target.dataset.bbPortaledOverlay = "";
   if (typeof __BB_PLUGIN_ID__ === "string") {
