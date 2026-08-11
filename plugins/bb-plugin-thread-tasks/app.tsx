@@ -262,11 +262,11 @@ function ThreadRow({
           href={`/projects/${encodeURIComponent(thread.projectId)}/threads/${encodeURIComponent(thread.id)}`}
           onClick={openThread}
         />
-        <span className="flex min-w-0 flex-1 items-center gap-1.5">
+        <span className="flex min-w-0 flex-1 items-center gap-2">
           {projectIcon === null ? null : (
             <HugeiconsIcon
               icon={projectIcon.glyph}
-              className={`size-3.5 shrink-0 opacity-70 ${projectIcon.colorClass || "text-muted-foreground"}`}
+              className={`size-4 shrink-0 ${projectIcon.colorClass || "text-muted-foreground/70"}`}
               data-project-icon=""
               aria-hidden
             />
