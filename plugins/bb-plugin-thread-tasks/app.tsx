@@ -48,6 +48,7 @@ import { notifyNativeShortcutHandled } from "./native-command-hints";
 import { usePersistentStringSet } from "./persistent-string-set";
 import {
   fetchProjectIcons,
+  subscribeToProjectIconChanges,
   type ProjectIconView,
 } from "./project-icons";
 import { shouldSyncThreads } from "./task-sync";
@@ -267,7 +268,7 @@ function ThreadRow({
             <HugeiconsIcon
               icon={projectIcon.glyph}
               className={`size-4 shrink-0 ${projectIcon.colorClass || "text-muted-foreground/70"}`}
-              data-project-icon=""
+              data-project-icon={projectIcon.name}
               aria-hidden
             />
           )}
@@ -643,12 +644,10 @@ function ThreadStatusList({
       );
     };
     load();
-    // Icons live in another plugin, whose realtime channel this one cannot
-    // join, so refresh when the window comes back into focus.
-    window.addEventListener("focus", load);
+    const unsubscribe = subscribeToProjectIconChanges(load);
     return () => {
       canceled = true;
-      window.removeEventListener("focus", load);
+      unsubscribe();
     };
   }, [projectIds]);
   const explicitPinnedThreadIds = useMemo(

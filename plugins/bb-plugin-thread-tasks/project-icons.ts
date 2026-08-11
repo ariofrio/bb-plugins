@@ -7,8 +7,16 @@ import type { IconSvgElement } from "@hugeicons/react";
  */
 const PROJECT_ICONS_PLUGIN_ID = "project-icons";
 const PERSONAL_PROJECT_ID = "proj_personal";
+/**
+ * The Project icons plugin announces edits here. A plugin cannot join another
+ * plugin's realtime channel, and both run in the same document, so a broadcast
+ * channel carries the change: instantly within a window, and to other windows
+ * of the same client too.
+ */
+export const PROJECT_ICONS_CHANNEL = "bb.project-icons";
 
 export interface ProjectIconView {
+  name: string;
   glyph: IconSvgElement;
   colorClass: string;
 }
@@ -43,16 +51,16 @@ export function buildProjectIconMap(
 ): Map<string, ProjectIconView> {
   const byProject = new Map<string, ProjectIconView>();
   for (const projectId of projectIds) {
+    const personal = projectId === PERSONAL_PROJECT_ID;
     byProject.set(projectId, {
-      glyph:
-        projectId === PERSONAL_PROJECT_ID
-          ? response.defaults.personal
-          : response.defaults.project,
+      name: personal ? "bubble-chat" : "folder-01",
+      glyph: personal ? response.defaults.personal : response.defaults.project,
       colorClass: "",
     });
   }
   for (const icon of response.icons) {
     byProject.set(icon.projectId, {
+      name: icon.icon,
       glyph: icon.glyph,
       colorClass: icon.color === null ? "" : (COLOR_CLASSES[icon.color] ?? ""),
     });
@@ -82,4 +90,20 @@ export async function fetchProjectIcons(
   } catch {
     return new Map();
   }
+}
+
+/** Calls back whenever the Project icons plugin reports an edit. */
+export function subscribeToProjectIconChanges(onChange: () => void): () => void {
+  let channel: BroadcastChannel | null = null;
+  try {
+    channel = new BroadcastChannel(PROJECT_ICONS_CHANNEL);
+    channel.onmessage = () => onChange();
+  } catch {
+    // Older clients without BroadcastChannel still refresh on focus.
+  }
+  window.addEventListener("focus", onChange);
+  return () => {
+    channel?.close();
+    window.removeEventListener("focus", onChange);
+  };
 }
