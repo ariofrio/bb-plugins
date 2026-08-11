@@ -267,7 +267,8 @@ function ThreadRow({
           {projectIcon === null ? null : (
             <HugeiconsIcon
               icon={projectIcon.glyph}
-              className={`size-4 shrink-0 ${projectIcon.colorClass || "text-muted-foreground/70"}`}
+              className={`size-4 shrink-0 ${projectIcon.color === null ? "text-muted-foreground/70" : ""}`}
+              style={projectIcon.color === null ? undefined : { color: projectIcon.color }}
               data-project-icon={projectIcon.name}
               aria-hidden
             />

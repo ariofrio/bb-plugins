@@ -6,7 +6,7 @@ import {
   searchIcons,
   type CatalogEntry,
 } from "./icon-search";
-import { PROJECT_ICON_COLOR_CLASSES } from "./project-icon-colors";
+import { projectIconColor } from "./project-icon-colors";
 import { PROJECT_ICON_COLORS, type ProjectIconColor } from "./store";
 import {
   Dialog,
@@ -75,9 +75,8 @@ export function IconPicker({
                 aria-label={swatch}
                 aria-pressed={color === swatch}
                 onClick={() => onPickColor(color === swatch ? null : swatch)}
+                style={{ backgroundColor: projectIconColor(swatch) ?? undefined }}
                 className={`size-5 rounded-full border transition-colors ${
-                  PROJECT_ICON_COLOR_CLASSES[swatch]
-                } bg-current ${
                   color === swatch
                     ? "ring-2 ring-ring ring-offset-1 ring-offset-background"
                     : "border-transparent"

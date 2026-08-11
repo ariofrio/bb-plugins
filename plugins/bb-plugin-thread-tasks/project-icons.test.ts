@@ -25,27 +25,27 @@ describe("buildProjectIconMap", () => {
     expect(map.get("proj_c")).toEqual({
       name: "folder-01",
       glyph: folder,
-      colorClass: "",
+      color: null,
     });
     expect(map.get("proj_personal")).toEqual({
       name: "bubble-chat",
       glyph: bubble,
-      colorClass: "",
+      color: null,
     });
   });
 
-  it("uses a chosen icon and maps its color to a class", () => {
+  it("mixes a chosen color into the theme's foreground", () => {
     const map = buildProjectIconMap(response, ["proj_a", "proj_b"]);
 
     expect(map.get("proj_a")).toEqual({
       name: "rocket",
       glyph: rocket,
-      colorClass: "text-teal-500",
+      color: "color-mix(in oklch, oklch(0.704 0.14 182.503) 45%, var(--foreground))",
     });
-    expect(map.get("proj_b")?.colorClass).toBe("");
+    expect(map.get("proj_b")?.color).toBeNull();
   });
 
-  it("ignores a color it does not know", () => {
+  it("ignores a color name it does not know", () => {
     const map = buildProjectIconMap(
       {
         ...response,
@@ -56,7 +56,7 @@ describe("buildProjectIconMap", () => {
       ["proj_a"],
     );
 
-    expect(map.get("proj_a")?.colorClass).toBe("");
+    expect(map.get("proj_a")?.color).toBeNull();
   });
 });
 

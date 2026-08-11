@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
 import { announceProjectIconsChanged } from "./broadcast";
 import { installProjectIconPortal } from "./header-dom";
 import { IconPicker, type CatalogIcon } from "./IconPicker";
-import { projectIconColorClass } from "./project-icon-colors";
+import { projectIconColorStyle } from "./project-icon-colors";
 import type { rpcContract } from "./server";
 import {
   PERSONAL_PROJECT_ID,
@@ -43,7 +43,8 @@ function ProjectIconGlyph({
   return (
     <HugeiconsIcon
       icon={glyph}
-      className={`size-4 shrink-0 ${projectIconColorClass(color)}`}
+      className="size-4 shrink-0"
+      style={projectIconColorStyle(color)}
       data-project-icon={name}
       aria-hidden
     />
