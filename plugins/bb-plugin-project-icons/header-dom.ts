@@ -1,3 +1,6 @@
+/** Stamped by `bb plugin build`; undefined in tests and registry copies. */
+declare const __BB_PLUGIN_ID__: string | undefined;
+
 interface IconPortalMount {
   target: HTMLElement;
   cleanup(): void;
@@ -39,6 +42,16 @@ export function installProjectIconPortal(
 
   const target = marker.ownerDocument.createElement("span");
   target.dataset.projectIconRoot = "";
+  // This node lives in bb's header, outside the plugin's mount, so it has to
+  // carry its own scope root or none of the plugin's stylesheet reaches it —
+  // colors, sizes, and the drag-region opt-out all silently do nothing.
+  // The overlay marker is what lets Electron route clicks here rather than to
+  // the window-drag region underneath.
+  target.dataset.bbPluginRoot = "";
+  target.dataset.bbPortaledOverlay = "";
+  if (typeof __BB_PLUGIN_ID__ === "string") {
+    target.dataset.bbPlugin = __BB_PLUGIN_ID__;
+  }
   target.className =
     "inline-flex shrink-0 items-center [app-region:no-drag] [-webkit-app-region:no-drag]";
   center.insertBefore(target, anchor);

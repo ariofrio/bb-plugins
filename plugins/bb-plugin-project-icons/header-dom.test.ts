@@ -74,6 +74,18 @@ describe("installProjectIconPortal", () => {
     expect(slot?.hidden).toBe(false);
   });
 
+  it("carries the plugin's style scope into bb's header", () => {
+    const { marker, center } = renderHeader({ withBreadcrumb: true });
+
+    installProjectIconPortal(marker);
+
+    // Plugin CSS is `@scope`d to these attributes; without them every class on
+    // this subtree resolves to nothing.
+    const root = center.querySelector<HTMLElement>("[data-project-icon-root]");
+    expect(root?.dataset.bbPluginRoot).toBe("");
+    expect(root?.dataset.bbPortaledOverlay).toBe("");
+  });
+
   it("opts its portal out of the desktop window drag region", () => {
     const { marker, center } = renderHeader({ withBreadcrumb: true });
 
