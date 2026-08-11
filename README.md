@@ -10,6 +10,8 @@ Personal plugins for [bb](https://github.com/ymichael/bb).
 - [Project header breadcrumb](plugins/bb-plugin-project-header-breadcrumb#readme)
   — adds the current project and its native actions menu before each thread
   title.
+- [Project icons](plugins/bb-plugin-project-icons#readme) — gives each project
+  an icon and optional color, shown next to its name in the thread header.
 - [Thread tasks](plugins/bb-plugin-thread-tasks#readme) — treats sidebar
   threads as manually ordered tasks in Done, To do, Working, Waiting,
   Deferred, and Canceled groups.
