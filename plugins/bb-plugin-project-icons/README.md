@@ -1,7 +1,12 @@
 # Project icons
 
 Gives every project an icon and an optional color, shown next to the project
-name in the thread header.
+name in the thread header and on each row of the [Thread
+tasks](../bb-plugin-thread-tasks#readme) sidebar.
+
+Click the icon in the header to change it: search 2,532 icons by name or
+synonym, filter by category, and pick a color. Changes save as you click and
+appear everywhere at once.
 
 The icon comes from [Hugeicons](https://hugeicons.com), the same set bb itself
 draws from, so it matches bb's chrome exactly. Projects default to a folder;
@@ -35,6 +40,13 @@ bb plugin reload project-icons
 ```
 
 Installing a path builds the plugin; reloading loads what is already built.
+
+## Where the catalog lives
+
+The catalog is served by the plugin backend, not bundled into the app. The
+client ships at 54 KB gzipped and fetches the full set once, the first time
+the picker opens; a chosen icon travels with its drawing so other plugins can
+render it without shipping the catalog themselves.
 
 ## The icon catalog
 

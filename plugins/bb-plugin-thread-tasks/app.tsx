@@ -19,6 +19,7 @@ import {
   type DragEvent,
   type MouseEvent,
 } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { toast } from "sonner";
 import type { rpcContract } from "./server";
 import {
@@ -45,6 +46,10 @@ import { ThreadRenameDialog } from "./components/ThreadRenameDialog";
 import { createNativeCommandDelegate } from "./native-command-delegation";
 import { notifyNativeShortcutHandled } from "./native-command-hints";
 import { usePersistentStringSet } from "./persistent-string-set";
+import {
+  fetchProjectIcons,
+  type ProjectIconView,
+} from "./project-icons";
 import { shouldSyncThreads } from "./task-sync";
 import {
   currentThreadId,
@@ -131,6 +136,7 @@ interface ThreadRowProps {
   onNavigate: () => void;
   onToggleChildren: () => void;
   preview: string | null;
+  projectIcon: ProjectIconView | null;
   reorderable: boolean;
   showDropAfter: boolean;
   showDropBefore: boolean;
@@ -159,6 +165,7 @@ function ThreadRow({
   onNavigate,
   onToggleChildren,
   preview,
+  projectIcon,
   reorderable,
   showDropAfter,
   showDropBefore,
@@ -256,6 +263,14 @@ function ThreadRow({
           onClick={openThread}
         />
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
+          {projectIcon === null ? null : (
+            <HugeiconsIcon
+              icon={projectIcon.glyph}
+              className={`size-3.5 shrink-0 opacity-70 ${projectIcon.colorClass || "text-muted-foreground"}`}
+              data-project-icon=""
+              aria-hidden
+            />
+          )}
           <span className="flex min-w-0 flex-1 flex-col justify-center leading-none">
             <span className="truncate leading-5" title={accessibleTitle}>
               {title}
@@ -610,6 +625,32 @@ function ThreadStatusList({
     () => sidebar.threads.filter((thread) => !thread.isArchived),
     [sidebar.threads],
   );
+
+  const projectIds = useMemo(
+    () => sidebar.projects.map((project) => project.id).sort().join(","),
+    [sidebar.projects],
+  );
+  const [projectIcons, setProjectIcons] = useState<
+    ReadonlyMap<string, ProjectIconView>
+  >(new Map());
+  useEffect(() => {
+    let canceled = false;
+    const load = () => {
+      void fetchProjectIcons(projectIds.split(",").filter(Boolean)).then(
+        (icons) => {
+          if (!canceled) setProjectIcons(icons);
+        },
+      );
+    };
+    load();
+    // Icons live in another plugin, whose realtime channel this one cannot
+    // join, so refresh when the window comes back into focus.
+    window.addEventListener("focus", load);
+    return () => {
+      canceled = true;
+      window.removeEventListener("focus", load);
+    };
+  }, [projectIds]);
   const explicitPinnedThreadIds = useMemo(
     () =>
       taskThreads
@@ -1031,6 +1072,7 @@ function ThreadStatusList({
                         toggleThreadCollapsed(thread.id)
                       }
                       preview={previews.get(thread.id) ?? null}
+                      projectIcon={projectIcons.get(thread.projectId) ?? null}
                       reorderable={isRoot && !Boolean(normalizedSearch)}
                       showDropAfter={
                         dropGroup === PINNED_SECTION &&
@@ -1190,6 +1232,7 @@ function ThreadStatusList({
                           toggleThreadCollapsed(thread.id)
                         }
                         preview={previews.get(thread.id) ?? null}
+                        projectIcon={projectIcons.get(thread.projectId) ?? null}
                         reorderable={!Boolean(normalizedSearch)}
                         showDropAfter={
                           dropGroup === status && dropAfter === thread.id
