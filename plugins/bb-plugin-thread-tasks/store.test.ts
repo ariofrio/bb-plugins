@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   THREAD_STATUS_MIGRATIONS,
   createThreadStatusStore,
@@ -309,6 +309,87 @@ describe("thread status store", () => {
     } finally {
       migrationDb.close();
     }
+  });
+
+  it("records where each move came from and what it left behind", () => {
+    store.ensureThreads(["thr_a", "thr_b"]);
+    const before = store.get("thr_a");
+
+    store.setStatus("thr_a", "Done", "app");
+
+    expect(store.listUndoCandidates()).toEqual([
+      {
+        threadId: "thr_a",
+        previousStatus: "To do",
+        previousSortKey: before.sortKey,
+        updatedAt: expect.any(Number),
+      },
+    ]);
+  });
+
+  it("offers only app moves into a filed status as undo candidates", () => {
+    store.ensureThreads(["thr_app", "thr_cli", "thr_auto", "thr_todo"]);
+    store.setStatus("thr_app", "Deferred", "app");
+    store.setStatus("thr_cli", "Done", "cli");
+    store.observeWorkingState("thr_auto", true);
+    store.setStatus("thr_todo", "To do", "app");
+
+    expect(
+      store.listUndoCandidates().map(({ threadId }) => threadId),
+    ).toEqual(["thr_app"]);
+  });
+
+  it("lists undo candidates newest first", () => {
+    store.ensureThreads(["thr_a", "thr_b"]);
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(1_000);
+      store.setStatus("thr_a", "Done", "app");
+      vi.setSystemTime(2_000);
+      store.setStatus("thr_b", "Canceled", "app");
+    } finally {
+      vi.useRealTimers();
+    }
+
+    expect(
+      store.listUndoCandidates().map(({ threadId }) => threadId),
+    ).toEqual(["thr_b", "thr_a"]);
+  });
+
+  it("restores a task to the position it held in To do", () => {
+    store.ensureThreads(["thr_a", "thr_b", "thr_c"]);
+    const original = store.get("thr_b").sortKey;
+    store.setStatus("thr_b", "Done", "app");
+
+    const [candidate] = store.listUndoCandidates();
+    store.restoreToTodo("thr_b", candidate?.previousSortKey ?? null);
+
+    expect(store.get("thr_b")).toMatchObject({
+      taskStatus: "To do",
+      sortKey: original,
+    });
+    expect(
+      store
+        .listState()
+        .assignments.filter(({ taskStatus }) => taskStatus === "To do")
+        .map(({ threadId }) => threadId),
+    ).toEqual(["thr_a", "thr_b", "thr_c"]);
+    expect(store.listUndoCandidates()).toEqual([]);
+  });
+
+  it("appends a restored task that never sat in To do", () => {
+    store.ensureThreads(["thr_a", "thr_b"]);
+    store.setStatus("thr_b", "Waiting", "app");
+    store.setStatus("thr_b", "Canceled", "app");
+
+    store.restoreToTodo("thr_b", null);
+
+    expect(
+      store
+        .listState()
+        .assignments.filter(({ taskStatus }) => taskStatus === "To do")
+        .map(({ threadId }) => threadId),
+    ).toEqual(["thr_a", "thr_b"]);
   });
 
   it("removes organization state for deleted threads", () => {

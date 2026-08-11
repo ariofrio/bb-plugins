@@ -1230,11 +1230,59 @@ function rpcErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+const ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY = "bb.root-compose.project-id";
+const PERSONAL_PROJECT_ID = "proj_personal";
+
+type ChordDestination =
+  | { kind: "stay" }
+  | { kind: "thread"; threadId: string; projectId: string | null }
+  | { kind: "compose" };
+
+/** Routes bb's SPA without a reload, and only in this client. */
+function navigate(path: string): void {
+  window.history.pushState({}, "", path);
+  window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+}
+
+function goTo(destination: ChordDestination): void {
+  if (destination.kind === "stay") return;
+  if (destination.kind === "thread") {
+    // Personal-project threads route without a project segment; the
+    // project-scoped path redirects to the compose screen.
+    const projectless =
+      destination.projectId === null ||
+      destination.projectId === PERSONAL_PROJECT_ID;
+    navigate(
+      projectless
+        ? `/threads/${encodeURIComponent(destination.threadId)}`
+        : `/projects/${encodeURIComponent(destination.projectId ?? "")}/threads/${encodeURIComponent(destination.threadId)}`,
+    );
+    return;
+  }
+  const oldValue = window.localStorage.getItem(
+    ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY,
+  );
+  window.localStorage.setItem(
+    ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY,
+    PERSONAL_PROJECT_ID,
+  );
+  window.dispatchEvent(
+    new StorageEvent("storage", {
+      key: ROOT_COMPOSE_PROJECT_ID_STORAGE_KEY,
+      newValue: PERSONAL_PROJECT_ID,
+      oldValue,
+      storageArea: window.localStorage,
+      url: window.location.href,
+    }),
+  );
+  navigate("/");
+}
+
 async function callTaskRpc(
   pluginId: string,
   method: "setTaskStatus" | "reorderTask",
   input: Record<string, unknown>,
-): Promise<void> {
+): Promise<unknown> {
   const response = await fetch(
     `/api/v1/plugins/${encodeURIComponent(pluginId)}/rpc/${method}`,
     {
@@ -1252,6 +1300,7 @@ async function callTaskRpc(
         : `Task request failed (${response.status})`,
     );
   }
+  return envelope.result;
 }
 
 export default definePluginApp((app) => {
@@ -1283,7 +1332,12 @@ export default definePluginApp((app) => {
           notifyNativeShortcutHandled(window, createKeyboardEvent);
           const request =
             reorder === null
-              ? callTaskRpc(pluginId, "setTaskStatus", { taskStatus, threadId })
+              ? callTaskRpc(pluginId, "setTaskStatus", {
+                  taskStatus,
+                  threadId,
+                }).then((result) => {
+                  goTo((result as { destination: ChordDestination }).destination);
+                })
               : callTaskRpc(pluginId, "reorderTask", {
                   threadId,
                   scope: reorder.scope,

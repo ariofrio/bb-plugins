@@ -269,9 +269,10 @@ export function runTaskCli(
           taskStatus: status,
           previousThreadId,
           nextThreadId,
+          source: "cli",
         });
       } else if (current.taskStatus !== status) {
-        store.setStatus(taskId, status);
+        store.setStatus(taskId, status, "cli");
       }
       const task = store.get(taskId);
       return {

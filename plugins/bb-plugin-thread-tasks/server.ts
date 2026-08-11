@@ -3,6 +3,7 @@ import { z } from "zod";
 import { runTaskCli } from "./cli";
 import { sortExplicitPinnedThreadIds } from "./pinned-threads";
 import { sidebarThreadsFromSearchResult } from "./search-results";
+import { resolveStatusChord } from "./task-chords";
 import { resolveTaskReorder } from "./task-reorder";
 import {
   THREAD_STATUS_MIGRATIONS,
@@ -21,6 +22,18 @@ const assignmentSchema = z
     updatedAt: z.number().int(),
   })
   .strict();
+const destinationSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("stay") }).strict(),
+  z
+    .object({
+      kind: z.literal("thread"),
+      threadId: z.string(),
+      projectId: z.string().nullable(),
+    })
+    .strict(),
+  z.object({ kind: z.literal("compose") }).strict(),
+]);
+type ChordDestination = z.infer<typeof destinationSchema>;
 const stateSchema = z
   .object({
     assignments: z.array(assignmentSchema),
@@ -113,7 +126,7 @@ export const rpcContract = defineRpcContract({
         taskStatus: threadStatusSchema,
       })
       .strict(),
-    output: stateSchema,
+    output: z.object({ destination: destinationSchema }).strict(),
   },
   reorderTask: {
     input: z
@@ -165,10 +178,37 @@ export default function plugin(bb: BbPluginApi) {
       bb.realtime.publish("state-changed", { threadId: input.threadId });
       return state;
     },
-    setTaskStatus({ threadId, taskStatus }) {
-      const state = store.setStatus(threadId, taskStatus);
+    async setTaskStatus({ threadId, taskStatus }) {
+      const threads = await bb.sdk.threads.list({ archived: false });
+      const chord = resolveStatusChord({
+        threadId,
+        taskStatus,
+        threads,
+        assignments: store.listState().assignments,
+        undoCandidates: store.listUndoCandidates(),
+      });
+      const stay: ChordDestination = { kind: "stay" };
+      if (chord.kind === "none") return { destination: stay };
+
+      if (chord.kind === "restore") {
+        store.restoreToTodo(chord.threadId, chord.sortKey);
+      } else {
+        store.setStatus(threadId, chord.taskStatus, "app");
+      }
       bb.realtime.publish("state-changed", { threadId });
-      return state;
+
+      const next = chord.next;
+      const destination: ChordDestination =
+        next.kind === "thread"
+          ? {
+              kind: "thread",
+              threadId: next.threadId,
+              projectId:
+                threads.find(({ id }) => id === next.threadId)?.projectId ??
+                null,
+            }
+          : next;
+      return { destination };
     },
     async reorderTask({ threadId, scope, direction }) {
       store.ensureThreads([threadId]);

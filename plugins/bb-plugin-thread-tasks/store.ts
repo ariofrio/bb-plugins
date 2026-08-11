@@ -69,6 +69,11 @@ export const THREAD_STATUS_MIGRATIONS = [
     CREATE INDEX IF NOT EXISTS thread_organization_status_sort_key
       ON thread_organization(status, sort_key, thread_id);
   `,
+  `
+    ALTER TABLE thread_organization ADD COLUMN moved_by TEXT;
+    ALTER TABLE thread_organization ADD COLUMN previous_status TEXT;
+    ALTER TABLE thread_organization ADD COLUMN previous_sort_key TEXT;
+  `,
 ];
 
 interface AssignmentRow {
@@ -76,6 +81,24 @@ interface AssignmentRow {
   status: string;
   sort_key: string;
   updated_at: number;
+}
+
+/** Where a status change came from. Only `app` moves are undoable. */
+export type MoveSource = "app" | "cli" | "auto";
+
+/** Statuses a task only reaches by being filed, never by the workflow. */
+const FILED_STATUSES: readonly ThreadStatus[] = [
+  "Done",
+  "Waiting",
+  "Deferred",
+  "Canceled",
+];
+
+export interface UndoCandidate {
+  threadId: string;
+  previousStatus: ThreadStatus | null;
+  previousSortKey: string | null;
+  updatedAt: number;
 }
 
 export interface ThreadStatusState {
@@ -95,6 +118,7 @@ export interface ReorderThreadInput {
   taskStatus: ThreadStatus;
   previousThreadId: string | null;
   nextThreadId: string | null;
+  source?: MoveSource;
 }
 
 export interface WorkingStateObservation {
@@ -110,9 +134,15 @@ export interface ThreadPreview {
 export interface ThreadStatusStore {
   listState(): ThreadStatusState;
   listPreviews(): ThreadPreview[];
+  listUndoCandidates(): UndoCandidate[];
   get(threadId: string): ThreadStatusLookup;
   ensureThreads(threadIds: readonly string[]): ThreadStatusState;
-  setStatus(threadId: string, status: ThreadStatus): ThreadStatusState;
+  setStatus(
+    threadId: string,
+    status: ThreadStatus,
+    source?: MoveSource,
+  ): ThreadStatusState;
+  restoreToTodo(threadId: string, sortKey: string | null): ThreadStatusState;
   observeWorkingState(
     threadId: string,
     isWorking: boolean,
@@ -173,12 +203,26 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
     LIMIT 1
   `);
   const upsertAssignment = db.prepare(`
-    INSERT INTO thread_organization(thread_id, status, position, updated_at, sort_key)
-    VALUES (?, ?, 0, ?, ?)
+    INSERT INTO thread_organization(
+      thread_id, status, position, updated_at, sort_key,
+      moved_by, previous_status, previous_sort_key
+    )
+    VALUES (?, ?, 0, ?, ?, ?, ?, ?)
     ON CONFLICT(thread_id) DO UPDATE SET
       status = excluded.status,
       updated_at = excluded.updated_at,
-      sort_key = excluded.sort_key
+      sort_key = excluded.sort_key,
+      moved_by = excluded.moved_by,
+      previous_status = excluded.previous_status,
+      previous_sort_key = excluded.previous_sort_key
+  `);
+  const listUndoCandidateRows = db.prepare(`
+    SELECT thread_id, previous_status, previous_sort_key, updated_at
+    FROM thread_organization
+    WHERE moved_by = 'app'
+      AND sort_key IS NOT NULL
+      AND status IN (${FILED_STATUSES.map(() => "?").join(", ")})
+    ORDER BY updated_at DESC, thread_id
   `);
   const deleteAssignment = db.prepare(
     "DELETE FROM thread_organization WHERE thread_id = ?",
@@ -248,6 +292,9 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
           DEFAULT_THREAD_STATUS,
           now,
           sortKey,
+          "auto",
+          null,
+          null,
         );
         previousKey = sortKey;
       }
@@ -255,20 +302,56 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
     },
   );
 
-  function moveToStatus(threadId: string, status: ThreadStatus): boolean {
+  function moveToStatus(
+    threadId: string,
+    status: ThreadStatus,
+    source: MoveSource,
+  ): boolean {
     const existing = getAssignment.get(threadId) as AssignmentRow | undefined;
     if (existing?.status === status) return false;
     const last = lastAssignment.get(status) as AssignmentRow | undefined;
     const sortKey = last
       ? createOrderKeyAfter({ previousKey: last.sort_key })
       : createOrderKeyBetween({ previousKey: null, nextKey: null });
-    upsertAssignment.run(threadId, status, Date.now(), sortKey);
+    upsertAssignment.run(
+      threadId,
+      status,
+      Date.now(),
+      sortKey,
+      source,
+      existing?.status ?? null,
+      existing?.sort_key ?? null,
+    );
     return true;
   }
 
   const setStatusTransaction = db.transaction(
-    (threadId: string, status: ThreadStatus): ThreadStatusState => {
-      moveToStatus(threadId, status);
+    (
+      threadId: string,
+      status: ThreadStatus,
+      source: MoveSource,
+    ): ThreadStatusState => {
+      moveToStatus(threadId, status, source);
+      return listState();
+    },
+  );
+
+  const restoreToTodoTransaction = db.transaction(
+    (threadId: string, sortKey: string | null): ThreadStatusState => {
+      if (sortKey === null) {
+        moveToStatus(threadId, "To do", "app");
+        return listState();
+      }
+      const existing = getAssignment.get(threadId) as AssignmentRow | undefined;
+      upsertAssignment.run(
+        threadId,
+        "To do",
+        Date.now(),
+        sortKey,
+        "app",
+        existing?.status ?? null,
+        existing?.sort_key ?? null,
+      );
       return listState();
     },
   );
@@ -281,13 +364,13 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
       let taskStatusChanged = false;
 
       if (isWorking && previous?.is_working !== 1) {
-        taskStatusChanged = moveToStatus(threadId, "Working");
+        taskStatusChanged = moveToStatus(threadId, "Working", "auto");
       } else if (!isWorking && previous?.is_working !== 0) {
         const assignment = getAssignment.get(threadId) as
           | AssignmentRow
           | undefined;
         if (assignment?.status === "Working") {
-          taskStatusChanged = moveToStatus(threadId, "To do");
+          taskStatusChanged = moveToStatus(threadId, "To do", "auto");
         }
       }
 
@@ -354,6 +437,9 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
         input.taskStatus,
         Date.now(),
         sortKey,
+        input.source ?? "app",
+        moved?.status ?? null,
+        moved?.sort_key ?? null,
       );
       return listState();
     },
@@ -387,12 +473,31 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
     ensureThreads(threadIds) {
       return ensureThreadsTransaction.immediate(threadIds);
     },
-    setStatus(threadId, status) {
+    setStatus(threadId, status, source = "app") {
       assertThreadId(threadId);
       if (!THREAD_STATUSES.includes(status)) {
         throw new Error("Unknown task status.");
       }
-      return setStatusTransaction.immediate(threadId, status);
+      return setStatusTransaction.immediate(threadId, status, source);
+    },
+    restoreToTodo(threadId, sortKey) {
+      assertThreadId(threadId);
+      return restoreToTodoTransaction.immediate(threadId, sortKey);
+    },
+    listUndoCandidates() {
+      return (
+        listUndoCandidateRows.all(...FILED_STATUSES) as Array<{
+          thread_id: string;
+          previous_status: string | null;
+          previous_sort_key: string | null;
+          updated_at: number;
+        }>
+      ).map((row) => ({
+        threadId: row.thread_id,
+        previousStatus: (row.previous_status as ThreadStatus | null) ?? null,
+        previousSortKey: row.previous_sort_key,
+        updatedAt: row.updated_at,
+      }));
     },
     observeWorkingState(threadId, isWorking) {
       assertThreadId(threadId);

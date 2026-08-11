@@ -44,6 +44,29 @@ export interface ResolveTaskReorderInput {
   intent: ReorderIntent;
 }
 
+/** The threads the sidebar lists at all. */
+export function listedThreads(
+  threads: readonly ReorderThreadLike[],
+): readonly ReorderThreadLike[] {
+  return threads.filter(
+    (thread) => thread.visibility === "visible" && thread.archivedAt === null,
+  );
+}
+
+/** Threads the sidebar renders in its pinned section instead of a status. */
+export function pinnedThreadIds(
+  listed: readonly ReorderThreadLike[],
+): ReadonlySet<string> {
+  return buildPinnedThreadState(
+    listed.map((thread) => ({
+      id: thread.id,
+      isPinned: thread.pinnedAt !== null,
+      parentThreadId: thread.parentThreadId,
+    })),
+    sortExplicitPinnedThreadIds(listed),
+  ).effectivePinnedThreadIds;
+}
+
 function neighbors(
   orderedIds: readonly string[],
   threadId: string,
@@ -77,9 +100,7 @@ export function resolveTaskReorder({
       : { kind: "status", taskStatus: nextStatus };
   }
 
-  const listed = threads.filter(
-    (thread) => thread.visibility === "visible" && thread.archivedAt === null,
-  );
+  const listed = listedThreads(threads);
   if (!listed.some((thread) => thread.id === threadId)) return { kind: "none" };
   const pinnedState = buildPinnedThreadState(
     listed.map((thread) => ({

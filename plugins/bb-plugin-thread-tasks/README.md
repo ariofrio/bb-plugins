@@ -40,18 +40,29 @@ Installing a path builds the plugin; reloading loads what is already built.
 
 ## Keyboard shortcuts
 
-On a thread route, `.` chords set the open thread's task status:
+On a thread route, `.` chords set the open thread's task status and move you
+on:
 
-| Shortcut | Task status |
-| -------: | ----------- |
-|       ⌘. | Done        |
-|      ⇧⌘. | To do       |
-|     ⌃⇧⌘. | Waiting     |
-|      ⌃⌘. | Deferred    |
-|      ⌥⌘. | Canceled    |
+| Shortcut | Task status | Then                        |
+| -------: | ----------- | --------------------------- |
+|       ⌘. | Done        | Go to the first To do task  |
+|      ⇧⌘. | To do       | Stay, or undo your last filing |
+|     ⌃⇧⌘. | Waiting     | Go to the first To do task  |
+|      ⌃⌘. | Deferred    | Go to the first To do task  |
+|      ⌥⌘. | Canceled    | Go to the first To do task  |
 
 **Working** has no chord because the task workflow assigns it automatically.
 Marking a task **Done** does not archive its thread.
+
+Filing a task moves you to the top of To do, skipping pinned threads, so the
+chords walk an inbox. When nothing is left to do you land on an empty composer
+with no project selected.
+
+**⇧⌘.** brings the open task back to To do and leaves you there. When the open
+task is *already* To do it undoes instead: the task you filed most recently
+returns to To do, in the position it held, and you go to it. Press again to
+walk further back, like reopening closed tabs. Only moves you made in bb count
+as yours, so a thread an agent filed itself stays filed.
 
 Arrow chords move the open thread's task:
 
