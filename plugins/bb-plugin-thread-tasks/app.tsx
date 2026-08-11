@@ -42,6 +42,7 @@ import {
 } from "./components/ThreadIndicator";
 import { SplitPaneMiniMap } from "./components/SplitPaneMiniMap";
 import { ThreadRenameDialog } from "./components/ThreadRenameDialog";
+import { createNativeCommandDelegate } from "./native-command-delegation";
 import { notifyNativeShortcutHandled } from "./native-command-hints";
 import { usePersistentStringSet } from "./persistent-string-set";
 import { shouldSyncThreads } from "./task-sync";
@@ -1244,7 +1245,10 @@ function navigate(path: string): void {
   window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
 }
 
-function goTo(destination: ChordDestination): void {
+function goTo(
+  destination: ChordDestination,
+  openComposer: () => void,
+): void {
   if (destination.kind === "stay") return;
   if (destination.kind === "thread") {
     // Personal-project threads route without a project segment; the
@@ -1275,7 +1279,9 @@ function goTo(destination: ChordDestination): void {
       url: window.location.href,
     }),
   );
-  navigate("/");
+  // The compose surface is a state of the root route, not a path of its own,
+  // so ask bb to open it the way its own New thread command does.
+  openComposer();
 }
 
 async function callTaskRpc(
@@ -1317,9 +1323,26 @@ export default definePluginApp((app) => {
     mount({ pluginId, signal }) {
       const createKeyboardEvent = (type: string, init: KeyboardEventInit) =>
         new KeyboardEvent(type, init);
+      const newThreadCommand = createNativeCommandDelegate({
+        command: "thread.new",
+        createEvent: createKeyboardEvent,
+        async fetchConfig() {
+          const response = await fetch("/api/v1/system/config", {
+            credentials: "same-origin",
+          });
+          if (!response.ok) {
+            throw new Error(`System config request failed (${response.status})`);
+          }
+          return response.json() as Promise<unknown>;
+        },
+        isMac: /Mac|iPhone|iPad|iPod/u.test(navigator.platform),
+        target: window,
+      });
+      void newThreadCommand.prefetch();
       window.addEventListener(
         "keydown",
         (event) => {
+          if (newThreadCommand.isDelegatedEvent(event)) return;
           const taskStatus = taskStatusShortcut(event);
           const reorder = taskReorderShortcut(event);
           if (taskStatus === null && reorder === null) return;
@@ -1336,7 +1359,10 @@ export default definePluginApp((app) => {
                   taskStatus,
                   threadId,
                 }).then((result) => {
-                  goTo((result as { destination: ChordDestination }).destination);
+                  goTo(
+                    (result as { destination: ChordDestination }).destination,
+                    () => void newThreadCommand.dispatch(),
+                  );
                 })
               : callTaskRpc(pluginId, "reorderTask", {
                   threadId,
