@@ -141,7 +141,9 @@ function ProjectIconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
       type="button"
       aria-label={`Icon for ${projectName}`}
       title="Change project icon"
-      className="-ml-0.5 flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground"
+      // The desktop header is a window drag region, so an interactive control
+      // inside it has to opt out or Electron swallows the click.
+      className="relative z-50 -ml-0.5 flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground [app-region:no-drag] [-webkit-app-region:no-drag]"
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();

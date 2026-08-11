@@ -74,6 +74,18 @@ describe("installProjectIconPortal", () => {
     expect(slot?.hidden).toBe(false);
   });
 
+  it("opts its portal out of the desktop window drag region", () => {
+    const { marker, center } = renderHeader({ withBreadcrumb: true });
+
+    installProjectIconPortal(marker);
+
+    // Electron treats the header as title bar; without this a left click drags
+    // the window instead of reaching the button.
+    const root = center.querySelector("[data-project-icon-root]");
+    expect(root?.className).toContain("[app-region:no-drag]");
+    expect(root?.className).toContain("[-webkit-app-region:no-drag]");
+  });
+
   it("declines to mount when the header is not the shape it expects", () => {
     document.body.innerHTML = `<header><div role="group"><span data-marker></span></div></header>`;
     const marker = document.querySelector<HTMLElement>("[data-marker]");

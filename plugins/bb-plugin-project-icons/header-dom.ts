@@ -39,7 +39,8 @@ export function installProjectIconPortal(
 
   const target = marker.ownerDocument.createElement("span");
   target.dataset.projectIconRoot = "";
-  target.className = "inline-flex shrink-0 items-center";
+  target.className =
+    "inline-flex shrink-0 items-center [app-region:no-drag] [-webkit-app-region:no-drag]";
   center.insertBefore(target, anchor);
 
   const wasHidden = slotWrapper.hidden;
