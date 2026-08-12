@@ -48,20 +48,46 @@ describe("thread status store", () => {
     store.setStatus("thr_done", "Done");
     store.setStatus("thr_working_first", "Working");
     store.setStatus("thr_working_second", "Working");
-    store.setStatus("thr_deferred", "Deferred");
+    store.setStatus("thr_backlog", "Backlog");
 
     expect(
       store.listState().assignments.map((assignment) => assignment.threadId),
     ).toEqual([
-      "thr_done",
+      "thr_backlog",
       "thr_todo_first",
       "thr_todo_second",
       "thr_working_first",
       "thr_working_second",
       "thr_waiting",
-      "thr_deferred",
+      "thr_done",
       "thr_canceled",
     ]);
+  });
+
+  it("renames stored Deferred assignments to Backlog", () => {
+    const migrationDb = new Database(":memory:");
+    try {
+      for (const migration of THREAD_STATUS_MIGRATIONS.slice(0, 6)) {
+        migrationDb.exec(migration);
+      }
+      migrationDb
+        .prepare(
+          "INSERT INTO thread_organization(thread_id, status, position, updated_at, sort_key, moved_by, previous_status, previous_sort_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .run("thr_legacy", "Deferred", 1024, 1, "a1", "app", "Deferred", "a0");
+
+      for (const migration of THREAD_STATUS_MIGRATIONS.slice(6)) {
+        migrationDb.exec(migration);
+      }
+
+      const migrated = createThreadStatusStore(migrationDb);
+      expect(migrated.get("thr_legacy").taskStatus).toBe("Backlog");
+      expect(migrated.listUndoCandidates()).toMatchObject([
+        { threadId: "thr_legacy", previousStatus: "Backlog" },
+      ]);
+    } finally {
+      migrationDb.close();
+    }
   });
 
   it("places status changes at the bottom and preserves idempotent keys", () => {
@@ -99,9 +125,9 @@ describe("thread status store", () => {
     expect(store.get("thr_finished").taskStatus).toBe("To do");
 
     store.observeWorkingState("thr_overridden", true);
-    store.setStatus("thr_overridden", "Deferred");
+    store.setStatus("thr_overridden", "Backlog");
     store.observeWorkingState("thr_overridden", false);
-    expect(store.get("thr_overridden").taskStatus).toBe("Deferred");
+    expect(store.get("thr_overridden").taskStatus).toBe("Backlog");
   });
 
   it("persists the lifecycle edge across store recreation", () => {
@@ -329,7 +355,7 @@ describe("thread status store", () => {
 
   it("offers only app moves into a filed status as undo candidates", () => {
     store.ensureThreads(["thr_app", "thr_cli", "thr_auto", "thr_todo"]);
-    store.setStatus("thr_app", "Deferred", "app");
+    store.setStatus("thr_app", "Backlog", "app");
     store.setStatus("thr_cli", "Done", "cli");
     store.observeWorkingState("thr_auto", true);
     store.setStatus("thr_todo", "To do", "app");
@@ -394,7 +420,7 @@ describe("thread status store", () => {
 
   it("removes organization state for deleted threads", () => {
     store.observeWorkingState("thr_a", true);
-    store.setStatus("thr_a", "Deferred");
+    store.setStatus("thr_a", "Backlog");
 
     expect(store.delete("thr_a")).toBe(true);
     expect(store.delete("thr_a")).toBe(false);

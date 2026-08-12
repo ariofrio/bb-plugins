@@ -79,7 +79,7 @@ describe("resolveStatusChord", () => {
         taskStatus: "Canceled",
         threads,
         assignments: [
-          assignment("thr_open", "Deferred", "a"),
+          assignment("thr_open", "Backlog", "a"),
           assignment("thr_next", "To do", "b"),
           assignment("thr_later", "To do", "c"),
         ],
@@ -155,7 +155,7 @@ describe("resolveStatusChord", () => {
         taskStatus: "To do",
         threads,
         assignments: [
-          assignment("thr_open", "Deferred", "a"),
+          assignment("thr_open", "Backlog", "a"),
           assignment("thr_next", "To do", "b"),
         ],
         undoCandidates: [],

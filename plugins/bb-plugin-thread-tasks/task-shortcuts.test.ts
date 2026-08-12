@@ -22,7 +22,7 @@ describe("taskStatusShortcut", () => {
     expect(
       taskStatusShortcut({ ...baseChord, ctrlKey: true, shiftKey: true }),
     ).toBe("Waiting");
-    expect(taskStatusShortcut({ ...baseChord, ctrlKey: true })).toBe("Deferred");
+    expect(taskStatusShortcut({ ...baseChord, ctrlKey: true })).toBe("Backlog");
     expect(taskStatusShortcut({ ...baseChord, altKey: true })).toBe("Canceled");
   });
 

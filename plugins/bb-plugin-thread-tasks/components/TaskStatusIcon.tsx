@@ -2,11 +2,11 @@ import type { ThreadStatus } from "../thread-status";
 import { Icon, type IconName } from "./Icon";
 
 const TASK_STATUS_ICONS: Record<ThreadStatus, IconName> = {
+  Backlog: "DashedSquare",
   Done: "CheckmarkSquare",
   "To do": "Square",
   Working: "Diamond",
   Waiting: "ClockSquare",
-  Deferred: "DashedSquare",
   Canceled: "CancelSquare",
 };
 

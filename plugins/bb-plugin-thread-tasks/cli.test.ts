@@ -104,9 +104,11 @@ describe("task CLI", () => {
 
   it("lists tasks without order keys in canonical display order", () => {
     store.ensureThreads(["thr_todo"]);
+    store.setStatus("thr_backlog", "Backlog");
     store.setStatus("thr_waiting", "Waiting");
     store.setStatus("thr_done", "Done");
     store.setStatus("thr_working", "Working");
+    store.setStatus("thr_canceled", "Canceled");
 
     const result = runTaskCli(store, ["list"]);
     const stdout = result.stdout ?? "";
@@ -116,12 +118,20 @@ describe("task CLI", () => {
     expect(stdout).not.toContain("Order");
     expect(doneKey).not.toBe("");
     expect(stdout).not.toContain(doneKey);
-    expect(stdout.indexOf("thr_done")).toBeLessThan(stdout.indexOf("thr_todo"));
+    expect(stdout.indexOf("thr_backlog")).toBeLessThan(
+      stdout.indexOf("thr_todo"),
+    );
     expect(stdout.indexOf("thr_todo")).toBeLessThan(
       stdout.indexOf("thr_working"),
     );
     expect(stdout.indexOf("thr_working")).toBeLessThan(
       stdout.indexOf("thr_waiting"),
+    );
+    expect(stdout.indexOf("thr_waiting")).toBeLessThan(
+      stdout.indexOf("thr_done"),
+    );
+    expect(stdout.indexOf("thr_done")).toBeLessThan(
+      stdout.indexOf("thr_canceled"),
     );
   });
 
@@ -304,6 +314,6 @@ describe("task CLI", () => {
       "blocked",
     ]);
     expect(invalid.exitCode).toBe(1);
-    expect(invalid.stderr).toContain("Done, To do, Working");
+    expect(invalid.stderr).toContain("Backlog, To do, Working");
   });
 });

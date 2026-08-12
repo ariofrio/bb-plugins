@@ -89,13 +89,13 @@ describe("resolveTaskReorder", () => {
         taskStatus: "To do",
         intent: { scope: "status", direction: -1 },
       }),
-    ).toEqual({ kind: "status", taskStatus: "Done" });
+    ).toEqual({ kind: "status", taskStatus: "Backlog" });
     expect(
       resolveTaskReorder({
         threads,
         assignments,
         threadId: "thr_b",
-        taskStatus: "Done",
+        taskStatus: "Backlog",
         intent: { scope: "status", direction: -1 },
       }),
     ).toEqual({ kind: "none" });

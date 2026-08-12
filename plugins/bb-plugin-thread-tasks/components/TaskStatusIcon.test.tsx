@@ -12,7 +12,7 @@ describe("TaskStatusIcon", () => {
     ["To do", "Square"],
     ["Working", "Diamond"],
     ["Waiting", "ClockSquare"],
-    ["Deferred", "DashedSquare"],
+    ["Backlog", "DashedSquare"],
     ["Canceled", "CancelSquare"],
   ] as const)("renders the requested icon for %s", (status, iconName) => {
     const { container } = render(<TaskStatusIcon status={status} />);

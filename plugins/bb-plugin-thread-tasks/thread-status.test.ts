@@ -10,13 +10,15 @@ import {
 describe("thread statuses", () => {
   it("keeps the supported labels stable and accepts friendly CLI spellings", () => {
     expect(THREAD_STATUSES).toEqual([
-      "Done",
+      "Backlog",
       "To do",
       "Working",
       "Waiting",
-      "Deferred",
+      "Done",
       "Canceled",
     ]);
+    expect(parseThreadStatus("backlog")).toBe("Backlog");
+    expect(parseThreadStatus("deferred")).toBe("Backlog");
     expect(parseThreadStatus("to-do")).toBe("To do");
     expect(parseThreadStatus("TODO")).toBe("To do");
     expect(parseThreadStatus("cancelled")).toBe("Canceled");

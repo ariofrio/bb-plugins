@@ -1,9 +1,9 @@
 export const THREAD_STATUSES = [
-  "Done",
+  "Backlog",
   "To do",
   "Working",
   "Waiting",
-  "Deferred",
+  "Done",
   "Canceled",
 ] as const;
 
@@ -30,6 +30,7 @@ function statusKey(value: string): string {
 const STATUS_BY_KEY = new Map<string, ThreadStatus>(
   THREAD_STATUSES.flatMap((status) => {
     const entries: Array<[string, ThreadStatus]> = [[statusKey(status), status]];
+    if (status === "Backlog") entries.push(["deferred", status]);
     if (status === "Canceled") entries.push(["cancelled", status]);
     return entries;
   }),
@@ -48,11 +49,11 @@ export function groupThreadsByStatus<Thread extends SidebarThreadLike>(
   );
   const sourceIndex = new Map(threads.map((thread, index) => [thread.id, index]));
   const groups: Record<ThreadStatus, Thread[]> = {
-    Done: [],
+    Backlog: [],
     "To do": [],
     Working: [],
     Waiting: [],
-    Deferred: [],
+    Done: [],
     Canceled: [],
   };
 

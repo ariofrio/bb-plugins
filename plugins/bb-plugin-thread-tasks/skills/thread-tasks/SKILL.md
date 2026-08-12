@@ -1,6 +1,6 @@
 ---
 name: thread-tasks
-description: Treat every bb thread as a task with statuses Done, To do, Working, Waiting, Deferred, and Canceled, where Working and To do are assigned automatically when the turn starts and pauses or ends. Use when inspecting, organizing, or changing a thread's task status or position. Do not archive a thread to mark it as done or completed.
+description: Treat every bb thread as a task with statuses Backlog, To do, Working, Waiting, Done, and Canceled, where Working and To do are assigned automatically when the turn starts and pauses or ends. Use when inspecting, organizing, or changing a thread's task status or position. Do not archive a thread to mark it as done or completed.
 ---
 
 # Thread tasks
