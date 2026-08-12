@@ -34,13 +34,13 @@ describe("buildProjectIconMap", () => {
     });
   });
 
-  it("mixes a chosen color into the theme's foreground", () => {
+  it("gives a chosen color its own lightness per mode", () => {
     const map = buildProjectIconMap(response, ["proj_a", "proj_b"]);
 
     expect(map.get("proj_a")).toEqual({
       name: "rocket",
       glyph: rocket,
-      color: "color-mix(in oklch, oklch(0.704 0.14 182.503) 45%, var(--foreground))",
+      color: "light-dark(oklch(0.556 0.086 191.6), oklch(0.793 0.136 191.6))",
     });
     expect(map.get("proj_b")?.color).toBeNull();
   });

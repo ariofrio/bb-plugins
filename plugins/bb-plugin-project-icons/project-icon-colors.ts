@@ -1,30 +1,88 @@
 import type { ProjectIconColor } from "./store";
 
 /**
- * Hue anchors only. A fixed palette cannot stay legible across bb's themes —
- * measured against each built-in theme's canvas, flat 500-weight colors fall to
- * about 1.7:1 on every light theme — so the chosen hue is mixed into the
- * theme's own foreground. That keeps the icon roughly as readable as the text
- * beside it, in any theme and either mode, which is the same `color-mix`
- * approach bb's themes use to derive their muted tones.
+ * A palette designed for this job rather than borrowed from one built for text
+ * and buttons. Each color keeps one hue across the whole app and picks its
+ * lightness per mode through CSS `light-dark()`: bb sets `color-scheme` on the
+ * same `:root, .light` / `.dark` selectors every theme overrides its tokens on,
+ * so the mode signal is always in step with the palette in effect.
+ *
+ * Choosing per mode is what lets the hues stay themselves. The obvious
+ * alternative — one anchor mixed into `var(--foreground)` — has to pull the
+ * color most of the way to the theme's ink before it clears 3:1 on a light
+ * canvas, and by then yellow reads olive and red reads mauve. Here nothing is
+ * mixed, so a color is only ever a lighter or darker version of itself.
+ *
+ * Fitted against every built-in theme in both modes, on both surfaces these
+ * icons sit on — the header and the sidebar — maximizing the smallest distance
+ * between any two colors subject to every color clearing 3.5:1. Lightness is
+ * held inside a narrow band per mode so the eight read as one family, and each
+ * chroma is at least 90% of the most that hue can hold at that lightness, which
+ * keeps them vivid without leaving sRGB. Hue windows keep each name honest, so
+ * colors already stored stay valid.
+ *
+ * Measured over those 12 combinations: contrast 3.54 at worst, and the closest
+ * pair anywhere is 0.126 apart in OKLab, against 0.021 for a flat 500-weight
+ * palette — roughly six times the separation, well past the ~0.05 two 16px
+ * glyphs need to be told apart.
+ *
+ * scripts/fit-palette.mjs re-runs both halves of that: it reports how these
+ * anchors score, and searches for new ones with `--fit` when a theme is added.
  */
-const PROJECT_ICON_HUES: Record<ProjectIconColor, string> = {
-  red: "oklch(0.637 0.237 25.331)",
-  orange: "oklch(0.705 0.213 47.604)",
-  yellow: "oklch(0.795 0.184 86.047)",
-  green: "oklch(0.723 0.219 149.579)",
-  teal: "oklch(0.704 0.14 182.503)",
-  blue: "oklch(0.623 0.214 259.815)",
-  purple: "oklch(0.627 0.265 303.9)",
-  pink: "oklch(0.656 0.241 354.308)",
-};
+interface ColorAnchor {
+  hue: number;
+  /** On a light canvas, where the color has to be dark enough to be seen. */
+  light: { lightness: number; chroma: number };
+  dark: { lightness: number; chroma: number };
+}
 
-/** How much of the hue survives the mix; the rest is the theme's foreground. */
-const HUE_WEIGHT = "45%";
+const PROJECT_ICON_ANCHORS: Record<ProjectIconColor, ColorAnchor> = {
+  red: {
+    hue: 23.5,
+    light: { lightness: 0.531, chroma: 0.212 },
+    dark: { lightness: 0.8, chroma: 0.103 },
+  },
+  orange: {
+    hue: 52.9,
+    light: { lightness: 0.595, chroma: 0.151 },
+    dark: { lightness: 0.72, chroma: 0.179 },
+  },
+  yellow: {
+    hue: 95,
+    light: { lightness: 0.52, chroma: 0.107 },
+    dark: { lightness: 0.8, chroma: 0.159 },
+  },
+  green: {
+    hue: 140,
+    light: { lightness: 0.56, chroma: 0.171 },
+    dark: { lightness: 0.729, chroma: 0.235 },
+  },
+  teal: {
+    hue: 191.6,
+    light: { lightness: 0.556, chroma: 0.086 },
+    dark: { lightness: 0.793, chroma: 0.136 },
+  },
+  blue: {
+    hue: 256,
+    light: { lightness: 0.522, chroma: 0.175 },
+    dark: { lightness: 0.72, chroma: 0.148 },
+  },
+  purple: {
+    hue: 306,
+    light: { lightness: 0.6, chroma: 0.279 },
+    dark: { lightness: 0.8, chroma: 0.128 },
+  },
+  pink: {
+    hue: 345.5,
+    light: { lightness: 0.52, chroma: 0.207 },
+    dark: { lightness: 0.72, chroma: 0.21 },
+  },
+};
 
 export function projectIconColor(color: ProjectIconColor | null): string | null {
   if (color === null) return null;
-  return `color-mix(in oklch, ${PROJECT_ICON_HUES[color]} ${HUE_WEIGHT}, var(--foreground))`;
+  const { hue, light, dark } = PROJECT_ICON_ANCHORS[color];
+  return `light-dark(oklch(${light.lightness} ${light.chroma} ${hue}), oklch(${dark.lightness} ${dark.chroma} ${hue}))`;
 }
 
 /** Inline so it survives outside the plugin's `@scope` root, such as bb's header. */

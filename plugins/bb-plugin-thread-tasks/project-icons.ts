@@ -35,27 +35,28 @@ interface ProjectIconsResponse {
 }
 
 /**
- * Mirrors the hue anchors and mix the Project icons plugin uses, so a color
- * reads the same here as it does in the header. A flat palette cannot stay
- * legible across bb's themes, so the hue is mixed into the theme's foreground.
+ * Mirrors the palette the Project icons plugin defines, so a color reads the
+ * same on a row as it does in the header. Each color holds one hue and picks
+ * its lightness per mode; see that plugin's project-icon-colors.ts for how the
+ * anchors were fitted across bb's themes.
  */
-const HUES: Record<string, string> = {
-  red: "oklch(0.637 0.237 25.331)",
-  orange: "oklch(0.705 0.213 47.604)",
-  yellow: "oklch(0.795 0.184 86.047)",
-  green: "oklch(0.723 0.219 149.579)",
-  teal: "oklch(0.704 0.14 182.503)",
-  blue: "oklch(0.623 0.214 259.815)",
-  purple: "oklch(0.627 0.265 303.9)",
-  pink: "oklch(0.656 0.241 354.308)",
+const ANCHORS: Record<string, { light: string; dark: string }> = {
+  red: { light: "0.531 0.212 23.5", dark: "0.8 0.103 23.5" },
+  orange: { light: "0.595 0.151 52.9", dark: "0.72 0.179 52.9" },
+  yellow: { light: "0.52 0.107 95", dark: "0.8 0.159 95" },
+  green: { light: "0.56 0.171 140", dark: "0.729 0.235 140" },
+  teal: { light: "0.556 0.086 191.6", dark: "0.793 0.136 191.6" },
+  blue: { light: "0.522 0.175 256", dark: "0.72 0.148 256" },
+  purple: { light: "0.6 0.279 306", dark: "0.8 0.128 306" },
+  pink: { light: "0.52 0.207 345.5", dark: "0.72 0.21 345.5" },
 };
 
 function iconColor(color: string | null): string | null {
   if (color === null) return null;
-  const hue = HUES[color];
-  return hue === undefined
+  const anchor = ANCHORS[color];
+  return anchor === undefined
     ? null
-    : `color-mix(in oklch, ${hue} 45%, var(--foreground))`;
+    : `light-dark(oklch(${anchor.light}), oklch(${anchor.dark}))`;
 }
 
 export function buildProjectIconMap(
