@@ -8,6 +8,7 @@ import {
 
 const baseChord = {
   altKey: false,
+  code: "Period",
   ctrlKey: false,
   key: ".",
   metaKey: true,
@@ -24,6 +25,15 @@ describe("taskStatusShortcut", () => {
     ).toBe("Blocked");
     expect(taskStatusShortcut({ ...baseChord, ctrlKey: true })).toBe("Backlog");
     expect(taskStatusShortcut({ ...baseChord, altKey: true })).toBe("Canceled");
+  });
+
+  it("matches the period key when modifiers change its character", () => {
+    expect(
+      taskStatusShortcut({ ...baseChord, key: ">", shiftKey: true }),
+    ).toBe("To do");
+    expect(taskStatusShortcut({ ...baseChord, altKey: true, key: "≥" })).toBe(
+      "Canceled",
+    );
   });
 
   it("leaves Working to the automatic workflow", () => {
@@ -49,7 +59,9 @@ describe("taskStatusShortcut", () => {
 
   it("rejects other chords and held-key repeats", () => {
     expect(taskStatusShortcut({ ...baseChord, metaKey: false })).toBeNull();
-    expect(taskStatusShortcut({ ...baseChord, key: "," })).toBeNull();
+    expect(
+      taskStatusShortcut({ ...baseChord, code: "Comma", key: "," }),
+    ).toBeNull();
     expect(taskStatusShortcut({ ...baseChord, repeat: true })).toBeNull();
   });
 });

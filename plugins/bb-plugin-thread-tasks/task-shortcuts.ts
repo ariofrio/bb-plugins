@@ -2,6 +2,7 @@ import type { ThreadStatus } from "./thread-status";
 
 export interface ShortcutKeyEvent {
   altKey: boolean;
+  code: string;
   ctrlKey: boolean;
   key: string;
   metaKey: boolean;
@@ -28,7 +29,7 @@ const STATUS_CHORDS: readonly StatusChord[] = [
 export function taskStatusShortcut(
   event: ShortcutKeyEvent,
 ): ThreadStatus | null {
-  if (!event.metaKey || event.repeat || event.key !== ".") return null;
+  if (!event.metaKey || event.repeat || event.code !== "Period") return null;
   return (
     STATUS_CHORDS.find(
       (chord) =>
