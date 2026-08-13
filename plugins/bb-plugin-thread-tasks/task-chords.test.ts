@@ -183,7 +183,7 @@ describe("resolveStatusChord", () => {
           },
           {
             threadId: "thr_next",
-            previousStatus: "Waiting",
+            previousStatus: "Blocked",
             previousSortKey: "b",
             updatedAt: 10,
           },
@@ -207,7 +207,7 @@ describe("resolveStatusChord", () => {
         undoCandidates: [
           {
             threadId: "thr_next",
-            previousStatus: "Waiting",
+            previousStatus: "Blocked",
             previousSortKey: "b",
             updatedAt: 10,
           },

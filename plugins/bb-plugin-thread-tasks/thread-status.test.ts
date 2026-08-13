@@ -13,12 +13,13 @@ describe("thread statuses", () => {
       "Backlog",
       "To do",
       "Working",
-      "Waiting",
+      "Blocked",
       "Done",
       "Canceled",
     ]);
     expect(parseThreadStatus("backlog")).toBe("Backlog");
     expect(parseThreadStatus("deferred")).toBe("Backlog");
+    expect(parseThreadStatus("waiting")).toBe("Blocked");
     expect(parseThreadStatus("to-do")).toBe("To do");
     expect(parseThreadStatus("TODO")).toBe("To do");
     expect(parseThreadStatus("cancelled")).toBe("Canceled");

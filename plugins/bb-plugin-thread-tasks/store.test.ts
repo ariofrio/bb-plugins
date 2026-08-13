@@ -44,7 +44,7 @@ describe("thread status store", () => {
   it("lists canonical status groups and fractional order within each group", () => {
     store.ensureThreads(["thr_todo_first", "thr_todo_second"]);
     store.setStatus("thr_canceled", "Canceled");
-    store.setStatus("thr_waiting", "Waiting");
+    store.setStatus("thr_blocked", "Blocked");
     store.setStatus("thr_done", "Done");
     store.setStatus("thr_working_first", "Working");
     store.setStatus("thr_working_second", "Working");
@@ -58,7 +58,7 @@ describe("thread status store", () => {
       "thr_todo_second",
       "thr_working_first",
       "thr_working_second",
-      "thr_waiting",
+      "thr_blocked",
       "thr_done",
       "thr_canceled",
     ]);
@@ -90,6 +90,32 @@ describe("thread status store", () => {
     }
   });
 
+  it("renames stored Waiting assignments to Blocked", () => {
+    const migrationDb = new Database(":memory:");
+    try {
+      for (const migration of THREAD_STATUS_MIGRATIONS.slice(0, 7)) {
+        migrationDb.exec(migration);
+      }
+      migrationDb
+        .prepare(
+          "INSERT INTO thread_organization(thread_id, status, position, updated_at, sort_key, moved_by, previous_status, previous_sort_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .run("thr_legacy", "Waiting", 1024, 1, "a1", "app", "Waiting", "a0");
+
+      for (const migration of THREAD_STATUS_MIGRATIONS.slice(7)) {
+        migrationDb.exec(migration);
+      }
+
+      const migrated = createThreadStatusStore(migrationDb);
+      expect(migrated.get("thr_legacy").taskStatus).toBe("Blocked");
+      expect(migrated.listUndoCandidates()).toMatchObject([
+        { threadId: "thr_legacy", previousStatus: "Blocked" },
+      ]);
+    } finally {
+      migrationDb.close();
+    }
+  });
+
   it("places status changes at the bottom and preserves idempotent keys", () => {
     store.ensureThreads(["thr_a", "thr_b"]);
     store.setStatus("thr_b", "Working");
@@ -114,9 +140,9 @@ describe("thread status store", () => {
     store.observeWorkingState("thr_a", true);
     expect(store.get("thr_a").taskStatus).toBe("Working");
 
-    store.setStatus("thr_a", "Waiting");
+    store.setStatus("thr_a", "Blocked");
     store.observeWorkingState("thr_a", true);
-    expect(store.get("thr_a").taskStatus).toBe("Waiting");
+    expect(store.get("thr_a").taskStatus).toBe("Blocked");
   });
 
   it("moves a Working task to To do when work stops without undoing an override", () => {
@@ -317,7 +343,7 @@ describe("thread status store", () => {
         .prepare(
           "INSERT INTO thread_organization(thread_id, status, position, updated_at, sort_key) VALUES (?, ?, ?, ?, ?)",
         )
-        .run("thr_waiting", "Waiting", 2048, 1, "a2");
+        .run("thr_blocked", "Waiting", 2048, 1, "a2");
       for (const migration of THREAD_STATUS_MIGRATIONS.slice(4)) {
         migrationDb.exec(migration);
       }
@@ -325,7 +351,7 @@ describe("thread status store", () => {
       const migrated = createThreadStatusStore(migrationDb);
       expect(migrated.listState().assignments).toMatchObject([
         { threadId: "thr_legacy", taskStatus: "To do", sortKey: "a1" },
-        { threadId: "thr_waiting", taskStatus: "Waiting", sortKey: "a2" },
+        { threadId: "thr_blocked", taskStatus: "Blocked", sortKey: "a2" },
       ]);
       expect(() =>
         migrationDb
@@ -405,7 +431,7 @@ describe("thread status store", () => {
 
   it("appends a restored task that never sat in To do", () => {
     store.ensureThreads(["thr_a", "thr_b"]);
-    store.setStatus("thr_b", "Waiting", "app");
+    store.setStatus("thr_b", "Blocked", "app");
     store.setStatus("thr_b", "Canceled", "app");
 
     store.restoreToTodo("thr_b", null);

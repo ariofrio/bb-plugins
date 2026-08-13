@@ -6,7 +6,7 @@ const TASK_STATUS_ICONS: Record<ThreadStatus, IconName> = {
   Done: "CheckmarkSquare",
   "To do": "Square",
   Working: "Diamond",
-  Waiting: "ClockSquare",
+  Blocked: "ClockSquare",
   Canceled: "CancelSquare",
 };
 

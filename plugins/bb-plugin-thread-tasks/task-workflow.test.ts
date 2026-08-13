@@ -59,11 +59,11 @@ describe("task workflow", () => {
       } as never);
       expect(store.get("thr_a").taskStatus).toBe("Working");
 
-      store.setStatus("thr_a", "Waiting");
+      store.setStatus("thr_a", "Blocked");
       await handlers.get("thread.active")?.({
         thread: { id: "thr_a", status: "active" },
       } as never);
-      expect(store.get("thr_a").taskStatus).toBe("Waiting");
+      expect(store.get("thr_a").taskStatus).toBe("Blocked");
       expect(publish).toHaveBeenCalledTimes(1);
     } finally {
       db.close();

@@ -2,7 +2,7 @@
 
 A bb sidebar that treats threads as tasks. It preserves bb's pinned-thread and
 subthread behavior, then groups the remaining threads into manually ordered
-**Backlog**, **To do**, **Working**, **Waiting**, **Done**, and **Canceled**
+**Backlog**, **To do**, **Working**, **Blocked**, **Done**, and **Canceled**
 sections.
 
 Each row shows its project's icon when the [Project
@@ -52,7 +52,7 @@ on:
 | -------: | ----------- | ------------------------------ |
 |       ⌘. | Done        | Go to the task below it        |
 |      ⇧⌘. | To do       | Stay, or undo your last filing |
-|     ⌃⇧⌘. | Waiting     | Go to the task below it        |
+|     ⌃⇧⌘. | Blocked     | Go to the task below it        |
 |      ⌃⌘. | Backlog     | Go to the task below it        |
 |      ⌥⌘. | Canceled    | Go to the task below it        |
 

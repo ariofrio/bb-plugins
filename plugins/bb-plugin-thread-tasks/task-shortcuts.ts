@@ -20,7 +20,7 @@ interface StatusChord {
 const STATUS_CHORDS: readonly StatusChord[] = [
   { altKey: false, ctrlKey: false, shiftKey: false, status: "Done" },
   { altKey: false, ctrlKey: false, shiftKey: true, status: "To do" },
-  { altKey: false, ctrlKey: true, shiftKey: true, status: "Waiting" },
+  { altKey: false, ctrlKey: true, shiftKey: true, status: "Blocked" },
   { altKey: false, ctrlKey: true, shiftKey: false, status: "Backlog" },
   { altKey: true, ctrlKey: false, shiftKey: false, status: "Canceled" },
 ];

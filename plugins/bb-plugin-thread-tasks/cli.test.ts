@@ -105,7 +105,7 @@ describe("task CLI", () => {
   it("lists tasks without order keys in canonical display order", () => {
     store.ensureThreads(["thr_todo"]);
     store.setStatus("thr_backlog", "Backlog");
-    store.setStatus("thr_waiting", "Waiting");
+    store.setStatus("thr_blocked", "Blocked");
     store.setStatus("thr_done", "Done");
     store.setStatus("thr_working", "Working");
     store.setStatus("thr_canceled", "Canceled");
@@ -125,9 +125,9 @@ describe("task CLI", () => {
       stdout.indexOf("thr_working"),
     );
     expect(stdout.indexOf("thr_working")).toBeLessThan(
-      stdout.indexOf("thr_waiting"),
+      stdout.indexOf("thr_blocked"),
     );
-    expect(stdout.indexOf("thr_waiting")).toBeLessThan(
+    expect(stdout.indexOf("thr_blocked")).toBeLessThan(
       stdout.indexOf("thr_done"),
     );
     expect(stdout.indexOf("thr_done")).toBeLessThan(
@@ -311,7 +311,7 @@ describe("task CLI", () => {
       "update",
       "thr_a",
       "--status",
-      "blocked",
+      "paused",
     ]);
     expect(invalid.exitCode).toBe(1);
     expect(invalid.stderr).toContain("Backlog, To do, Working");

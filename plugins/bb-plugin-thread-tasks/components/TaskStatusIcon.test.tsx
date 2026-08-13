@@ -11,7 +11,7 @@ describe("TaskStatusIcon", () => {
     ["Done", "CheckmarkSquare"],
     ["To do", "Square"],
     ["Working", "Diamond"],
-    ["Waiting", "ClockSquare"],
+    ["Blocked", "ClockSquare"],
     ["Backlog", "DashedSquare"],
     ["Canceled", "CancelSquare"],
   ] as const)("renders the requested icon for %s", (status, iconName) => {

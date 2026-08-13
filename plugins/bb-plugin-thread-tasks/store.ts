@@ -106,6 +106,38 @@ export const THREAD_STATUS_MIGRATIONS = [
     CREATE INDEX IF NOT EXISTS thread_organization_status_sort_key
       ON thread_organization(status, sort_key, thread_id);
   `,
+  `
+    CREATE TABLE thread_organization_blocked (
+      thread_id TEXT PRIMARY KEY,
+      status TEXT NOT NULL CHECK (status IN ('Backlog', 'To do', 'Working', 'Blocked', 'Done', 'Canceled')),
+      position INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      sort_key TEXT,
+      moved_by TEXT,
+      previous_status TEXT,
+      previous_sort_key TEXT
+    );
+    INSERT INTO thread_organization_blocked(
+      thread_id, status, position, updated_at, sort_key,
+      moved_by, previous_status, previous_sort_key
+    )
+      SELECT
+        thread_id,
+        CASE status WHEN 'Waiting' THEN 'Blocked' ELSE status END,
+        position,
+        updated_at,
+        sort_key,
+        moved_by,
+        CASE previous_status WHEN 'Waiting' THEN 'Blocked' ELSE previous_status END,
+        previous_sort_key
+      FROM thread_organization;
+    DROP TABLE thread_organization;
+    ALTER TABLE thread_organization_blocked RENAME TO thread_organization;
+    CREATE INDEX IF NOT EXISTS thread_organization_status_position
+      ON thread_organization(status, position, thread_id);
+    CREATE INDEX IF NOT EXISTS thread_organization_status_sort_key
+      ON thread_organization(status, sort_key, thread_id);
+  `,
 ];
 
 interface AssignmentRow {
@@ -122,7 +154,7 @@ export type MoveSource = "app" | "cli" | "auto";
 const FILED_STATUSES: readonly ThreadStatus[] = [
   "Backlog",
   "Done",
-  "Waiting",
+  "Blocked",
   "Canceled",
 ];
 
@@ -209,7 +241,7 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
         WHEN 'Backlog' THEN 0
         WHEN 'To do' THEN 1
         WHEN 'Working' THEN 2
-        WHEN 'Waiting' THEN 3
+        WHEN 'Blocked' THEN 3
         WHEN 'Done' THEN 4
         WHEN 'Canceled' THEN 5
       END,

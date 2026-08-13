@@ -3,9 +3,9 @@ import { parseStoredStringSet } from "./persistent-string-set";
 
 describe("parseStoredStringSet", () => {
   it("loads unique strings and rejects malformed entries", () => {
-    expect([...parseStoredStringSet('["Done",3,"Done","Waiting"]')]).toEqual([
+    expect([...parseStoredStringSet('["Done",3,"Done","Blocked"]')]).toEqual([
       "Done",
-      "Waiting",
+      "Blocked",
     ]);
     expect(parseStoredStringSet("not json").size).toBe(0);
   });

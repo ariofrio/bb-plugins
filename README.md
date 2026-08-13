@@ -13,7 +13,7 @@ Personal plugins for [bb](https://github.com/ymichael/bb).
 - [Project icons](plugins/bb-plugin-project-icons#readme) — gives each project
   an icon and optional color, shown next to its name in the thread header.
 - [Thread tasks](plugins/bb-plugin-thread-tasks#readme) — treats sidebar
-  threads as manually ordered tasks in Backlog, To do, Working, Waiting,
+  threads as manually ordered tasks in Backlog, To do, Working, Blocked,
   Done, and Canceled groups.
 
 ## Install
