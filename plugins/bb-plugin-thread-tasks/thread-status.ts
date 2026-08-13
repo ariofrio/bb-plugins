@@ -60,7 +60,9 @@ export function groupThreadsByStatus<Thread extends SidebarThreadLike>(
 
   for (const thread of threads) {
     const taskStatus =
-      assignmentByThread.get(thread.id)?.taskStatus ?? DEFAULT_THREAD_STATUS;
+      parseThreadStatus(
+        assignmentByThread.get(thread.id)?.taskStatus ?? "",
+      ) ?? DEFAULT_THREAD_STATUS;
     groups[taskStatus].push(thread);
   }
 

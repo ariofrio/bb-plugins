@@ -55,6 +55,24 @@ describe("thread statuses", () => {
     expect(groups.Done).toEqual([]);
   });
 
+  it("defaults assignments from an incompatible bundle to To do", () => {
+    const assignments = [
+      {
+        threadId: "newer-status",
+        taskStatus: "Review",
+        sortKey: "U",
+        updatedAt: 1,
+      },
+    ] as unknown as ThreadAssignment[];
+
+    const groups = groupThreadsByStatus(
+      [{ id: "newer-status", updatedAt: 1 }],
+      assignments,
+    );
+
+    expect(groups["To do"].map((thread) => thread.id)).toEqual(["newer-status"]);
+  });
+
   it("computes reorder and cross-group destination orders", () => {
     expect(destinationOrder(["a", "b", "c"], "c", "a")).toEqual([
       "c",
