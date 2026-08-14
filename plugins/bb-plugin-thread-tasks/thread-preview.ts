@@ -3,6 +3,27 @@ import type { ThreadStatusStore } from "./store";
 
 const MAX_PREVIEW_LENGTH = 500;
 
+/**
+ * Events after which the newest message may have changed.
+ *
+ * `item/completed` is what keeps the subtitle current during a turn: an agent
+ * that says something and then spends minutes on tool calls has already sent
+ * its newest message, and waiting for the turn to end would leave the row
+ * showing the user's message that whole time. It fires for every item, not
+ * just messages, so most of these re-derive to the same text and stop at
+ * setPreview; the redundant reads are the price of not knowing an item's kind
+ * from the event alone.
+ *
+ * Deltas are deliberately absent. They arrive per token, and a subtitle that
+ * retypes itself word by word costs a timeline read per token to do it.
+ */
+const MESSAGE_EVENT_TYPES = [
+  "client/turn/requested",
+  "turn/input/accepted",
+  "system/manager/user_message",
+  "item/completed",
+];
+
 export interface ThreadPreviewRow {
   kind: string;
   sourceSeqEnd: number;
@@ -153,14 +174,10 @@ export function registerThreadPreviews(
         event: "thread:changed",
         callback(event) {
           if (!event.id) return;
-          const inputChanged = event.metadata?.eventTypes?.some((eventType) =>
-            [
-              "client/turn/requested",
-              "turn/input/accepted",
-              "system/manager/user_message",
-            ].includes(eventType),
+          const messageChanged = event.metadata?.eventTypes?.some((eventType) =>
+            MESSAGE_EVENT_TYPES.includes(eventType),
           );
-          if (event.changes.includes("status-changed") || inputChanged) {
+          if (event.changes.includes("status-changed") || messageChanged) {
             schedule(event.id);
           }
         },

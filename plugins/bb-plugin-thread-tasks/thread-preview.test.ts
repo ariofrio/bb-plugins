@@ -179,12 +179,21 @@ describe("thread preview", () => {
       await new Promise((resolve) => setTimeout(resolve, 75));
       expect(timeline).toHaveBeenCalledTimes(1);
 
+      // A message the agent finishes mid-turn is the newest message from that
+      // moment on, even though the turn runs for several more minutes.
+      changed?.({
+        id: "thr_a",
+        changes: ["events-appended"],
+        metadata: { eventTypes: ["item/completed"] },
+      });
+      await vi.waitFor(() => expect(timeline).toHaveBeenCalledTimes(2));
+
       changed?.({
         id: "thr_a",
         changes: ["events-appended"],
         metadata: { eventTypes: ["turn/input/accepted"] },
       });
-      await vi.waitFor(() => expect(timeline).toHaveBeenCalledTimes(2));
+      await vi.waitFor(() => expect(timeline).toHaveBeenCalledTimes(3));
 
       abort.abort();
       await running;
