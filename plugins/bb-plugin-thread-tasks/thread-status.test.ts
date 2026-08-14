@@ -73,6 +73,32 @@ describe("thread statuses", () => {
     expect(groups["To do"].map((thread) => thread.id)).toEqual(["newer-status"]);
   });
 
+  it("groups every descendant under its root task status", () => {
+    const threads = [
+      { id: "child", parentThreadId: "parent", updatedAt: 4 },
+      { id: "other", parentThreadId: null, updatedAt: 3 },
+      { id: "grandchild", parentThreadId: "child", updatedAt: 2 },
+      { id: "parent", parentThreadId: null, updatedAt: 1 },
+    ];
+    const assignments: ThreadAssignment[] = [
+      { threadId: "parent", taskStatus: "Done", sortKey: "a", updatedAt: 1 },
+      { threadId: "child", taskStatus: "Working", sortKey: "b", updatedAt: 2 },
+      { threadId: "grandchild", taskStatus: "Blocked", sortKey: "c", updatedAt: 3 },
+      { threadId: "other", taskStatus: "To do", sortKey: "d", updatedAt: 4 },
+    ];
+
+    const groups = groupThreadsByStatus(threads, assignments);
+
+    expect(groups.Done.map(({ id }) => id)).toEqual([
+      "child",
+      "grandchild",
+      "parent",
+    ]);
+    expect(groups.Working).toEqual([]);
+    expect(groups.Blocked).toEqual([]);
+    expect(groups["To do"].map(({ id }) => id)).toEqual(["other"]);
+  });
+
   it("computes reorder and cross-group destination orders", () => {
     expect(destinationOrder(["a", "b", "c"], "c", "a")).toEqual([
       "c",

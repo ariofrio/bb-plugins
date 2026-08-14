@@ -1,4 +1,5 @@
 import type { BbPluginApi } from "@bb/plugin-sdk";
+import { listAllThreads } from "./list-all-threads";
 import type { ThreadStatusStore } from "./store";
 
 export type ThreadLifecycleStatus =
@@ -24,6 +25,7 @@ export function isWorkingThreadStatus(
 
 interface WorkflowThread {
   id: string;
+  parentThreadId?: string | null;
   status: ThreadLifecycleStatus;
 }
 
@@ -47,6 +49,12 @@ export function registerTaskWorkflow(
   };
 
   const observe = async (thread: WorkflowThread) => {
+    if (thread.parentThreadId) {
+      if (store.removeTask(thread.id)) {
+        bb.realtime.publish("state-changed", { threadId: thread.id });
+      }
+      return;
+    }
     const isWorking =
       isWorkingThreadStatus(thread.status) && !(await isWaitingOnUser(thread.id));
     const result = store.observeWorkingState(thread.id, isWorking);
@@ -95,7 +103,9 @@ export function registerTaskWorkflow(
       });
 
       try {
-        const threads = await bb.sdk.threads.list({ signal });
+        const threads = await listAllThreads(({ limit, offset }) =>
+          bb.sdk.threads.list({ limit, offset, signal }),
+        );
         for (const thread of threads) enqueue(thread.id);
 
         if (!signal.aborted) {

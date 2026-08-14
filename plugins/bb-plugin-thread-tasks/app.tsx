@@ -53,6 +53,10 @@ import {
 } from "./project-icons";
 import { shouldSyncThreads } from "./task-sync";
 import {
+  partitionTaskThreads,
+  withThreadAncestors,
+} from "./task-ownership";
+import {
   currentThreadId,
   taskReorderShortcut,
   taskStatusShortcut,
@@ -141,7 +145,7 @@ interface ThreadRowProps {
   reorderable: boolean;
   showDropAfter: boolean;
   showDropBefore: boolean;
-  taskStatus: ThreadStatus;
+  taskStatus: ThreadStatus | null;
   thread: PluginSidebarThread;
 }
 
@@ -627,6 +631,10 @@ function ThreadStatusList({
     () => sidebar.threads.filter((thread) => !thread.isArchived),
     [sidebar.threads],
   );
+  const taskPartition = useMemo(
+    () => partitionTaskThreads(taskThreads),
+    [taskThreads],
+  );
 
   const projectIds = useMemo(
     () => sidebar.projects.map((project) => project.id).sort().join(","),
@@ -682,10 +690,15 @@ function ThreadStatusList({
         (assignment) => assignment.threadId,
       ),
     );
-    return taskThreads
-      .map((thread) => thread.id)
-      .filter((threadId) => !assigned.has(threadId));
-  }, [organization?.assignments, taskThreads]);
+    return [
+      ...taskPartition.taskThreads
+        .map((thread) => thread.id)
+        .filter((threadId) => !assigned.has(threadId)),
+      ...taskPartition.childThreads
+        .map((thread) => thread.id)
+        .filter((threadId) => assigned.has(threadId)),
+    ];
+  }, [organization?.assignments, taskPartition]);
 
   useEffect(() => {
     if (
@@ -701,7 +714,10 @@ function ThreadStatusList({
     }
     syncInFlight.current = true;
     void rpc
-      .call("syncThreads", { threadIds: taskThreads.map((thread) => thread.id) })
+      .call("syncThreads", {
+        taskThreadIds: taskPartition.taskThreads.map((thread) => thread.id),
+        childThreadIds: taskPartition.childThreads.map((thread) => thread.id),
+      })
       .then((state) => {
         setOrganization(state);
         setError(null);
@@ -720,6 +736,7 @@ function ThreadStatusList({
     rpc,
     sidebar.status,
     taskThreads,
+    taskPartition,
     unsyncedThreadIds.length,
   ]);
 
@@ -766,9 +783,14 @@ function ThreadStatusList({
     const liveThreads = new Map(
       sidebar.threads.map((thread) => [thread.id, thread] as const),
     );
-    return search.threads.map(
+    const matches = search.threads.map(
       (thread) => liveThreads.get(thread.id) ?? archivedSearchThread(thread),
     );
+    const allThreads = [
+      ...sidebar.threads,
+      ...matches.filter((thread) => !liveThreads.has(thread.id)),
+    ];
+    return withThreadAncestors(matches, allThreads);
   }, [normalizedSearch, search, sidebar.threads, taskThreads]);
   const pinnedState = useMemo(
     () => buildPinnedThreadState(displayThreads, pinnedThreadIds),
@@ -819,7 +841,9 @@ function ThreadStatusList({
     ) => {
       if (mutationPending || unsyncedThreadIds.length > 0) return;
       const order = destinationOrder(
-        groups[status].map((thread) => thread.id),
+        flattenThreadHierarchy(groups[status], new Set<string>())
+          .filter(({ depth }) => depth === 0)
+          .map(({ thread }) => thread.id),
         threadId,
         beforeThreadId,
       );
@@ -1001,8 +1025,10 @@ function ThreadStatusList({
                       ? (groupIndicator([thread, ...descendants]) ?? thread)
                       : thread;
                   const taskStatus =
-                    assignmentByThreadId.get(thread.id)?.taskStatus ??
-                    DEFAULT_THREAD_STATUS;
+                    isRoot
+                      ? (assignmentByThreadId.get(thread.id)?.taskStatus ??
+                        DEFAULT_THREAD_STATUS)
+                      : null;
                   return (
                     <ThreadRow
                       key={thread.id}
@@ -1096,14 +1122,16 @@ function ThreadStatusList({
           const allThreads = groups[status];
           const shownThreads = allThreads;
           const idsInStatus = new Set(allThreads.map((thread) => thread.id));
-          const hierarchyRows = normalizedSearch
-            ? shownThreads.map((thread) => ({
-                thread,
-                depth: 0,
-                hasChildren: false,
-                descendants: [] as readonly PluginSidebarThread[],
-              }))
-            : flattenThreadHierarchy(shownThreads, collapsedThreads);
+          const hierarchyRows = flattenThreadHierarchy(
+            shownThreads,
+            normalizedSearch ? new Set<string>() : collapsedThreads,
+          );
+          const rootThreads = flattenThreadHierarchy(
+            allThreads,
+            new Set<string>(),
+          )
+            .filter(({ depth }) => depth === 0)
+            .map(({ thread }) => thread);
           const isCollapsed = collapsedSections.has(status);
           if (normalizedSearch && shownThreads.length === 0) return null;
           return (
@@ -1142,9 +1170,10 @@ function ThreadStatusList({
               <ul>
                 {hierarchyRows.map(
                   ({ thread, depth, hasChildren, descendants }) => {
-                    const fullIndex = allThreads.findIndex(
+                    const rootIndex = rootThreads.findIndex(
                       (item) => item.id === thread.id,
                     );
+                    const isRoot = rootIndex >= 0;
                     const childrenCollapsed = collapsedThreads.has(thread.id);
                     const indicatorThread =
                       childrenCollapsed && hasChildren
@@ -1166,7 +1195,9 @@ function ThreadStatusList({
                         hasChildren={hasChildren}
                         indicatorThread={indicatorThread}
                         onChangeStatus={(nextStatus) => {
-                          void commitMove(thread.id, nextStatus, null);
+                          if (isRoot) {
+                            void commitMove(thread.id, nextStatus, null);
+                          }
                         }}
                         onDragEnd={clearDrag}
                         onDragOver={(event) => {
@@ -1174,6 +1205,7 @@ function ThreadStatusList({
                             (item) => item.id === draggingThreadId,
                           );
                           if (
+                            !isRoot ||
                             draggedThread === undefined ||
                             pinnedRootIds.has(draggedThread.id) ||
                             !canDropThreadBeside(
@@ -1193,7 +1225,7 @@ function ThreadStatusList({
                           const isAfter =
                             event.clientY > bounds.top + bounds.height / 2;
                           if (isAfter) {
-                            setDropBefore(allThreads[fullIndex + 1]?.id ?? null);
+                            setDropBefore(rootThreads[rootIndex + 1]?.id ?? null);
                             setDropAfter(thread.id);
                           } else {
                             setDropBefore(thread.id);
@@ -1214,6 +1246,7 @@ function ThreadStatusList({
                             (item) => item.id === draggingThreadId,
                           );
                           if (
+                            !isRoot ||
                             draggedThread === undefined ||
                             pinnedRootIds.has(draggedThread.id) ||
                             !canDropThreadBeside(
@@ -1233,7 +1266,7 @@ function ThreadStatusList({
                         }
                         preview={previews.get(thread.id) ?? null}
                         projectIcon={projectIcons.get(thread.projectId) ?? null}
-                        reorderable={!Boolean(normalizedSearch)}
+                        reorderable={isRoot && !Boolean(normalizedSearch)}
                         showDropAfter={
                           dropGroup === status && dropAfter === thread.id
                         }
@@ -1242,7 +1275,7 @@ function ThreadStatusList({
                           dropAfter === null &&
                           dropBefore === thread.id
                         }
-                        taskStatus={status}
+                        taskStatus={isRoot ? status : null}
                         thread={thread}
                       />
                     );
@@ -1357,7 +1390,7 @@ export default definePluginApp((app) => {
     id: "thread-status",
     title: "Thread tasks",
     description:
-      "Treat threads as manually ordered tasks grouped by task status.",
+      "Treat root threads as manually ordered tasks grouped by task status.",
     component: ThreadStatusList,
   });
 

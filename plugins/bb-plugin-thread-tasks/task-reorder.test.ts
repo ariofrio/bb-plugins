@@ -149,6 +149,23 @@ describe("resolveTaskReorder", () => {
     ).toEqual({ kind: "none" });
   });
 
+  it("does not reorder or change status for a child thread", () => {
+    const nested = [
+      thread("thr_parent"),
+      thread("thr_child", { parentThreadId: "thr_parent" }),
+    ];
+
+    expect(
+      resolveTaskReorder({
+        threads: nested,
+        assignments: [assignment("thr_parent", "To do", "a")],
+        threadId: "thr_child",
+        taskStatus: "To do",
+        intent: { scope: "status", direction: 1 },
+      }),
+    ).toEqual({ kind: "none" });
+  });
+
   it("reorders a pinned thread among the pinned roots", () => {
     const pinned = [
       thread("thr_a", { pinnedAt: 3, pinSortKey: "a" }),

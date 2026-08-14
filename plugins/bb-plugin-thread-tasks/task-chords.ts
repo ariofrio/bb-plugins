@@ -4,7 +4,7 @@ import {
   pinnedThreadIds,
   type ReorderThreadLike,
 } from "./task-reorder";
-import { flattenThreadHierarchy } from "./thread-hierarchy";
+import { partitionTaskThreads } from "./task-ownership";
 import type { ThreadAssignment, ThreadStatus } from "./thread-status";
 
 /** Where the client should go once the chord has been applied. */
@@ -45,6 +45,10 @@ export function resolveStatusChord({
   undoCandidates,
 }: ResolveStatusChordInput): StatusChord {
   const listed = listedThreads(threads);
+  const taskThreads = partitionTaskThreads(listed).taskThreads;
+  if (!taskThreads.some((thread) => thread.id === threadId)) {
+    return { kind: "none" };
+  }
   const openStatus = assignments.find(
     (assignment) => assignment.threadId === threadId,
   )?.taskStatus;
@@ -54,7 +58,7 @@ export function resolveStatusChord({
       return { kind: "file", taskStatus, next: { kind: "stay" } };
     }
     const candidate = undoCandidates.find((item) =>
-      listed.some((thread) => thread.id === item.threadId),
+      taskThreads.some((thread) => thread.id === item.threadId),
     );
     if (candidate === undefined) return { kind: "none" };
     return {
@@ -68,7 +72,7 @@ export function resolveStatusChord({
 
   // Walk the To do section the way the sidebar renders it, so "the row below"
   // means the row below on screen.
-  const threadById = new Map(listed.map((thread) => [thread.id, thread]));
+  const threadById = new Map(taskThreads.map((thread) => [thread.id, thread]));
   const pinned = pinnedThreadIds(listed);
   const toDo = assignments
     .filter(
@@ -78,9 +82,7 @@ export function resolveStatusChord({
         !pinned.has(assignment.threadId),
     )
     .flatMap((assignment) => threadById.get(assignment.threadId) ?? []);
-  const rows = flattenThreadHierarchy(toDo, new Set<string>()).map(
-    ({ thread }) => thread.id,
-  );
+  const rows = toDo.map((thread) => thread.id);
 
   const index = rows.indexOf(threadId);
   const nextThreadId =

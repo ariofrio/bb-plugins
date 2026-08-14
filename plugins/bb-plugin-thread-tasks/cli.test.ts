@@ -23,6 +23,7 @@ describe("task CLI", () => {
     const result = runTaskCli(store, ["--help"]);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("bb task [options] [command]");
+    expect(result.stdout).toContain("Treat root threads");
     expect(result.stdout).toContain("list [options]");
     expect(result.stdout).toContain("show [options] [id]");
     expect(result.stdout).toContain("update [options] [id]");
@@ -315,5 +316,28 @@ describe("task CLI", () => {
     ]);
     expect(invalid.exitCode).toBe(1);
     expect(invalid.stderr).toContain("Backlog, To do, Working");
+  });
+
+  it("rejects status reads and writes for child threads", () => {
+    store.ensureThreads(["parent", "child"]);
+    const taskRootIds = new Map<string, string | null>([
+      ["parent", "parent"],
+      ["child", "parent"],
+    ]);
+
+    const shown = runTaskCli(store, ["show", "child"], { taskRootIds });
+    const updated = runTaskCli(
+      store,
+      ["update", "child", "--status", "Done"],
+      { taskRootIds },
+    );
+
+    expect(shown).toMatchObject({
+      exitCode: 1,
+      stderr: expect.stringContaining("parent task parent"),
+    });
+    expect(updated.exitCode).toBe(1);
+    expect(store.get("parent").taskStatus).toBe("To do");
+    expect(store.get("child").taskStatus).toBe("To do");
   });
 });

@@ -88,7 +88,7 @@ describe("resolveStatusChord", () => {
     ).toMatchObject({ next: { kind: "thread", threadId: "thr_next" } });
   });
 
-  it("follows the sidebar's nesting when picking the row below", () => {
+  it("skips child rows when picking the next task", () => {
     expect(
       resolveStatusChord({
         threadId: "thr_open",
@@ -100,12 +100,11 @@ describe("resolveStatusChord", () => {
         ],
         assignments: [
           assignment("thr_open", "To do", "a"),
-          assignment("thr_child", "To do", "b"),
           assignment("thr_next", "To do", "c"),
         ],
         undoCandidates: [],
       }),
-    ).toMatchObject({ next: { kind: "thread", threadId: "thr_child" } });
+    ).toMatchObject({ next: { kind: "thread", threadId: "thr_next" } });
   });
 
   it("skips the filed task, pinned threads, and threads the sidebar hides", () => {

@@ -201,6 +201,11 @@ export interface ThreadStatusStore {
   listUndoCandidates(): UndoCandidate[];
   get(threadId: string): ThreadStatusLookup;
   ensureThreads(threadIds: readonly string[]): ThreadStatusState;
+  syncTaskThreads(
+    taskThreadIds: readonly string[],
+    childThreadIds: readonly string[],
+  ): ThreadStatusState;
+  removeTask(threadId: string): boolean;
   setStatus(
     threadId: string,
     status: ThreadStatus,
@@ -331,40 +336,70 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
     };
   }
 
-  const ensureThreadsTransaction = db.transaction(
-    (threadIds: readonly string[]): ThreadStatusState => {
-      if (threadIds.length > 10_000) throw new Error("Too many thread ids.");
-      const uniqueIds = new Set(threadIds);
-      if (uniqueIds.size !== threadIds.length) {
-        throw new Error("Thread ids must be unique.");
-      }
-      for (const threadId of threadIds) assertThreadId(threadId);
+  function ensureThreads(threadIds: readonly string[]): ThreadStatusState {
+    if (threadIds.length > 10_000) throw new Error("Too many thread ids.");
+    const uniqueIds = new Set(threadIds);
+    if (uniqueIds.size !== threadIds.length) {
+      throw new Error("Thread ids must be unique.");
+    }
+    for (const threadId of threadIds) assertThreadId(threadId);
 
-      const last = lastAssignment.get(DEFAULT_THREAD_STATUS) as
-        | AssignmentRow
-        | undefined;
-      let previousKey = last?.sort_key ?? null;
-      const now = Date.now();
-      for (const threadId of threadIds) {
-        if (getAssignment.get(threadId)) continue;
-        const sortKey =
-          previousKey === null
-            ? createOrderKeyBetween({ previousKey: null, nextKey: null })
-            : createOrderKeyAfter({ previousKey });
-        upsertAssignment.run(
-          threadId,
-          DEFAULT_THREAD_STATUS,
-          now,
-          sortKey,
-          "auto",
-          null,
-          null,
-        );
-        previousKey = sortKey;
+    const last = lastAssignment.get(DEFAULT_THREAD_STATUS) as
+      | AssignmentRow
+      | undefined;
+    let previousKey = last?.sort_key ?? null;
+    const now = Date.now();
+    for (const threadId of threadIds) {
+      if (getAssignment.get(threadId)) continue;
+      const sortKey =
+        previousKey === null
+          ? createOrderKeyBetween({ previousKey: null, nextKey: null })
+          : createOrderKeyAfter({ previousKey });
+      upsertAssignment.run(
+        threadId,
+        DEFAULT_THREAD_STATUS,
+        now,
+        sortKey,
+        "auto",
+        null,
+        null,
+      );
+      previousKey = sortKey;
+    }
+    return listState();
+  }
+
+  const ensureThreadsTransaction = db.transaction(ensureThreads);
+  const syncTaskThreadsTransaction = db.transaction(
+    (
+      taskThreadIds: readonly string[],
+      childThreadIds: readonly string[],
+    ): ThreadStatusState => {
+      if (childThreadIds.length > 10_000) {
+        throw new Error("Too many child thread ids.");
       }
-      return listState();
+      const taskIds = new Set(taskThreadIds);
+      const childIds = new Set(childThreadIds);
+      if (childIds.size !== childThreadIds.length) {
+        throw new Error("Child thread ids must be unique.");
+      }
+      for (const threadId of childThreadIds) {
+        assertThreadId(threadId);
+        if (taskIds.has(threadId)) {
+          throw new Error("A thread cannot be both a task and a child.");
+        }
+        deleteAssignment.run(threadId);
+        deleteWorkingState.run(threadId);
+      }
+      return ensureThreads(taskThreadIds);
     },
   );
+
+  const removeTaskTransaction = db.transaction((threadId: string): boolean => {
+    const assignmentDeleted = deleteAssignment.run(threadId).changes > 0;
+    const workflowDeleted = deleteWorkingState.run(threadId).changes > 0;
+    return assignmentDeleted || workflowDeleted;
+  });
 
   function moveToStatus(
     threadId: string,
@@ -536,6 +571,16 @@ export function createThreadStatusStore(db: Database): ThreadStatusStore {
     },
     ensureThreads(threadIds) {
       return ensureThreadsTransaction.immediate(threadIds);
+    },
+    syncTaskThreads(taskThreadIds, childThreadIds) {
+      return syncTaskThreadsTransaction.immediate(
+        taskThreadIds,
+        childThreadIds,
+      );
+    },
+    removeTask(threadId) {
+      assertThreadId(threadId);
+      return removeTaskTransaction.immediate(threadId);
     },
     setStatus(threadId, status, source = "app") {
       assertThreadId(threadId);

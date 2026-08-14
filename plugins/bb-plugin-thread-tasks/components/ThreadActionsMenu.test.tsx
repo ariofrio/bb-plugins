@@ -81,6 +81,33 @@ describe("ThreadActionsDropdown", () => {
     expect(screen.queryByText("Move down")).toBeNull();
     expect(screen.getByText("Archive")).toBeDefined();
     expect(screen.getByText("Delete")).toBeDefined();
+  }, 10_000);
+
+  it("does not offer task status controls for a child thread", () => {
+    const actions = {
+      open: vi.fn(),
+      openNewThread: vi.fn(),
+      setPinned: vi.fn(async () => {}),
+      setRead: vi.fn(async () => {}),
+      rename: vi.fn(async () => {}),
+      archive: vi.fn(),
+      requestDelete: vi.fn(),
+    } satisfies PluginSidebarThreadActions;
+    render(
+      <ThreadActionsDropdown
+        actions={actions}
+        disabled={false}
+        onOpenChange={vi.fn()}
+        onRename={vi.fn()}
+        onSetTaskStatus={vi.fn()}
+        splitAvailable={false}
+        taskStatus={null}
+        thread={{ ...thread(), parentThreadId: "thr_parent" }}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
+    expect(screen.queryByText("Set task status")).toBeNull();
   });
 });
 

@@ -1,9 +1,13 @@
 # Thread tasks
 
-A bb sidebar that treats threads as tasks. It preserves bb's pinned-thread and
-subthread behavior, then groups the remaining threads into manually ordered
-**Backlog**, **To do**, **Working**, **Blocked**, **Done**, and **Canceled**
-sections.
+A bb sidebar that treats root threads as tasks. It preserves bb's pinned-thread
+and subthread behavior, then groups the remaining root threads into manually
+ordered **Backlog**, **To do**, **Working**, **Blocked**, **Done**, and
+**Canceled** sections.
+
+Child threads do not have task statuses or positions of their own. They always
+render beneath their parent, inherit the root parent's section, and move with
+that parent. Their thread actions therefore omit task-status controls.
 
 Each row shows its project's icon when the [Project
 icons](../bb-plugin-project-icons#readme) plugin is installed, so a
@@ -11,7 +15,7 @@ status-grouped list still tells you what a thread belongs to. Without that
 plugin the rows look as they always have.
 
 Drag tasks to reorder or change their task status. Task order uses fractional
-keys, so a move updates only the moved task. Threads automatically enter
+keys, so a move updates only the moved task. Root threads automatically enter
 **Working** when they start and return to **To do** when they stop, unless you
 manually move them after the transition. A thread blocked on a question or an
 approval counts as **To do** while it waits, because the next move is yours.
@@ -80,11 +84,10 @@ Arrow chords move the open thread's task:
 |   ⌃⌘↑ / ⌃⌘↓ | To the status above or below       |
 
 A move that would leave a task where it already is does nothing, and moving to
-another status appends the task to that section. Reordering follows the
-sidebar's layout: it moves a task among the rows at its own depth, skipping a
-neighbor's nested threads, and reorders a pinned thread within the pinned
-section. The backend resolves each move, so every shortcut works on the open
-thread from anywhere in bb, whichever sidebar is displayed.
+another status appends the task to that section. Reordering moves root tasks
+while keeping their entire child-thread hierarchy attached, and reorders a
+pinned root thread within the pinned section. The backend resolves each move
+and rejects task shortcuts on child threads, whichever sidebar is displayed.
 
 All of these shortcuts work while an input, editor, or composer has focus. They
 use exact modifier matching, ignore held-key repeats, and stop matched key
@@ -102,6 +105,9 @@ Task-status input is case-insensitive. `update` without `--after` or `--before`
 places a task at the bottom only when its status changes; repeating its current
 status is a no-op. A neighbor outside the destination status is ignored with a
 warning.
+
+Child thread IDs are rejected because their task status belongs to the root
+parent task.
 
 ## Development
 

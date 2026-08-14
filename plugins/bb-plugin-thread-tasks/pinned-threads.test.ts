@@ -63,7 +63,7 @@ describe("buildPinnedThreadState", () => {
     ]);
   });
 
-  it("promotes a pinned child when its parent is not pinned", () => {
+  it("keeps a pinned child with its unpinned parent task", () => {
     const pinnedChild = thread("child", {
       isPinned: true,
       parentThreadId: "ordinary-parent",
@@ -74,8 +74,8 @@ describe("buildPinnedThreadState", () => {
       ["child"],
     );
 
-    expect(state.pinnedThreads).toEqual([pinnedChild]);
-    expect([...state.effectivePinnedThreadIds]).toEqual(["child"]);
+    expect(state.pinnedThreads).toEqual([]);
+    expect([...state.effectivePinnedThreadIds]).toEqual([]);
   });
 });
 

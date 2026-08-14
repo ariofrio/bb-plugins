@@ -23,7 +23,7 @@ interface CommonMenuProps {
   disabled: boolean;
   onRename: () => void;
   onSetTaskStatus: (status: ThreadStatus) => void;
-  taskStatus: ThreadStatus;
+  taskStatus: ThreadStatus | null;
   thread: PluginSidebarThread;
   splitAvailable: boolean;
 }
@@ -115,36 +115,44 @@ function ContextMenuItems(props: CommonMenuProps) {
       <ContextItem icon="Edit" onSelect={props.onRename}>
         Rename
       </ContextItem>
-      <ContextMenu.Separator className={SEPARATOR_CLASS} />
-      <ContextMenu.Sub>
-        <ContextMenu.SubTrigger
-          disabled={disabled}
-          className={ITEM_CLASS}
-        >
-          <Icon name="ListTodo" aria-hidden />
-          Set task status
-          <Icon name="ChevronRight" className="ml-auto" aria-hidden />
-        </ContextMenu.SubTrigger>
-        <ContextMenu.Portal>
-          <ContextMenu.SubContent
-            {...portalScopeProps()}
-            className={SUB_CONTENT_CLASS}
-          >
-            {THREAD_STATUSES.map((status) => (
-              <ContextMenu.Item
-                key={status}
-                className={ITEM_CLASS}
-                onSelect={() => {
-                  if (status !== taskStatus) props.onSetTaskStatus(status);
-                }}
+      {taskStatus === null ? null : (
+        <>
+          <ContextMenu.Separator className={SEPARATOR_CLASS} />
+          <ContextMenu.Sub>
+            <ContextMenu.SubTrigger
+              disabled={disabled}
+              className={ITEM_CLASS}
+            >
+              <Icon name="ListTodo" aria-hidden />
+              Set task status
+              <Icon name="ChevronRight" className="ml-auto" aria-hidden />
+            </ContextMenu.SubTrigger>
+            <ContextMenu.Portal>
+              <ContextMenu.SubContent
+                {...portalScopeProps()}
+                className={SUB_CONTENT_CLASS}
               >
-                <span className="w-4">{status === taskStatus ? <Icon name="Check" aria-hidden /> : null}</span>
-                {status}
-              </ContextMenu.Item>
-            ))}
-          </ContextMenu.SubContent>
-        </ContextMenu.Portal>
-      </ContextMenu.Sub>
+                {THREAD_STATUSES.map((status) => (
+                  <ContextMenu.Item
+                    key={status}
+                    className={ITEM_CLASS}
+                    onSelect={() => {
+                      if (status !== taskStatus) props.onSetTaskStatus(status);
+                    }}
+                  >
+                    <span className="w-4">
+                      {status === taskStatus ? (
+                        <Icon name="Check" aria-hidden />
+                      ) : null}
+                    </span>
+                    {status}
+                  </ContextMenu.Item>
+                ))}
+              </ContextMenu.SubContent>
+            </ContextMenu.Portal>
+          </ContextMenu.Sub>
+        </>
+      )}
       <ContextMenu.Separator className={SEPARATOR_CLASS} />
       <ContextItem icon="Archive" onSelect={() => actions.archive(thread.id)}>
         Archive
@@ -190,33 +198,44 @@ function DropdownMenuItems(props: CommonMenuProps) {
       <DropdownItem icon="Edit" onSelect={props.onRename}>
         Rename
       </DropdownItem>
-      <DropdownMenu.Separator className={SEPARATOR_CLASS} />
-      <DropdownMenu.Sub>
-        <DropdownMenu.SubTrigger disabled={disabled} className={ITEM_CLASS}>
-          <Icon name="ListTodo" aria-hidden />
-          Set task status
-          <Icon name="ChevronRight" className="ml-auto" aria-hidden />
-        </DropdownMenu.SubTrigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.SubContent
-            {...portalScopeProps()}
-            className={SUB_CONTENT_CLASS}
-          >
-            {THREAD_STATUSES.map((status) => (
-              <DropdownMenu.Item
-                key={status}
-                className={ITEM_CLASS}
-                onSelect={() => {
-                  if (status !== taskStatus) props.onSetTaskStatus(status);
-                }}
+      {taskStatus === null ? null : (
+        <>
+          <DropdownMenu.Separator className={SEPARATOR_CLASS} />
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger
+              disabled={disabled}
+              className={ITEM_CLASS}
+            >
+              <Icon name="ListTodo" aria-hidden />
+              Set task status
+              <Icon name="ChevronRight" className="ml-auto" aria-hidden />
+            </DropdownMenu.SubTrigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.SubContent
+                {...portalScopeProps()}
+                className={SUB_CONTENT_CLASS}
               >
-                <span className="w-4">{status === taskStatus ? <Icon name="Check" aria-hidden /> : null}</span>
-                {status}
-              </DropdownMenu.Item>
-            ))}
-          </DropdownMenu.SubContent>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Sub>
+                {THREAD_STATUSES.map((status) => (
+                  <DropdownMenu.Item
+                    key={status}
+                    className={ITEM_CLASS}
+                    onSelect={() => {
+                      if (status !== taskStatus) props.onSetTaskStatus(status);
+                    }}
+                  >
+                    <span className="w-4">
+                      {status === taskStatus ? (
+                        <Icon name="Check" aria-hidden />
+                      ) : null}
+                    </span>
+                    {status}
+                  </DropdownMenu.Item>
+                ))}
+              </DropdownMenu.SubContent>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Sub>
+        </>
+      )}
       <DropdownMenu.Separator className={SEPARATOR_CLASS} />
       <DropdownItem icon="Archive" onSelect={() => actions.archive(thread.id)}>
         Archive

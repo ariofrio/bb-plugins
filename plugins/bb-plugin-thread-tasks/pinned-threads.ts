@@ -51,7 +51,9 @@ export function buildPinnedThreadState<Thread extends PinnedThreadLike>(
   const byId = new Map(threads.map((item) => [item.id, item] as const));
   const childrenByParentId = new Map<string, Thread[]>();
   const explicitlyPinnedIds = new Set(
-    threads.filter((item) => item.isPinned).map((item) => item.id),
+    threads
+      .filter((item) => item.isPinned && item.parentThreadId === null)
+      .map((item) => item.id),
   );
 
   for (const item of threads) {
@@ -88,7 +90,12 @@ export function buildPinnedThreadState<Thread extends PinnedThreadLike>(
     orderedExplicitIdSet.add(threadId);
   }
   for (const item of threads) {
-    if (!item.isPinned || orderedExplicitIdSet.has(item.id)) continue;
+    if (
+      !explicitlyPinnedIds.has(item.id) ||
+      orderedExplicitIdSet.has(item.id)
+    ) {
+      continue;
+    }
     orderedExplicitIds.push(item.id);
     orderedExplicitIdSet.add(item.id);
   }

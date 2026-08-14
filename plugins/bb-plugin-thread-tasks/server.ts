@@ -1,6 +1,7 @@
 import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk";
 import { z } from "zod";
 import { runTaskCli } from "./cli";
+import { listAllThreads } from "./list-all-threads";
 import { sortExplicitPinnedThreadIds } from "./pinned-threads";
 import { sidebarThreadsFromSearchResult } from "./search-results";
 import { resolveStatusChord } from "./task-chords";
@@ -12,6 +13,11 @@ import {
 import { registerTaskWorkflow } from "./task-workflow";
 import { registerThreadPreviews } from "./thread-preview";
 import { THREAD_STATUSES } from "./thread-status";
+import {
+  partitionTaskThreads,
+  taskRootIdByThreadId,
+  type TaskHierarchyThread,
+} from "./task-ownership";
 
 const threadStatusSchema = z.enum(THREAD_STATUSES);
 const assignmentSchema = z
@@ -103,7 +109,8 @@ export const rpcContract = defineRpcContract({
   syncThreads: {
     input: z
       .object({
-        threadIds: z.array(z.string().min(1).max(256)).max(10_000),
+        taskThreadIds: z.array(z.string().min(1).max(256)).max(10_000),
+        childThreadIds: z.array(z.string().min(1).max(256)).max(10_000),
       })
       .strict(),
     output: stateSchema,
@@ -145,11 +152,26 @@ export default function plugin(bb: BbPluginApi) {
   bb.storage.migrate(db, THREAD_STATUS_MIGRATIONS);
   const store = createThreadStatusStore(db);
 
+  function requireTaskThread(
+    threadId: string,
+    threads: readonly TaskHierarchyThread[],
+  ): void {
+    const rootId = taskRootIdByThreadId(threads).get(threadId);
+    if (rootId === threadId) return;
+    throw new Error(
+      rootId
+        ? `Child thread ${threadId} has no task status; its status belongs to parent task ${rootId}.`
+        : `Thread ${threadId} is not a root task thread.`,
+    );
+  }
+
   bb.rpc.register(rpcContract, {
     listState: () => store.listState(),
     listPreviews: () => ({ previews: store.listPreviews() }),
     async listPinnedThreadIds() {
-      const threads = await bb.sdk.threads.list({ archived: false });
+      const threads = await listAllThreads(({ limit, offset }) =>
+        bb.sdk.threads.list({ archived: false, limit, offset }),
+      );
       return { threadIds: sortExplicitPinnedThreadIds(threads) };
     },
     async reorderPinnedThread(input) {
@@ -165,21 +187,34 @@ export default function plugin(bb: BbPluginApi) {
         threads: sidebarThreadsFromSearchResult(result),
       };
     },
-    syncThreads({ threadIds }) {
-      const previousCount = store.listState().assignments.length;
-      const state = store.ensureThreads(threadIds);
-      if (state.assignments.length !== previousCount) {
+    syncThreads({ taskThreadIds, childThreadIds }) {
+      const previousIds = store
+        .listState()
+        .assignments.map(({ threadId }) => threadId)
+        .join("\n");
+      const state = store.syncTaskThreads(taskThreadIds, childThreadIds);
+      if (
+        state.assignments.map(({ threadId }) => threadId).join("\n") !==
+        previousIds
+      ) {
         bb.realtime.publish("state-changed", { threadId: null });
       }
       return state;
     },
-    moveThread(input) {
+    async moveThread(input) {
+      const threads = await listAllThreads(({ limit, offset }) =>
+        bb.sdk.threads.list({ archived: false, limit, offset }),
+      );
+      requireTaskThread(input.threadId, threads);
       const state = store.reorderThread(input);
       bb.realtime.publish("state-changed", { threadId: input.threadId });
       return state;
     },
     async setTaskStatus({ threadId, taskStatus }) {
-      const threads = await bb.sdk.threads.list({ archived: false });
+      const threads = await listAllThreads(({ limit, offset }) =>
+        bb.sdk.threads.list({ archived: false, limit, offset }),
+      );
+      requireTaskThread(threadId, threads);
       const chord = resolveStatusChord({
         threadId,
         taskStatus,
@@ -211,9 +246,13 @@ export default function plugin(bb: BbPluginApi) {
       return { destination };
     },
     async reorderTask({ threadId, scope, direction }) {
+      const threads = await listAllThreads(({ limit, offset }) =>
+        bb.sdk.threads.list({ archived: false, limit, offset }),
+      );
+      requireTaskThread(threadId, threads);
       store.ensureThreads([threadId]);
       const move = resolveTaskReorder({
-        threads: await bb.sdk.threads.list({ archived: false }),
+        threads,
         assignments: store.listState().assignments,
         threadId,
         taskStatus: store.get(threadId).taskStatus,
@@ -245,7 +284,7 @@ export default function plugin(bb: BbPluginApi) {
 
   bb.cli.register({
     name: "task",
-    summary: "Treat threads as manually organized tasks",
+    summary: "Treat root threads as manually organized tasks",
     commands: [
       {
         name: "list",
@@ -266,17 +305,34 @@ export default function plugin(bb: BbPluginApi) {
     ],
     async run(argv, context) {
       let listTaskIds: string[] | undefined;
-      if (argv[0] === "list") {
-        const previousCount = store.listState().assignments.length;
-        const threads = await bb.sdk.threads.list();
-        listTaskIds = threads.map((thread) => thread.id);
-        const state = store.ensureThreads(listTaskIds);
-        if (state.assignments.length !== previousCount) {
+      let taskRootIds: ReadonlyMap<string, string | null> | undefined;
+      if (["list", "show", "update"].includes(argv[0] ?? "")) {
+        const threads = await listAllThreads(({ limit, offset }) =>
+          bb.sdk.threads.list({ archived: false, limit, offset }),
+        );
+        const partition = partitionTaskThreads(threads);
+        taskRootIds = taskRootIdByThreadId(threads);
+        if (argv[0] === "list") {
+          listTaskIds = partition.taskThreads.map((thread) => thread.id);
+        }
+        const previousIds = store
+          .listState()
+          .assignments.map(({ threadId }) => threadId)
+          .join("\n");
+        const state = store.syncTaskThreads(
+          partition.taskThreads.map((thread) => thread.id),
+          partition.childThreads.map((thread) => thread.id),
+        );
+        if (
+          state.assignments.map(({ threadId }) => threadId).join("\n") !==
+          previousIds
+        ) {
           bb.realtime.publish("state-changed", { threadId: null });
         }
       }
       const result = runTaskCli(store, argv, {
         ...(listTaskIds ? { listTaskIds } : {}),
+        ...(taskRootIds ? { taskRootIds } : {}),
         ...(context.threadId ? { threadId: context.threadId } : {}),
       });
       if (argv[0] === "update" && result.exitCode === 0) {

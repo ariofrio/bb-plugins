@@ -1,3 +1,5 @@
+import { taskRootIdByThreadId } from "./task-ownership";
+
 export const THREAD_STATUSES = [
   "Backlog",
   "To do",
@@ -18,6 +20,7 @@ export interface ThreadAssignment {
 
 export interface SidebarThreadLike {
   id: string;
+  parentThreadId?: string | null;
   updatedAt: number;
 }
 
@@ -49,6 +52,12 @@ export function groupThreadsByStatus<Thread extends SidebarThreadLike>(
     assignments.map((assignment) => [assignment.threadId, assignment]),
   );
   const sourceIndex = new Map(threads.map((thread, index) => [thread.id, index]));
+  const roots = taskRootIdByThreadId(
+    threads.map((thread) => ({
+      id: thread.id,
+      parentThreadId: thread.parentThreadId ?? null,
+    })),
+  );
   const groups: Record<ThreadStatus, Thread[]> = {
     Backlog: [],
     "To do": [],
@@ -59,21 +68,35 @@ export function groupThreadsByStatus<Thread extends SidebarThreadLike>(
   };
 
   for (const thread of threads) {
+    const rootId = roots.get(thread.id);
     const taskStatus =
       parseThreadStatus(
-        assignmentByThread.get(thread.id)?.taskStatus ?? "",
+        rootId === null || rootId === undefined
+          ? ""
+          : (assignmentByThread.get(rootId)?.taskStatus ?? ""),
       ) ?? DEFAULT_THREAD_STATUS;
     groups[taskStatus].push(thread);
   }
 
   for (const status of THREAD_STATUSES) {
     groups[status].sort((left, right) => {
-      const leftAssignment = assignmentByThread.get(left.id);
-      const rightAssignment = assignmentByThread.get(right.id);
+      const leftRootId = roots.get(left.id);
+      const rightRootId = roots.get(right.id);
+      if (leftRootId === rightRootId) {
+        return (sourceIndex.get(left.id) ?? 0) - (sourceIndex.get(right.id) ?? 0);
+      }
+      const leftAssignment =
+        leftRootId === null || leftRootId === undefined
+          ? undefined
+          : assignmentByThread.get(leftRootId);
+      const rightAssignment =
+        rightRootId === null || rightRootId === undefined
+          ? undefined
+          : assignmentByThread.get(rightRootId);
       if (leftAssignment && rightAssignment) {
         if (leftAssignment.sortKey < rightAssignment.sortKey) return -1;
         if (leftAssignment.sortKey > rightAssignment.sortKey) return 1;
-        return left.id.localeCompare(right.id);
+        return (leftRootId ?? left.id).localeCompare(rightRootId ?? right.id);
       }
       if (leftAssignment) return -1;
       if (rightAssignment) return 1;

@@ -9,6 +9,7 @@ interface CliResult {
 
 export interface TaskCliContext {
   listTaskIds?: readonly string[];
+  taskRootIds?: ReadonlyMap<string, string | null>;
   threadId?: string;
 }
 
@@ -27,7 +28,7 @@ const USAGE = {
 
 const HELP = `Usage: bb task [options] [command]
 
-Treat threads as manually organized tasks
+Treat root threads as manually organized tasks
 
 Options:
   -h, --help                         display help for command
@@ -98,12 +99,27 @@ function resolveTaskId(
   if (self && positionalId) {
     throw new Error("Cannot combine a task ID argument with --self.");
   }
+  let threadId: string;
   if (self) {
     if (!context.threadId) throw new Error("--self requires a current bb thread.");
-    return context.threadId;
+    threadId = context.threadId;
+  } else if (positionalId) {
+    threadId = positionalId;
+  } else {
+    throw new Error("Missing task ID. Pass <id> or use --self.");
   }
-  if (positionalId) return positionalId;
-  throw new Error("Missing task ID. Pass <id> or use --self.");
+
+  if (context.taskRootIds?.has(threadId)) {
+    const rootId = context.taskRootIds.get(threadId) ?? null;
+    if (rootId !== threadId) {
+      throw new Error(
+        rootId === null
+          ? `Child thread ${threadId} has no task status.`
+          : `Child thread ${threadId} has no task status; its status belongs to parent task ${rootId}.`,
+      );
+    }
+  }
+  return threadId;
 }
 
 function humanTask(value: ReturnType<ThreadStatusStore["get"]>): string {

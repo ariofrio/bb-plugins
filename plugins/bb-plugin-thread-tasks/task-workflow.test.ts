@@ -70,6 +70,49 @@ describe("task workflow", () => {
     }
   });
 
+  it("removes stale task state instead of observing a child thread", async () => {
+    const db = new Database(":memory:");
+    for (const migration of THREAD_STATUS_MIGRATIONS) db.exec(migration);
+    const store = createThreadStatusStore(db);
+    const handlers = new Map<string, (payload: never) => unknown>();
+    const publish = vi.fn();
+    const bb = {
+      events: {
+        on: (event: string, handler: (payload: never) => unknown) => {
+          handlers.set(event, handler);
+        },
+      },
+      background: { service: () => undefined },
+      realtime: { publish },
+      log: { warn: vi.fn() },
+      sdk: {
+        threads: { interactions: { list: vi.fn() } },
+      },
+    } as unknown as BbPluginApi;
+
+    try {
+      store.ensureThreads(["child"]);
+      store.setStatus("child", "Done");
+      registerTaskWorkflow(bb, store);
+
+      await handlers.get("thread.active")?.({
+        thread: {
+          id: "child",
+          parentThreadId: "parent",
+          status: "active",
+        },
+      } as never);
+
+      expect(store.get("child").explicit).toBe(false);
+      expect(bb.sdk.threads.interactions.list).not.toHaveBeenCalled();
+      expect(publish).toHaveBeenCalledWith("state-changed", {
+        threadId: "child",
+      });
+    } finally {
+      db.close();
+    }
+  });
+
   it("treats a thread waiting on the user as To do while it stays active", async () => {
     const db = new Database(":memory:");
     for (const migration of THREAD_STATUS_MIGRATIONS) db.exec(migration);

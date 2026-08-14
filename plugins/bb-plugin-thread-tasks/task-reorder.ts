@@ -13,6 +13,7 @@ import {
   type ThreadAssignment,
   type ThreadStatus,
 } from "./thread-status";
+import { taskRootIdByThreadId } from "./task-ownership";
 
 /** The thread fields the sidebar's grouping and pinning rules depend on. */
 export interface ReorderThreadLike {
@@ -92,6 +93,10 @@ export function resolveTaskReorder({
   taskStatus,
   intent,
 }: ResolveTaskReorderInput): TaskReorder {
+  const listed = listedThreads(threads);
+  const roots = taskRootIdByThreadId(listed);
+  if (roots.get(threadId) !== threadId) return { kind: "none" };
+
   if (intent.scope === "status") {
     const nextStatus =
       THREAD_STATUSES[THREAD_STATUSES.indexOf(taskStatus) + intent.direction];
@@ -100,8 +105,6 @@ export function resolveTaskReorder({
       : { kind: "status", taskStatus: nextStatus };
   }
 
-  const listed = listedThreads(threads);
-  if (!listed.some((thread) => thread.id === threadId)) return { kind: "none" };
   const pinnedState = buildPinnedThreadState(
     listed.map((thread) => ({
       id: thread.id,
@@ -138,7 +141,7 @@ export function resolveTaskReorder({
     .map((item) => item.threadId)
     .filter(
       (id) =>
-        threadById.has(id) && !pinnedState.effectivePinnedThreadIds.has(id),
+        roots.get(id) === id && !pinnedState.effectivePinnedThreadIds.has(id),
     );
   const idsInStatus = new Set(orderedIds);
   const parentIdOf = (id: string): string | null => {

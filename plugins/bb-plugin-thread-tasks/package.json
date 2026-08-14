@@ -20,11 +20,11 @@
   },
   "engines": {
     "bb": ">=0.36",
-    "bbPluginSdk": "^0.4.1"
+    "bbPluginSdk": "^0.4.2"
   },
   "bb": {
     "name": "Thread tasks",
-    "description": "Treat sidebar threads as manually ordered tasks grouped by task status.",
+    "description": "Treat root sidebar threads as manually ordered tasks grouped by task status.",
     "branding": {
       "icon": "List"
     },

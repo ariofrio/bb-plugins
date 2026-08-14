@@ -7,6 +7,34 @@ import {
 } from "./store";
 
 describe("thread status store", () => {
+  it("keeps assignments only for root task threads", () => {
+    const db = new Database(":memory:");
+    for (const migration of THREAD_STATUS_MIGRATIONS) db.exec(migration);
+    const store = createThreadStatusStore(db);
+
+    try {
+      store.ensureThreads(["parent", "child"]);
+      store.setStatus("child", "Working");
+      store.setPreview("child", "Child output");
+
+      const state = store.syncTaskThreads(["parent"], ["child"]);
+
+      expect(state.assignments.map(({ threadId }) => threadId)).toEqual([
+        "parent",
+      ]);
+      expect(store.get("child")).toMatchObject({
+        explicit: false,
+        taskStatus: "To do",
+      });
+      expect(store.listPreviews()).toContainEqual({
+        threadId: "child",
+        preview: "Child output",
+      });
+    } finally {
+      db.close();
+    }
+  });
+
   let db: Database.Database;
   let store: ThreadStatusStore;
 

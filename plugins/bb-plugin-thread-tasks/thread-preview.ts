@@ -1,4 +1,5 @@
 import type { BbPluginApi } from "@bb/plugin-sdk";
+import { listAllThreads } from "./list-all-threads";
 import type { ThreadStatusStore } from "./store";
 
 const MAX_PREVIEW_LENGTH = 500;
@@ -184,7 +185,9 @@ export function registerThreadPreviews(
       });
 
       try {
-        const threads = await bb.sdk.threads.list({ signal });
+        const threads = await listAllThreads(({ limit, offset }) =>
+          bb.sdk.threads.list({ limit, offset, signal }),
+        );
         for (const thread of threads) enqueue(thread.id);
 
         if (!signal.aborted) {
