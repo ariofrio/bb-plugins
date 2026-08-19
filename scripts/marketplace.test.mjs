@@ -87,3 +87,31 @@ test("shows one description for each plugin everywhere it appears", async () => 
     assert.equal(cell[2], description, `${id} README description must match its bb.description`);
   }
 });
+
+test("packages every plugin the same way and paints its icon in bb's muted foreground", async () => {
+  for (const collectionPlugin of collection.plugins) {
+    const directory = collectionPlugin.source.replace(/^\.\//, "");
+    const manifest = await readJson(new URL(`../${directory}/package.json`, import.meta.url));
+    const id = derivePluginId(manifest.name);
+
+    assert.equal(manifest.repository.directory, directory, `${id} repository.directory`);
+    assert.equal(
+      manifest.homepage,
+      `https://github.com/ariofrio/bb-plugins/tree/main/${directory}#readme`,
+      `${id} homepage`,
+    );
+    assert.ok(manifest.files.includes("assets"), `${id} must publish assets/`);
+
+    const icon = await readFile(
+      new URL(`../${directory}/${manifest.bb.branding.icon.slice(2)}`, import.meta.url),
+      "utf8",
+    );
+    assert.match(icon, /viewBox="0 0 24 24"/, `${id} icon must use a 24x24 viewBox`);
+    assert.match(icon, /color="#525252"/, `${id} icon must use bb's muted foreground`);
+    assert.match(
+      icon,
+      /@media \(prefers-color-scheme: dark\) \{ svg \{ color: #b7b7b7; \} \}/,
+      `${id} icon must carry bb's muted foreground for dark mode`,
+    );
+  }
+});
