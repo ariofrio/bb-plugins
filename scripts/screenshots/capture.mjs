@@ -292,8 +292,24 @@ const WINDOW_FRAME = {
   },
 };
 
-async function writeFramedWindow({ browser, image, size, theme, output }) {
-  const { padding, radius } = WINDOW_FRAME;
+/**
+ * A card is a crop of an interface, not a window, so it gets a tile's corners
+ * and a shadow that lifts it off the README's page — and no edge, which would
+ * draw a window frame around something that is not a window. The radius is
+ * wider than the window's because a card is shown at about half its size in
+ * the table, where a window's 10px would all but disappear.
+ */
+const CARD_FRAME = {
+  radius: 14,
+  padding: { top: 14, side: 14, bottom: 14 },
+  light: { edge: null, shadow: "0 8px 20px -10px rgba(15, 15, 20, 0.45)" },
+  dark: { edge: null, shadow: "0 8px 20px -10px rgba(0, 0, 0, 0.85)" },
+};
+
+/** Draws an image into its frame's corners, edge, and shadow. */
+async function writeFramed({ browser, frame, image, size, theme, output }) {
+  const { padding, radius } = frame;
+  const { edge, shadow } = frame[theme];
   const context = await browser.newContext({
     viewport: {
       width: size.width + padding.side * 2,
@@ -311,13 +327,13 @@ async function writeFramedWindow({ browser, image, size, theme, output }) {
          <img src="data:image/png;base64,${image.toString("base64")}"
               style="display:block;width:${size.width}px;height:${size.height}px;
                      border-radius:${radius}px;
-                     box-shadow:${WINDOW_FRAME[theme].shadow},
-                                0 0 0 1px ${WINDOW_FRAME[theme].edge}">
+                     box-shadow:${shadow}${edge === null ? "" : `, 0 0 0 1px ${edge}`}">
        </div>
      </body>`,
   );
-  mkdirSync(dirname(output), { recursive: true });
-  await sheet.locator("#frame").screenshot({ path: output, omitBackground: true });
+  await sheet
+    .locator("#frame")
+    .screenshot({ path: mkdirFor(output), omitBackground: true });
   await context.close();
 }
 
@@ -375,17 +391,10 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
   const captured = [];
   try {
     for (const shot of shots) {
-      // Only cards are written as they are taken. A window capture is an
-      // ingredient: it gets its frame, and a split shot's gets the other
-      // mode's diagonal first, so nothing is written until both modes exist.
+      // Nothing is written while a shot is being taken. Every capture is an
+      // ingredient: a split shot pairs each mode's with the other's, and all of
+      // them are framed before they land.
       const outputs = shotFiles(shot);
-      const files = shot.split
-        ? {}
-        : Object.fromEntries(
-            Object.entries(outputs).filter(([name]) =>
-              name.startsWith("card-"),
-            ),
-          );
       await shot.setup?.({ fixture, stack });
       const frames = { fullWindow: {}, card: {} };
       for (const theme of shot.themes ?? THEMES) {
@@ -398,11 +407,10 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
             viewport,
           });
           frames.card.clip = clip;
-          return await page.screenshot({
-            ...pathFor(files, CARD_FILE(theme)),
-            clip,
-          });
+          return await page.screenshot({ clip });
         };
+        const takeFullWindow = ({ page }) =>
+          page.screenshot({ clip: { x: 0, y: 0, ...VIEWPORT } });
         if (shot.card === undefined) {
           const [fullWindow, card] = await render({
             browser,
@@ -411,13 +419,7 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
             shot,
             theme,
             async take(frame) {
-              return [
-                await frame.page.screenshot({
-                  ...pathFor(files, FULL_WINDOW_FILE(theme)),
-                  clip: { x: 0, y: 0, ...VIEWPORT },
-                }),
-                await takeCard(frame, VIEWPORT),
-              ];
+              return [await takeFullWindow(frame), await takeCard(frame, VIEWPORT)];
             },
           });
           frames.fullWindow[theme] = fullWindow;
@@ -434,11 +436,7 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
           fixture,
           shot,
           theme,
-          take: (frame) =>
-            frame.page.screenshot({
-              ...pathFor(files, FULL_WINDOW_FILE(theme)),
-              clip: { x: 0, y: 0, ...VIEWPORT },
-            }),
+          take: takeFullWindow,
         });
         frames.card[theme] = await render({
           browser,
@@ -453,31 +451,27 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
       }
       for (const theme of shot.themes ?? THEMES) {
         const other = OTHER_THEME[theme];
-        if (shot.split && outputs[CARD_FILE(theme)] !== undefined) {
-          await writeDiagonalSplit({
+        for (const [name, frame, taken, size] of [
+          [FULL_WINDOW_FILE(theme), WINDOW_FRAME, frames.fullWindow, VIEWPORT],
+          [CARD_FILE(theme), CARD_FRAME, frames.card, frames.card.clip],
+        ]) {
+          if (outputs[name] === undefined) continue;
+          await writeFramed({
             browser,
-            base: frames.card[theme],
-            corner: frames.card[other],
-            output: outputs[CARD_FILE(theme)],
-            size: frames.card.clip,
+            frame,
+            image: shot.split
+              ? await writeDiagonalSplit({
+                  browser,
+                  base: taken[theme],
+                  corner: taken[other],
+                  size,
+                })
+              : taken[theme],
+            size: { width: size.width, height: size.height },
+            theme,
+            output: outputs[name],
           });
         }
-        if (outputs[FULL_WINDOW_FILE(theme)] === undefined) continue;
-        const window = shot.split
-          ? await writeDiagonalSplit({
-              browser,
-              base: frames.fullWindow[theme],
-              corner: frames.fullWindow[other],
-              size: VIEWPORT,
-            })
-          : frames.fullWindow[theme];
-        await writeFramedWindow({
-          browser,
-          image: window,
-          size: VIEWPORT,
-          theme,
-          output: outputs[FULL_WINDOW_FILE(theme)],
-        });
       }
       await shot.teardown?.({ fixture, stack });
       captured.push(shot);
@@ -487,13 +481,6 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
     await browser.close();
   }
   return captured;
-}
-
-function pathFor(files, name) {
-  const output = files[name];
-  if (output === undefined) return {};
-  mkdirSync(dirname(output), { recursive: true });
-  return { path: output };
 }
 
 /**
