@@ -4,17 +4,22 @@ Personal plugins for [bb](https://getbb.app).
 
 ## Plugins
 
-- [Codex theme](plugins/bb-plugin-codex-theme#readme) — matches bb's palette
+- <img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20">
+  [Codex theme](plugins/bb-plugin-codex-theme#readme) — matches bb's palette
   to the OpenAI ChatGPT desktop app in light and dark mode.
-- [Missing keyboard shortcuts](plugins/bb-plugin-missing-keyboard-shortcuts#readme) —
+- <img src="assets/plugin-icons/zap.svg" alt="" width="20" height="20">
+  [Missing keyboard shortcuts](plugins/bb-plugin-missing-keyboard-shortcuts#readme) —
   adds shortcuts for starting threads, navigating history, focusing the
   primary composer, and toggling a side chat or thread terminal.
-- [Project header breadcrumb](plugins/bb-plugin-project-header-breadcrumb#readme)
+- <img src="assets/plugin-icons/folder.svg" alt="" width="20" height="20">
+  [Project header breadcrumb](plugins/bb-plugin-project-header-breadcrumb#readme)
   — adds the current project and its native actions menu before each thread
   title.
-- [Project icons](plugins/bb-plugin-project-icons#readme) — gives each project
+- <img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20">
+  [Project icons](plugins/bb-plugin-project-icons#readme) — gives each project
   an icon and optional color, shown next to its name in the thread header.
-- [Thread workflow](plugins/bb-plugin-thread-workflow#readme) — organizes sidebar
+- <img src="assets/plugin-icons/list-todo.svg" alt="" width="20" height="20">
+  [Thread workflow](plugins/bb-plugin-thread-workflow#readme) — organizes sidebar
   threads into manually ordered Backlog, To do, Working, Blocked, Done, and
   Canceled workflow stages.
 
