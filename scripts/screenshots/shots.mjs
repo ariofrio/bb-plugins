@@ -1,16 +1,15 @@
 import { SIDE_CHAT_QUESTION } from "./fixture.mjs";
 
 // What each plugin's screenshot pictures. Every shot starts from the same
-// seeded bb, so shots of the same area frame the same pixels and readers can
-// compare them side by side.
-const THEME_FILES = ["screenshot-light.png", "screenshot-dark.png"];
-
-/** Both thread-header shots frame the same rectangle. */
-const HEADER_SHOT_WIDTH = 720;
-
-function themedOutput(theme) {
-  return `screenshot-${theme}.png`;
-}
+// seeded bb and is captured twice: the whole window, for the plugin's own
+// README, and a card cropped to what the plugin adds, for the table in the
+// root README. Both carry the same shade and the same cutouts.
+const THEME_FILES = [
+  "screenshot-light.png",
+  "screenshot-dark.png",
+  "card-light.png",
+  "card-dark.png",
+];
 
 /** The right panel the ⇧⌘L side chat opens into. */
 function sideChatPanel(page) {
@@ -33,7 +32,6 @@ export const SHOTS = [
     id: "project-breadcrumbs",
     plugin: "bb-plugin-project-breadcrumbs",
     outputs: THEME_FILES,
-    outputFor: themedOutput,
     async prepare({ page }) {
       await openFeaturedThread(page);
       // The open menu marks the header aria-hidden, so the trigger has to be
@@ -46,20 +44,11 @@ export const SHOTS = [
       { locator: page.locator('[aria-label="Atlas actions"]') },
       { locator: page.getByRole("menu") },
     ],
-    crop: {
-      anchors: (page) => [
-        page.locator('[aria-label="Atlas actions"]'),
-        page.getByRole("menu"),
-      ],
-      // The header shots share this width so they can be read side by side.
-      width: HEADER_SHOT_WIDTH,
-    },
   },
   {
     id: "project-icons",
     plugin: "bb-plugin-project-icons",
     outputs: THEME_FILES,
-    outputFor: themedOutput,
     async prepare({ page }) {
       await openFeaturedThread(page);
       await page.locator('[aria-label="Icon for Atlas"]').click();
@@ -70,22 +59,17 @@ export const SHOTS = [
       { locator: page.locator('[aria-label="Icon for Atlas"]') },
       { locator: page.getByRole("dialog") },
     ],
-    crop: {
-      // Anchored on the picker's search field rather than the whole picker, so
-      // the frame matches the other header shot instead of growing to fit a
-      // panel that is taller than it is wide.
-      anchors: (page) => [
-        page.locator('[aria-label="Icon for Atlas"]'),
-        page.getByPlaceholder("Search icons"),
-      ],
-      width: HEADER_SHOT_WIDTH,
-    },
+    // The picker is taller than the card, so the card frames its top: the
+    // header icon it belongs to, the colors, and the search field.
+    focus: (page) => [
+      page.locator('[aria-label="Icon for Atlas"]'),
+      page.getByPlaceholder("Search icons"),
+    ],
   },
   {
     id: "thread-stages",
     plugin: "bb-plugin-thread-stages",
     outputs: THEME_FILES,
-    outputFor: themedOutput,
     async prepare({ page }) {
       await openFeaturedThread(page);
     },
@@ -94,16 +78,17 @@ export const SHOTS = [
     highlights: (page) => [
       { locator: page.locator("[data-thread-stages-sidebar-root]"), padding: 6 },
     ],
-    crop: {
-      anchors: (page) => [page.locator("[data-thread-stages-sidebar-root]")],
-      padding: 24,
-    },
+    // The sidebar is taller than the card, so the card frames the stages that
+    // hold threads rather than the empty ones.
+    focus: (page) => [
+      page.getByRole("region", { name: "To do" }),
+      page.getByRole("region", { name: "Working" }),
+    ],
   },
   {
     id: "missing-keyboard-shortcuts",
     plugin: "bb-plugin-missing-keyboard-shortcuts",
     outputs: THEME_FILES,
-    outputFor: themedOutput,
     async prepare({ page }) {
       await openFeaturedThread(page);
       // ⇧⌘L opens a side chat and puts the cursor in its composer, so the
@@ -120,20 +105,30 @@ export const SHOTS = [
       {
         locator: sideChatPanel(page),
         // The panel runs the full height of the window, so the keys sit beside
-        // it rather than under it.
+        // it, level with the conversation rather than with its empty middle.
         keys: "⇧ ⌘ L",
         keysPlacement: "left",
+        keysAnchor: "start",
       },
     ],
-    crop: { anchors: (page) => [sideChatPanel(page)], padding: 20 },
+    // The panel is as wide as the card, so the card frames the exchange at its
+    // top and the keys that opened it.
+    focus: (page) => [
+      page.getByRole("toolbar", { name: "Right panel views" }),
+      page.getByText("Eighteen dashboard tests cover them."),
+    ],
   },
   {
     id: "chatgpt-theme",
     plugin: "bb-plugin-chatgpt-theme",
-    outputs: ["screenshot-light.png", "screenshot-dark.png", "screenshot.png"],
-    outputFor: themedOutput,
+    outputs: [
+      "screenshot-light.png",
+      "screenshot-dark.png",
+      "screenshot.png",
+      "card.png",
+    ],
     // The two palettes meet along the diagonal in one image for the README.
-    split: "screenshot.png",
+    split: true,
     // The palette is server state, so it is switched on for this shot only and
     // switched back after it, leaving every other shot on bb's own default.
     setup({ fixture }) {
@@ -147,6 +142,9 @@ export const SHOTS = [
     },
     // A palette has nothing to point at: the whole window is the change.
     highlights: () => [],
-    crop: { anchors: (page) => [page.locator("body")], padding: 0 },
+    // The card sits on the sidebar, where the palette repaints the most per
+    // pixel — surfaces, rows, icons, and the selected thread — and reaches far
+    // enough into the thread for the diagonal to divide two surfaces.
+    focus: (page) => [page.getByRole("region", { name: "To do" })],
   },
 ];

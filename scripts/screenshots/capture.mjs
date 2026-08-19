@@ -6,8 +6,20 @@ import { dirname } from "node:path";
 import { chromium } from "playwright";
 
 export const ASPECT_RATIO = 16 / 9;
-export const VIEWPORT = { width: 1280, height: 720 };
+/** bb's own default window: DEFAULT_WINDOW_WIDTH x DEFAULT_WINDOW_HEIGHT. */
+export const VIEWPORT = { width: 1280, height: 900 };
+/**
+ * Every README-table shot is cropped to this width, so the five cells share one
+ * zoom level and the UI reads at the same size in each. Only where each crop
+ * sits differs, because each plugin adds something somewhere else.
+ */
+export const CARD_WIDTH = 560;
 export const THEMES = ["light", "dark"];
+
+export const FULL_WINDOW_FILE = (theme) => `screenshot-${theme}.png`;
+export const CARD_FILE = (theme) => `card-${theme}.png`;
+export const SPLIT_FULL_WINDOW_FILE = "screenshot.png";
+export const SPLIT_CARD_FILE = "card.png";
 
 /**
  * Grows a box into a 16:9 window that stays inside the viewport, so shots of
@@ -129,11 +141,17 @@ function paintOverlay({ boxes, dim, id, keyStyle }) {
     const placement =
       box.keysPlacement ??
       (box.y + box.height + 56 < window.innerHeight ? "below" : "above");
+    const anchor = box.keysAnchor ?? "center";
+    const along = { start: 0, center: 0.5, end: 1 }[anchor];
+    const shift = { start: "0", center: "-50%", end: "-100%" }[anchor];
+    const inset = anchor === "center" ? 0 : gap * (anchor === "start" ? 1 : -1);
+    const acrossX = box.x + box.width * along + inset;
+    const acrossY = box.y + box.height * along + inset;
     const anchors = {
-      below: [box.x + box.width / 2, box.y + box.height + gap, "-50%", "0"],
-      above: [box.x + box.width / 2, box.y - gap, "-50%", "-100%"],
-      left: [box.x - gap, box.y + box.height / 2, "-100%", "-50%"],
-      right: [box.x + box.width + gap, box.y + box.height / 2, "0", "-50%"],
+      below: [acrossX, box.y + box.height + gap, shift, "0"],
+      above: [acrossX, box.y - gap, shift, "-100%"],
+      left: [box.x - gap, acrossY, "-100%", shift],
+      right: [box.x + box.width + gap, acrossY, "0", shift],
     };
     const [left, top, shiftX, shiftY] = anchors[placement];
     chip.style.cssText = `position:absolute;left:${left}px;top:${top}px;transform:translate(${shiftX}, ${shiftY});${keyStyle}`;
@@ -282,49 +300,19 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
   try {
     for (const shot of shots) {
       const files = shotFiles(shot);
+      const write = async (name, take) => {
+        const output = files[name];
+        if (output === undefined) return await take();
+        mkdirSync(dirname(output), { recursive: true });
+        return await take(output);
+      };
       await shot.setup?.({ fixture, stack });
-      const themeShots = {};
+      const frames = { fullWindow: {}, card: {} };
       for (const theme of shot.themes ?? THEMES) {
-        const { context, page } = await openApp({
-          browser,
-          stack,
-          theme,
-          viewport: shot.viewport,
-        });
+        const { context, page } = await openApp({ browser, stack, theme });
         try {
           await shot.prepare({ page, fixture, stack, theme });
-          const viewport = shot.viewport ?? VIEWPORT;
-          const highlights = shot.highlights?.(page) ?? [];
-          const highlightBoxes = [];
-          for (const highlight of highlights) {
-            const boxes = await boxesFor([highlight.locator], {
-              label: `${shot.id} highlight`,
-            });
-            // Just enough to keep the shade off the element's own edge.
-            const padding = highlight.padding ?? 2;
-            const padded = highlight.merge
-              ? [
-                  padBox(
-                    {
-                      ...unionBox(boxes),
-                      radius: Math.max(...boxes.map((box) => box.radius ?? 0)),
-                    },
-                    padding,
-                  ),
-                ]
-              : boxes.map((box) => padBox(box, padding));
-            highlightBoxes.push(
-              ...padded.map((box) =>
-                highlight.keys === undefined
-                  ? box
-                  : {
-                      ...box,
-                      keys: highlight.keys,
-                      keysPlacement: highlight.keysPlacement,
-                    },
-              ),
-            );
-          }
+          const highlightBoxes = await highlightBoxesFor({ page, shot });
           let chipBoxes = [];
           if (highlightBoxes.length > 0) {
             chipBoxes = await page.evaluate(paintOverlay, {
@@ -334,36 +322,58 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
               keyStyle: keyChipStyle(theme),
             });
           }
-          const anchorBoxes = [
-            ...(shot.crop.anchors
-              ? await boxesFor(shot.crop.anchors(page), { label: `${shot.id} crop` })
+          frames.fullWindow[theme] = await write(
+            FULL_WINDOW_FILE(theme),
+            (path) => page.screenshot({ ...(path ? { path } : {}), clip: { x: 0, y: 0, ...VIEWPORT } }),
+          );
+          // The card frames what the plugin adds; the keys drawn onto the shade
+          // are part of that, and so is anything the shot points at by hand.
+          const focusBoxes = [
+            ...(shot.focus
+              ? await boxesFor(shot.focus(page), { label: `${shot.id} focus` })
               : highlightBoxes),
             ...chipBoxes,
           ];
           const clip = cropRectangle({
-            box: unionBox(anchorBoxes),
-            padding: shot.crop.padding ?? 24,
-            width: shot.crop.width,
-            viewport,
+            box: unionBox(focusBoxes),
+            padding: shot.focusPadding ?? 20,
+            width: CARD_WIDTH,
+            viewport: VIEWPORT,
           });
-          const output = files[shot.outputFor(theme)];
-          mkdirSync(dirname(output), { recursive: true });
-          themeShots[theme] = { buffer: await page.screenshot({ path: output, clip }), clip };
+          frames.card[theme] = await write(CARD_FILE(theme), (path) =>
+            page.screenshot({ ...(path ? { path } : {}), clip }),
+          );
+          frames.card.clip = clip;
         } finally {
           await context.close();
         }
       }
-      if (shot.split !== undefined) {
-        await writeDiagonalSplit({
-          browser,
-          light: themeShots.light.buffer,
-          dark: themeShots.dark.buffer,
-          output: files[shot.split],
-          size: {
-            width: themeShots.light.clip.width,
-            height: themeShots.light.clip.height,
-          },
-        });
+      if (shot.split) {
+        await write(SPLIT_FULL_WINDOW_FILE, (path) =>
+          path === undefined
+            ? undefined
+            : writeDiagonalSplit({
+                browser,
+                light: frames.fullWindow.light,
+                dark: frames.fullWindow.dark,
+                output: path,
+                size: VIEWPORT,
+              }),
+        );
+        await write(SPLIT_CARD_FILE, (path) =>
+          path === undefined
+            ? undefined
+            : writeDiagonalSplit({
+                browser,
+                light: frames.card.light,
+                dark: frames.card.dark,
+                output: path,
+                size: {
+                  width: frames.card.clip.width,
+                  height: frames.card.clip.height,
+                },
+              }),
+        );
       }
       await shot.teardown?.({ fixture, stack });
       captured.push(shot);
@@ -373,4 +383,40 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
     await browser.close();
   }
   return captured;
+}
+
+/** Measures and pads everything a shot lifts out of the shade. */
+async function highlightBoxesFor({ page, shot }) {
+  const highlightBoxes = [];
+  for (const highlight of shot.highlights?.(page) ?? []) {
+    const boxes = await boxesFor([highlight.locator], {
+      label: `${shot.id} highlight`,
+    });
+    // Just enough to keep the shade off the element's own edge.
+    const padding = highlight.padding ?? 2;
+    const padded = highlight.merge
+      ? [
+          padBox(
+            {
+              ...unionBox(boxes),
+              radius: Math.max(...boxes.map((box) => box.radius ?? 0)),
+            },
+            padding,
+          ),
+        ]
+      : boxes.map((box) => padBox(box, padding));
+    highlightBoxes.push(
+      ...padded.map((box) =>
+        highlight.keys === undefined
+          ? box
+          : {
+              ...box,
+              keys: highlight.keys,
+              keysPlacement: highlight.keysPlacement,
+              keysAnchor: highlight.keysAnchor,
+            },
+      ),
+    );
+  }
+  return highlightBoxes;
 }
