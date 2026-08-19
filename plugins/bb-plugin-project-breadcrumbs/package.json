@@ -1,6 +1,6 @@
 {
   "name": "bb-plugin-project-breadcrumbs",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Add the current project and its actions menu to bb thread headers.",
   "license": "MIT",
   "repository": {

@@ -1,5 +1,14 @@
 # bb-plugin-missing-keyboard-shortcuts
 
+## 0.2.1
+
+### Patch Changes
+
+- 4e0d644: Move each plugin's TypeScript sources under `src/`, leaving only packaging and
+  tooling configuration in the plugin root. Published tarballs now ship `src/`
+  without its co-located tests.
+- 4e0d644: Follow the surrounding color scheme in each plugin's icon, so the marketplace's Browse screen stops painting it a fixed grey.
+
 ## 0.2.0
 
 ### Minor Changes

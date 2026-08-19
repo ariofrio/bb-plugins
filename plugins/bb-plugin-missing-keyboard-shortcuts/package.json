@@ -1,6 +1,6 @@
 {
   "name": "bb-plugin-missing-keyboard-shortcuts",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Add keyboard shortcuts for common bb navigation and thread actions.",
   "license": "MIT",
   "repository": {
