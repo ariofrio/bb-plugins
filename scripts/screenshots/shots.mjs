@@ -12,6 +12,13 @@ function themedOutput(theme) {
   return `screenshot-${theme}.png`;
 }
 
+/** The right panel the ⇧⌘L side chat opens into. */
+function sideChatPanel(page) {
+  return page
+    .locator("aside")
+    .filter({ has: page.getByRole("textbox", { name: "Reply…" }) });
+}
+
 /** Opens the thread every shot is framed around. */
 async function openFeaturedThread(page) {
   await page
@@ -37,7 +44,7 @@ export const SHOTS = [
     },
     highlights: (page) => [
       { locator: page.locator('[aria-label="Atlas actions"]') },
-      { locator: page.getByRole("menu"), padding: 0 },
+      { locator: page.getByRole("menu") },
     ],
     crop: {
       anchors: (page) => [
@@ -61,7 +68,7 @@ export const SHOTS = [
     },
     highlights: (page) => [
       { locator: page.locator('[aria-label="Icon for Atlas"]') },
-      { locator: page.getByRole("dialog"), padding: 0 },
+      { locator: page.getByRole("dialog") },
     ],
     crop: {
       // Anchored on the picker's search field rather than the whole picker, so
@@ -82,16 +89,14 @@ export const SHOTS = [
     async prepare({ page }) {
       await openFeaturedThread(page);
     },
-    // The plugin's own stage headers are the thing it adds; the threads under
-    // them are bb's, so the shade keeps them as context.
+    // The plugin owns the whole thread list rather than one control inside it,
+    // so the shade lifts its entire sidebar out of the window.
     highlights: (page) => [
-      { locator: page.locator('[data-sidebar="group-label"]'), padding: 4 },
+      { locator: page.locator("[data-thread-stages-sidebar-root]"), padding: 6 },
     ],
     crop: {
-      anchors: (page) => [page.locator('[data-sidebar="group"]')],
-      // Wide enough to place the sidebar against the thread it belongs to,
-      // narrow enough that the stage rows stay readable in a README cell.
-      width: 720,
+      anchors: (page) => [page.locator("[data-thread-stages-sidebar-root]")],
+      padding: 24,
     },
   },
   {
@@ -113,21 +118,14 @@ export const SHOTS = [
     },
     highlights: (page) => [
       {
-        locator: page
-          .getByRole("toolbar", { name: "Right panel views" })
-          .or(page.getByRole("textbox", { name: "Reply…" })),
-        merge: true,
-        padding: 10,
+        locator: sideChatPanel(page),
+        // The panel runs the full height of the window, so the keys sit beside
+        // it rather than under it.
         keys: "⇧ ⌘ L",
+        keysPlacement: "left",
       },
     ],
-    crop: {
-      anchors: (page) => [
-        page.getByRole("toolbar", { name: "Right panel views" }),
-        page.getByRole("textbox", { name: "Reply…" }),
-      ],
-      padding: 20,
-    },
+    crop: { anchors: (page) => [sideChatPanel(page)], padding: 20 },
   },
   {
     id: "chatgpt-theme",

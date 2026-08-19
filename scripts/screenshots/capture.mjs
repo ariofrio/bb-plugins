@@ -54,6 +54,7 @@ export function unionBox(boxes) {
 }
 
 const OVERLAY_ID = "bb-plugins-screenshot-overlay";
+const MINIMUM_CUTOUT_RADIUS = 8;
 
 /** A shortcut has no UI of its own, so the keys are drawn onto the shade. */
 function keyChipStyle(theme) {
@@ -77,7 +78,7 @@ function keyChipStyle(theme) {
  * Runs in the page: shades everything outside the measured rectangles, and
  * writes each box's keys, when it has them, on the shaded side.
  */
-function paintOverlay({ boxes, dim, radius, id, keyStyle }) {
+function paintOverlay({ boxes, dim, id, keyStyle }) {
   document.getElementById(id)?.remove();
   const svgNamespace = "http://www.w3.org/2000/svg";
 
@@ -105,7 +106,7 @@ function paintOverlay({ boxes, dim, radius, id, keyStyle }) {
     hole.setAttribute("y", String(box.y));
     hole.setAttribute("width", String(box.width));
     hole.setAttribute("height", String(box.height));
-    hole.setAttribute("rx", String(box.radius ?? radius));
+    hole.setAttribute("rx", String(box.radius));
     hole.setAttribute("fill", "black");
     mask.append(hole);
   }
@@ -124,10 +125,18 @@ function paintOverlay({ boxes, dim, radius, id, keyStyle }) {
     if (!box.keys) continue;
     const chip = document.createElement("div");
     chip.textContent = box.keys;
-    const belowFits = box.y + box.height + 56 < window.innerHeight;
-    chip.style.cssText = `position:absolute;left:${box.x + box.width / 2}px;top:${
-      belowFits ? box.y + box.height + 14 : box.y - 14
-    }px;transform:translate(-50%, ${belowFits ? "0" : "-100%"});${keyStyle}`;
+    const gap = 14;
+    const placement =
+      box.keysPlacement ??
+      (box.y + box.height + 56 < window.innerHeight ? "below" : "above");
+    const anchors = {
+      below: [box.x + box.width / 2, box.y + box.height + gap, "-50%", "0"],
+      above: [box.x + box.width / 2, box.y - gap, "-50%", "-100%"],
+      left: [box.x - gap, box.y + box.height / 2, "-100%", "-50%"],
+      right: [box.x + box.width + gap, box.y + box.height / 2, "0", "-50%"],
+    };
+    const [left, top, shiftX, shiftY] = anchors[placement];
+    chip.style.cssText = `position:absolute;left:${left}px;top:${top}px;transform:translate(${shiftX}, ${shiftY});${keyStyle}`;
     overlay.append(chip);
     chipBoxes.push(chip);
   }
@@ -145,28 +154,66 @@ function paintOverlay({ boxes, dim, radius, id, keyStyle }) {
   });
 }
 
+/**
+ * Measures each match in the page rather than through boundingBox(), because a
+ * cutout that does not carry the element's own corner radius reads as a sticker
+ * laid over the UI instead of a hole cut around it.
+ */
 async function boxesFor(locators, { label }) {
   const boxes = [];
   for (const locator of locators) {
-    const count = await locator.count();
-    if (count === 0) {
-      throw new Error(`${label}: nothing matched ${locator}`);
+    const measured = await locator.evaluateAll((nodes) =>
+      nodes
+        .map((node) => {
+          const rectangle = node.getBoundingClientRect();
+          const style = getComputedStyle(node);
+          const corner = (value) => {
+            const number = Number.parseFloat(value);
+            if (Number.isNaN(number)) return 0;
+            return value.trimStart().endsWith("%")
+              ? (Math.min(rectangle.width, rectangle.height) * number) / 100
+              : number;
+          };
+          return {
+            x: rectangle.x,
+            y: rectangle.y,
+            width: rectangle.width,
+            height: rectangle.height,
+            radius: Math.max(
+              corner(style.borderTopLeftRadius),
+              corner(style.borderTopRightRadius),
+              corner(style.borderBottomLeftRadius),
+              corner(style.borderBottomRightRadius),
+            ),
+          };
+        })
+        .filter((box) => box.width > 0 && box.height > 0),
+    );
+    if (measured.length === 0) {
+      throw new Error(`${label}: nothing visible matched ${locator}`);
     }
-    for (let index = 0; index < count; index += 1) {
-      const box = await locator.nth(index).boundingBox();
-      if (box !== null) boxes.push(box);
-    }
+    boxes.push(...measured);
   }
-  if (boxes.length === 0) throw new Error(`${label}: every match was invisible`);
   return boxes;
 }
 
+/**
+ * Growing a rounded rectangle by p grows its corners by p too. Square-cornered
+ * elements still get a rounded cutout, because a sharp one reads as a crop mark
+ * rather than a highlight, and no corner can exceed half the shorter side.
+ */
 function padBox(box, padding) {
+  const width = box.width + padding * 2;
+  const height = box.height + padding * 2;
   return {
     x: box.x - padding,
     y: box.y - padding,
-    width: box.width + padding * 2,
-    height: box.height + padding * 2,
+    width,
+    height,
+    radius: Math.min(
+      Math.max((box.radius ?? 0) + padding, MINIMUM_CUTOUT_RADIUS),
+      Math.min(width, height) / 2,
+    ),
   };
 }
 
@@ -253,13 +300,28 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
             const boxes = await boxesFor([highlight.locator], {
               label: `${shot.id} highlight`,
             });
-            const padding = highlight.padding ?? 6;
+            // Just enough to keep the shade off the element's own edge.
+            const padding = highlight.padding ?? 2;
             const padded = highlight.merge
-              ? [padBox(unionBox(boxes), padding)]
+              ? [
+                  padBox(
+                    {
+                      ...unionBox(boxes),
+                      radius: Math.max(...boxes.map((box) => box.radius ?? 0)),
+                    },
+                    padding,
+                  ),
+                ]
               : boxes.map((box) => padBox(box, padding));
             highlightBoxes.push(
               ...padded.map((box) =>
-                highlight.keys === undefined ? box : { ...box, keys: highlight.keys },
+                highlight.keys === undefined
+                  ? box
+                  : {
+                      ...box,
+                      keys: highlight.keys,
+                      keysPlacement: highlight.keysPlacement,
+                    },
               ),
             );
           }
@@ -268,7 +330,6 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
             chipBoxes = await page.evaluate(paintOverlay, {
               boxes: highlightBoxes,
               dim: theme === "dark" ? "rgba(0,0,0,0.66)" : "rgba(15,15,15,0.42)",
-              radius: 10,
               id: OVERLAY_ID,
               keyStyle: keyChipStyle(theme),
             });
