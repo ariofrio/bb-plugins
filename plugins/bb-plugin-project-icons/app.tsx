@@ -134,6 +134,16 @@ function ProjectIconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
       .catch(() => void refresh());
   };
 
+  const reset = () => {
+    pendingRef.current = {
+      icon: defaultProjectIcon(projectId),
+      color: null,
+    };
+    setIcons((current) => current.filter((item) => item.projectId !== projectId));
+    announceProjectIconsChanged();
+    void rpc.call("clearProjectIcon", { projectId }).catch(() => void refresh());
+  };
+
   const control = editable ? (
     <button
       type="button"
@@ -169,9 +179,7 @@ function ProjectIconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
                 color={color}
                 onPick={(next) => apply({ icon: next })}
                 onPickColor={(next) => apply({ color: next })}
-                onResetIcon={() =>
-                  apply({ icon: defaultProjectIcon(projectId) })
-                }
+                onReset={reset}
                 trigger={control}
               />
             ) : (

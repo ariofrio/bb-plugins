@@ -42,7 +42,7 @@ export interface IconPickerProps {
   color: ProjectIconColor | null;
   onPick: (icon: string) => void;
   onPickColor: (color: ProjectIconColor | null) => void;
-  onResetIcon: () => void;
+  onReset: () => void;
   trigger: ReactElement;
 }
 
@@ -57,7 +57,7 @@ export function IconPicker({
   color,
   onPick,
   onPickColor,
-  onResetIcon,
+  onReset,
   trigger,
 }: IconPickerProps) {
   const [query, setQuery] = useState("");
@@ -71,10 +71,6 @@ export function IconPicker({
   const categoryChipRefs = useRef(new Map<string, HTMLButtonElement>());
   const sectionRefs = useRef(new Map<string, HTMLElement>());
   const groups = useMemo(() => groupCatalog(catalog), [catalog]);
-  const selectedGlyph = useMemo(
-    () => catalog.find((entry) => entry.name === icon)?.glyph,
-    [catalog, icon],
-  );
   const { results, total } = useMemo(
     () => searchIcons(catalog, query, null),
     [catalog, query],
@@ -162,21 +158,6 @@ export function IconPicker({
 
           <div className="flex items-center gap-2 py-1">
             <div
-              aria-label={`Selected icon: ${iconLabel(icon)}`}
-              style={projectIconColorStyle(color)}
-              className="flex size-7 shrink-0 items-center justify-center rounded-md bg-state-active"
-            >
-              {selectedGlyph === undefined ? (
-                <Icon name="Folder" aria-hidden className="size-[18px]" />
-              ) : (
-                <HugeiconsIcon
-                  icon={selectedGlyph}
-                  className="size-[18px]"
-                  aria-hidden
-                />
-              )}
-            </div>
-            <div
               role="group"
               aria-label="Color"
               className="flex min-w-0 flex-1 items-center gap-2"
@@ -205,8 +186,8 @@ export function IconPicker({
             <button
               type="button"
               aria-label="Remove custom icon"
-              onClick={onResetIcon}
-              disabled={icon === defaultIcon}
+              onClick={onReset}
+              disabled={icon === defaultIcon && color === null}
               className="shrink-0 rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground disabled:invisible"
             >
               Remove

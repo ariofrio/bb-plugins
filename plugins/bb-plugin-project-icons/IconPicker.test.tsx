@@ -55,7 +55,7 @@ beforeEach(() => {
 });
 
 describe("IconPicker", () => {
-  it("offers theme color first and previews every icon in the selected color", () => {
+  it("offers theme color first without duplicating the selected header icon", () => {
     render(
       <IconPicker
         catalog={catalog}
@@ -68,7 +68,7 @@ describe("IconPicker", () => {
         color="red"
         onPick={vi.fn()}
         onPickColor={vi.fn()}
-        onResetIcon={vi.fn()}
+        onReset={vi.fn()}
         trigger={<button type="button">Change icon</button>}
       />,
     );
@@ -80,14 +80,12 @@ describe("IconPicker", () => {
     expect(screen.getByRole("button", { name: "circle" }).style.color).toBe(
       projectIconColor("red"),
     );
-    expect(screen.getByLabelText("Selected icon: circle").style.color).toBe(
-      projectIconColor("red"),
-    );
+    expect(screen.queryByLabelText("Selected icon: circle")).toBeNull();
   });
 
-  it("resets the icon independently from its color", () => {
+  it("removes the icon and color customization together", () => {
     const onPickColor = vi.fn();
-    const onResetIcon = vi.fn();
+    const onReset = vi.fn();
     render(
       <IconPicker
         catalog={catalog}
@@ -95,18 +93,18 @@ describe("IconPicker", () => {
         open
         onOpenChange={vi.fn()}
         projectName="Example project"
-        icon="circle"
+        icon="folder"
         defaultIcon="folder"
         color="red"
         onPick={vi.fn()}
         onPickColor={onPickColor}
-        onResetIcon={onResetIcon}
+        onReset={onReset}
         trigger={<button type="button">Change icon</button>}
       />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Remove custom icon" }));
-    expect(onResetIcon).toHaveBeenCalledOnce();
+    expect(onReset).toHaveBeenCalledOnce();
     expect(onPickColor).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "Theme color" }));
@@ -131,7 +129,7 @@ describe("IconPicker", () => {
         color={null}
         onPick={vi.fn()}
         onPickColor={vi.fn()}
-        onResetIcon={vi.fn()}
+        onReset={vi.fn()}
         trigger={<button type="button">Change icon</button>}
       />,
     );
@@ -174,7 +172,7 @@ describe("IconPicker", () => {
         color={null}
         onPick={vi.fn()}
         onPickColor={vi.fn()}
-        onResetIcon={vi.fn()}
+        onReset={vi.fn()}
         trigger={<button type="button">Change icon</button>}
       />,
     );
@@ -237,7 +235,7 @@ describe("IconPicker", () => {
         color={null}
         onPick={vi.fn()}
         onPickColor={vi.fn()}
-        onResetIcon={vi.fn()}
+        onReset={vi.fn()}
         trigger={<button type="button">Change icon</button>}
       />,
     );
@@ -260,7 +258,7 @@ describe("IconPicker", () => {
         color={null}
         onPick={vi.fn()}
         onPickColor={vi.fn()}
-        onResetIcon={vi.fn()}
+        onReset={vi.fn()}
         trigger={<button type="button">Change icon</button>}
       />,
     );
