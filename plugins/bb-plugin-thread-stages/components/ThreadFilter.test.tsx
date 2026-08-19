@@ -109,11 +109,27 @@ describe("ThreadFilter", () => {
       <ThreadFilter {...sharedProps} projects={projects} sections={[]} />,
     );
     fireEvent.keyDown(
-      screen.getByRole("button", { name: "Projects and sections" }),
+      screen.getByRole("button", { name: "Projects" }),
       { key: "Enter" },
     );
-    expect(screen.getByText("Projects")).toBeDefined();
-    expect(screen.queryByText("Sections")).toBeNull();
+    const projectsOnlyMenu = screen.getByRole("menu");
+    expect(within(projectsOnlyMenu).getByText("Projects")).toBeDefined();
+    expect(within(projectsOnlyMenu).queryByText("Sections")).toBeNull();
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    rerender(
+      <ThreadFilter
+        projects={projects}
+        sections={[]}
+        value={{ kind: "project", id: "proj_alpha" }}
+        onChange={() => {}}
+        onNewProject={() => {}}
+        onNewSection={() => {}}
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Projects: Alpha" }),
+    ).toBeDefined();
   });
 
   it("runs the two creation actions without opening the filter menu", () => {
