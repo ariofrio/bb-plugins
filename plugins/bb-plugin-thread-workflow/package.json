@@ -15,12 +15,14 @@
   "files": [
     "app.tsx",
     "dist",
+    "scripts",
     "server.ts",
     "skills"
   ],
   "type": "module",
   "scripts": {
     "build": "bb plugin build",
+    "qa:project-filter-hover": "bash scripts/qa-project-filter-hover.sh",
     "verify:types": "node ../../scripts/verify-types.mjs",
     "verify:package": "node ../../scripts/verify-package.mjs",
     "release:check": "npm test && npm run typecheck && npm run verify:types && npm run build && npm run verify:package",

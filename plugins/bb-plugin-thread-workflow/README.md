@@ -109,6 +109,7 @@ thread.
 ```sh
 npm run release:check
 bb plugin reload thread-workflow
+npm run qa:project-filter-hover
 ```
 
 `release:check` runs the tests and typecheck, checks the committed SDK
@@ -116,6 +117,9 @@ declarations are current, builds, and installs the packed npm artifact in a
 temporary directory to validate its contents. `dist/` is built, never
 committed. The package is not published to npm yet, but it stays publishable
 so it can be.
+
+`qa:project-filter-hover` opens an isolated browser against `BB_SERVER_URL` and
+fails if a sticky stage shield covers the project filter's rounded bottom edge.
 
 ## License
 
