@@ -19,7 +19,9 @@ export const PROJECTS = [
 /** bb's own project for threads that belong to no repository. */
 export const PERSONAL_PROJECT_ID = "proj_personal";
 
-// Stage names match the Thread stages plugin's CLI vocabulary.
+// Stage names match the Thread stages plugin's CLI vocabulary. One thread per
+// stage is what keeps a card's worth of sidebar legible: every stage shows what
+// it holds without any of them needing to be scrolled past.
 export const THREADS = [
   {
     project: "Storefront",
@@ -29,13 +31,16 @@ export const THREADS = [
     stage: "To do",
     prompt:
       "Polish the analytics dashboard. Improve the metric cards, add keyboard navigation, and verify the loading state.",
-    children: [{ title: "Audit keyboard navigation", prompt: "Audit keyboard navigation across the dashboard." }],
-  },
-  {
-    project: "Storefront",
-    title: "Add loading-state tests",
-    stage: "To do",
-    prompt: "Add tests for the dashboard's loading states.",
+    reply:
+      "Dashboard polish is in place.\n\n- Refined metric formatting and loading states\n- Added keyboard-focus coverage\n- Verified all 18 dashboard tests pass",
+    children: [
+      {
+        title: "Audit keyboard navigation",
+        prompt: "Audit keyboard navigation across the dashboard.",
+        reply:
+          "Every dashboard control is reachable by keyboard, and focus order follows the visual order.",
+      },
+    ],
   },
   {
     project: "Payments API",
@@ -43,90 +48,57 @@ export const THREADS = [
     // Its turn never ends, which is how the fixture keeps one thread running
     // and one stage occupied by a thread bb placed there itself.
     stage: null,
+    hang: true,
     prompt: "Investigate why webhook retries stall after the third attempt.",
+    reply:
+      "Reproducing the stalled retry against the events fixture, then tracing the backoff timer.",
   },
   {
     project: "Payments API",
     title: "Harden events API",
     stage: "Blocked",
     prompt: "Harden the events API against duplicate deliveries.",
+    reply: "Deliveries are now idempotent per event id, and replays are safe.",
   },
   {
     project: "Docs site",
     title: "Draft release notes",
     stage: "Done",
     prompt: "Draft the release notes for this milestone.",
+    reply: "Release notes drafted, grouped by feature, fix, and breaking change.",
   },
   {
     project: "Docs site",
     title: "Sketch onboarding tour",
-    stage: "Backlog",
+    stage: "Canceled",
     prompt: "Sketch an onboarding tour for first-run users.",
+    reply:
+      "Sketched a four-step tour, though it assumes the sign-up flow that is being replaced.",
   },
   {
     // Not every thread belongs to a repository; this one is bb's personal
     // project, which the sidebar and the icons both treat differently.
     project: null,
     title: "Compare managed Postgres plans",
-    stage: "To do",
+    stage: "Backlog",
     prompt: "Compare managed Postgres plans for a small production app.",
+    reply:
+      "For this size, the shared tiers on Neon and Supabase both cover it, and Neon's branching is the one that pays off during migrations.",
   },
 ];
 
 /** Asked in the side chat the keyboard-shortcut screenshot opens. */
 export const SIDE_CHAT_QUESTION = "What did the dashboard pass end up covering?";
 
+/** Every thread answers from its own entry, plus the turns bb starts itself. */
 export const TRANSCRIPTS = [
-  {
-    prompt: THREADS[0].prompt,
-    updates: [
-      chunk(
-        "Dashboard polish is in place.\n\n- Refined metric formatting and loading states\n- Added keyboard-focus coverage\n- Verified all 18 dashboard tests pass",
-      ),
-    ],
-  },
-  {
-    prompt: THREADS[0].children[0].prompt,
-    updates: [
-      chunk(
-        "Every dashboard control is reachable by keyboard, and focus order follows the visual order.",
-      ),
-    ],
-  },
-  {
-    prompt: THREADS[1].prompt,
-    updates: [chunk("Added three tests covering the empty, partial, and error loading states.")],
-  },
-  {
-    prompt: THREADS[2].prompt,
-    // Left unanswered on purpose: this is the thread bb shows as Working.
-    hang: true,
-    updates: [
-      chunk(
-        "Reproducing the stalled retry against the events fixture, then tracing the backoff timer.",
-      ),
-    ],
-  },
-  {
-    prompt: THREADS[3].prompt,
-    updates: [chunk("Deliveries are now idempotent per event id, and replays are safe.")],
-  },
-  {
-    prompt: THREADS[4].prompt,
-    updates: [chunk("Release notes drafted, grouped by feature, fix, and breaking change.")],
-  },
-  {
-    prompt: THREADS[5].prompt,
-    updates: [chunk("Sketched a four-step tour that introduces projects, threads, and environments.")],
-  },
-  {
-    prompt: THREADS[6].prompt,
-    updates: [
-      chunk(
-        "For this size, the shared tiers on Neon and Supabase both cover it, and Neon's branching is the one that pays off during migrations.",
-      ),
-    ],
-  },
+  ...THREADS.flatMap((thread) => [thread, ...(thread.children ?? [])]).map(
+    ({ prompt, reply, hang }) => ({
+      prompt,
+      ...(hang ? { hang } : {}),
+      updates: [chunk(reply)],
+    }),
+  ),
   {
     prompt: SIDE_CHAT_QUESTION,
     updates: [
