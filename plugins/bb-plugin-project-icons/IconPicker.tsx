@@ -1,5 +1,5 @@
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
-import { useMemo, useState } from "react";
+import { type ReactElement, useId, useMemo, useState } from "react";
 import {
   categoryLabel,
   iconLabel,
@@ -9,12 +9,12 @@ import {
 import { projectIconColor } from "./project-icon-colors";
 import { PROJECT_ICON_COLORS, type ProjectIconColor } from "./store";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 
 export interface CatalogIcon extends Omit<CatalogEntry, "export"> {
@@ -32,6 +32,7 @@ export interface IconPickerProps {
   onPick: (icon: string) => void;
   onPickColor: (color: ProjectIconColor | null) => void;
   onReset: () => void;
+  trigger: ReactElement;
 }
 
 export function IconPicker({
@@ -45,9 +46,12 @@ export function IconPicker({
   onPick,
   onPickColor,
   onReset,
+  trigger,
 }: IconPickerProps) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | null>(null);
+  const titleId = useId();
+  const descriptionId = useId();
   const categories = useMemo(
     () => [...new Set(catalog.map((entry) => entry.category))].sort(),
     [catalog],
@@ -58,14 +62,22 @@ export function IconPicker({
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <DialogTitle>Icon for {projectName}</DialogTitle>
-          <DialogDescription>
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={8}
+        collisionPadding={8}
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+        mobileTitle={null}
+      >
+        <div className="flex flex-col space-y-1.5 text-left">
+          <PopoverTitle id={titleId}>Icon for {projectName}</PopoverTitle>
+          <PopoverDescription id={descriptionId}>
             Pick an icon and an optional color for this project.
-          </DialogDescription>
-        </DialogHeader>
+          </PopoverDescription>
+        </div>
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             {PROJECT_ICON_COLORS.map((swatch) => (
@@ -159,8 +171,8 @@ export function IconPicker({
                   : `${total} ${total === 1 ? "icon" : "icons"}`}
           </p>
         </div>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   );
 }
 

@@ -153,11 +153,6 @@ function ProjectIconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
       // The desktop header is a window drag region, so an interactive control
       // inside it has to opt out or Electron swallows the click.
       className="relative z-50 -ml-0.5 flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground [app-region:no-drag] [-webkit-app-region:no-drag]"
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        setPicking(true);
-      }}
     >
       <ProjectIconGlyph name={icon} glyph={glyph} color={color} />
     </button>
@@ -170,21 +165,28 @@ function ProjectIconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
   return (
     <>
       <span ref={markerRef} className="hidden" />
-      {target === null ? null : createPortal(control, target)}
-      {editable ? (
-        <IconPicker
-          catalog={catalog}
-          loading={loadingCatalog}
-          open={picking}
-          onOpenChange={setPicking}
-          projectName={projectName}
-          icon={icon}
-          color={color}
-          onPick={(next) => apply({ icon: next })}
-          onPickColor={(next) => apply({ color: next })}
-          onReset={reset}
-        />
-      ) : null}
+      {target === null
+        ? null
+        : createPortal(
+            editable ? (
+              <IconPicker
+                catalog={catalog}
+                loading={loadingCatalog}
+                open={picking}
+                onOpenChange={setPicking}
+                projectName={projectName}
+                icon={icon}
+                color={color}
+                onPick={(next) => apply({ icon: next })}
+                onPickColor={(next) => apply({ color: next })}
+                onReset={reset}
+                trigger={control}
+              />
+            ) : (
+              control
+            ),
+            target,
+          )}
     </>
   );
 }
