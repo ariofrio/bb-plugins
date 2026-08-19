@@ -53,6 +53,12 @@ const CONTENT_CLASS =
   "z-[70] min-w-52 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
 const ITEM_CLASS =
   "relative flex cursor-default select-none items-center gap-2 rounded-sm py-[0.3125rem] pl-7 pr-2 text-xs outline-none transition-colors data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground";
+const ACTION_ITEM_CLASS =
+  "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-[0.3125rem] text-xs outline-none transition-colors data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground";
+const ACTIONABLE_ITEM_CLASS =
+  "group relative flex cursor-default select-none items-center pr-1 text-xs outline-none";
+const ACTIONABLE_SELECT_TARGET_CLASS =
+  "relative flex min-w-0 flex-1 items-center gap-2 rounded-sm py-[0.3125rem] pl-7 pr-2 transition-colors group-data-[highlighted]:bg-state-hover group-data-[highlighted]:text-foreground";
 const ACTION_CLASS =
   "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none ring-sidebar-ring transition-none hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 max-md:pointer-coarse:size-9";
 const ACTION_TOOLTIP_DELAY_MS = 350;
@@ -272,6 +278,12 @@ function ActionableThreadFilterItem({
   const suppressSyntheticClick = useRef(false);
 
   function handleClick(event: ReactMouseEvent<HTMLDivElement>): void {
+    if (
+      !(event.target instanceof Node) ||
+      !event.currentTarget.contains(event.target)
+    ) {
+      return;
+    }
     if (suppressSyntheticClick.current) {
       suppressSyntheticClick.current = false;
       event.preventDefault();
@@ -288,6 +300,12 @@ function ActionableThreadFilterItem({
   }
 
   function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>): void {
+    if (
+      !(event.target instanceof Node) ||
+      !event.currentTarget.contains(event.target)
+    ) {
+      return;
+    }
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       onSelect();
@@ -311,7 +329,7 @@ function ActionableThreadFilterItem({
       <DropdownMenu.SubTrigger
         role="menuitemradio"
         aria-checked={selected}
-        className={ITEM_CLASS}
+        className={ACTIONABLE_ITEM_CLASS}
         onClick={handleClick}
         onContextMenu={(event) => {
           event.preventDefault();
@@ -319,16 +337,21 @@ function ActionableThreadFilterItem({
         }}
         onKeyDown={handleKeyDown}
       >
-        {selected ? (
-          <span className="absolute left-2 inline-flex size-3.5 items-center justify-center">
-            <Icon name="Check" className="size-3.5" aria-hidden />
-          </span>
-        ) : null}
-        {children}
-        <span className="truncate">{label}</span>
+        <span
+          data-thread-filter-select-target=""
+          className={ACTIONABLE_SELECT_TARGET_CLASS}
+        >
+          {selected ? (
+            <span className="absolute left-2 inline-flex size-3.5 items-center justify-center">
+              <Icon name="Check" className="size-3.5" aria-hidden />
+            </span>
+          ) : null}
+          {children}
+          <span className="truncate">{label}</span>
+        </span>
         <span
           data-thread-filter-submenu-chevron=""
-          className="ml-auto inline-flex size-4 shrink-0 items-center justify-center"
+          className="ml-1 inline-flex size-5 shrink-0 items-center justify-center"
         >
           <Icon name="ChevronRight" className="size-3.5" aria-hidden />
         </span>
@@ -421,7 +444,7 @@ function FilterActionItem({
 }) {
   return (
     <DropdownMenu.Item
-      className={`${ITEM_CLASS} pl-2 ${destructive ? "text-destructive focus:text-destructive" : ""}`}
+      className={`${ACTION_ITEM_CLASS} ${destructive ? "text-destructive focus:text-destructive" : ""}`}
       onSelect={onSelect}
     >
       <Icon name={icon} className="size-4 shrink-0" aria-hidden />

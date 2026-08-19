@@ -304,7 +304,12 @@ describe("ThreadFilter", () => {
     expect(
       within(submenu).getAllByRole("menuitem").map((item) => item.textContent),
     ).toEqual(["Project settings", "Rename", "Add local path", "Remove"]);
-    fireEvent.click(within(submenu).getByRole("menuitem", { name: "Rename" }));
+    const rename = within(submenu).getByRole("menuitem", { name: "Rename" });
+    fireEvent.keyDown(rename, { key: "Enter" });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.click(rename, {
+      detail: 1,
+    });
     expect(actions.onRenameProject).toHaveBeenCalledWith(projects[0]);
     expect(onChange).not.toHaveBeenCalled();
 
