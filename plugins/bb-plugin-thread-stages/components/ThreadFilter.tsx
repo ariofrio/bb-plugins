@@ -36,7 +36,7 @@ const CONTENT_CLASS =
 const ITEM_CLASS =
   "relative flex cursor-default select-none items-center gap-2 rounded-sm py-[0.3125rem] pl-7 pr-2 text-xs outline-none transition-colors data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground";
 const ACTION_CLASS =
-  "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none ring-sidebar-ring transition-none hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 max-md:pointer-coarse:size-9";
+  "bb-sidebar-hover-actions inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none ring-sidebar-ring transition-none hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 max-md:pointer-coarse:size-9";
 const LABEL_CLASS =
   "px-2 py-1.5 text-[11px] font-medium text-muted-foreground";
 
@@ -63,7 +63,7 @@ export function ThreadFilter({
   const activeLabel = activeProject?.name ?? activeSection?.name ?? null;
 
   return (
-    <div className="sticky top-2 z-[70] mb-4 flex min-w-0 items-center gap-1 bg-sidebar before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-sidebar before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-sidebar after:content-['']">
+    <div className="bb-sidebar-hover-actions-row sticky top-2 z-[70] mb-4 flex min-w-0 items-center gap-1 bg-sidebar before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-sidebar before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-sidebar after:content-['']">
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
           <button

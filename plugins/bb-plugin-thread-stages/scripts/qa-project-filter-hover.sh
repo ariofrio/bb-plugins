@@ -17,7 +17,64 @@ agent-browser --session "$qa_session" open "$qa_server_url" >/dev/null
 agent-browser --session "$qa_session" wait 2000 >/dev/null
 agent-browser --session "$qa_session" set viewport 900 700 >/dev/null
 agent-browser --session "$qa_session" wait 300 >/dev/null
+agent-browser --session "$qa_session" hover \
+  '[data-sidebar-sticky-tier="label"]' >/dev/null
+agent-browser --session "$qa_session" wait 100 >/dev/null
+agent-browser --session "$qa_session" eval '(() => {
+  const actions = ["New project", "New section"].map((label) =>
+    document.querySelector(`button[aria-label="${label}"]`),
+  );
+  if (actions.some((action) => !(action instanceof HTMLButtonElement))) {
+    throw new Error("Could not find both thread filter creation actions.");
+  }
+  const states = actions.map((action) => {
+    const style = getComputedStyle(action);
+    return {
+      label: action.getAttribute("aria-label"),
+      opacity: Number.parseFloat(style.opacity),
+      pointerEvents: style.pointerEvents,
+    };
+  });
+  if (
+    states.some(
+      ({ opacity, pointerEvents }) =>
+        opacity !== 0 || pointerEvents !== "none",
+    )
+  ) {
+    throw new Error(
+      `Thread filter creation actions are visible away from hover: ${JSON.stringify(states)}.`,
+    );
+  }
+  return JSON.stringify({ actionsAwayFromHover: states });
+})()'
 agent-browser --session "$qa_session" hover 'button[aria-label^="Filter threads"]' >/dev/null
+agent-browser --session "$qa_session" wait 100 >/dev/null
+agent-browser --session "$qa_session" eval '(() => {
+  const actions = ["New project", "New section"].map((label) =>
+    document.querySelector(`button[aria-label="${label}"]`),
+  );
+  if (actions.some((action) => !(action instanceof HTMLButtonElement))) {
+    throw new Error("Could not find both thread filter creation actions.");
+  }
+  const states = actions.map((action) => {
+    const style = getComputedStyle(action);
+    return {
+      label: action.getAttribute("aria-label"),
+      opacity: Number.parseFloat(style.opacity),
+      pointerEvents: style.pointerEvents,
+    };
+  });
+  if (
+    states.some(
+      ({ opacity, pointerEvents }) => opacity !== 1 || pointerEvents !== "auto",
+    )
+  ) {
+    throw new Error(
+      `Thread filter creation actions did not appear on row hover: ${JSON.stringify(states)}.`,
+    );
+  }
+  return JSON.stringify({ actionsOnHover: states });
+})()'
 agent-browser --session "$qa_session" eval '(() => {
   const control = document.querySelector("button[aria-label^=\"Filter threads\"]");
   const tasksLabel = [...document.querySelectorAll("button span")].find(
