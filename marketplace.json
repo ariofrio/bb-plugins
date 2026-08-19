@@ -68,7 +68,7 @@
     {
       "id": "project-icons",
       "displayName": "Project icons",
-      "description": "Gives each bb project a searchable icon and optional color in thread headers and the Thread workflow sidebar.",
+      "description": "Gives each bb project a searchable icon and optional color in thread headers and the Thread stages sidebar.",
       "icon": "Palette",
       "tags": ["projects", "icons", "colors", "interface", "sidebar"],
       "author": {
@@ -86,11 +86,11 @@
       }
     },
     {
-      "id": "thread-workflow",
-      "displayName": "Thread workflow",
-      "description": "Organizes root threads into manually ordered workflow stages, with automatic stage transitions, keyboard shortcuts, and a CLI.",
+      "id": "thread-stages",
+      "displayName": "Thread stages",
+      "description": "Organizes root threads into manually ordered stages, with automatic transitions, keyboard shortcuts, and a CLI.",
       "icon": "ListTodo",
-      "tags": ["workflow", "sidebar", "threads", "productivity", "keyboard-shortcuts", "cli"],
+      "tags": ["stages", "sidebar", "threads", "productivity", "keyboard-shortcuts", "cli"],
       "author": {
         "name": "Andres Riofrio",
         "github": "ariofrio",
@@ -99,9 +99,9 @@
       "source": {
         "git": {
           "url": "https://github.com/ariofrio/bb-plugins.git",
-          "subdir": "plugins/bb-plugin-thread-workflow",
+          "subdir": "plugins/bb-plugin-thread-stages",
           "range": "^0.5.0",
-          "tagPrefix": "thread-workflow/"
+          "tagPrefix": "thread-stages/"
         }
       }
     }

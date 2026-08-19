@@ -68,7 +68,7 @@ export function registerThreadWorkflow(
   bb.events.on("thread.idle", ({ thread }) => observe(thread));
   bb.events.on("thread.failed", ({ thread }) => observe(thread));
 
-  bb.background.service("workflow-automation", {
+  bb.background.service("stage-automation", {
     async start(signal) {
       let queue = Promise.resolve();
       const enqueue = (threadId: string) => {
@@ -83,7 +83,7 @@ export function registerThreadWorkflow(
               const message =
                 error instanceof Error ? error.message : String(error);
               bb.log.warn(
-                `Could not reconcile workflow stage for ${threadId}: ${message}`,
+                `Could not reconcile stage for ${threadId}: ${message}`,
               );
             }
           });

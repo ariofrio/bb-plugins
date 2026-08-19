@@ -50,9 +50,9 @@ test("ignores package metadata changes when the version is unchanged", () => {
 test("sorts independent plugin releases by id", () => {
   const plan = buildReleasePlan([
     {
-      directory: "plugins/bb-plugin-thread-workflow",
-      before: plugin("bb-plugin-thread-workflow", "0.5.0", "Thread workflow"),
-      after: plugin("bb-plugin-thread-workflow", "0.6.0", "Thread workflow"),
+      directory: "plugins/bb-plugin-thread-stages",
+      before: plugin("bb-plugin-thread-stages", "0.5.0", "Thread stages"),
+      after: plugin("bb-plugin-thread-stages", "0.6.0", "Thread stages"),
     },
     {
       directory: "plugins/bb-plugin-codex-theme",
@@ -65,7 +65,7 @@ test("sorts independent plugin releases by id", () => {
     plan.map(({ id, tag }) => ({ id, tag })),
     [
       { id: "codex-theme", tag: "codex-theme/v1.0.0" },
-      { id: "thread-workflow", tag: "thread-workflow/v0.6.0" },
+      { id: "thread-stages", tag: "thread-stages/v0.6.0" },
     ],
   );
 });
@@ -75,9 +75,9 @@ test("rejects version decreases", () => {
     () =>
       buildReleasePlan([
         {
-          directory: "plugins/bb-plugin-thread-workflow",
-          before: plugin("bb-plugin-thread-workflow", "0.5.0"),
-          after: plugin("bb-plugin-thread-workflow", "0.4.0"),
+          directory: "plugins/bb-plugin-thread-stages",
+          before: plugin("bb-plugin-thread-stages", "0.5.0"),
+          after: plugin("bb-plugin-thread-stages", "0.4.0"),
         },
       ]),
     /must increase from 0\.5\.0 to 0\.4\.0/,

@@ -585,7 +585,7 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
     setStage(threadId, stage, source = "app") {
       assertThreadId(threadId);
       if (!WORKFLOW_STAGES.includes(stage)) {
-        throw new Error("Unknown workflow stage.");
+        throw new Error("Unknown stage.");
       }
       return setStageTransaction.immediate(threadId, stage, source);
     },
@@ -629,7 +629,7 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
       if (input.previousThreadId) assertThreadId(input.previousThreadId);
       if (input.nextThreadId) assertThreadId(input.nextThreadId);
       if (!WORKFLOW_STAGES.includes(input.workflowStage)) {
-        throw new Error("Unknown workflow stage.");
+        throw new Error("Unknown stage.");
       }
       return reorderThreadTransaction.immediate(input);
     },

@@ -160,7 +160,7 @@ export default function plugin(bb: BbPluginApi) {
     if (rootId === threadId) return;
     throw new Error(
       rootId
-        ? `Child thread ${threadId} has no workflow stage; its stage belongs to root thread ${rootId}.`
+        ? `Child thread ${threadId} has no stage; its stage belongs to root thread ${rootId}.`
         : `Thread ${threadId} is not a root thread.`,
     );
   }
@@ -283,24 +283,24 @@ export default function plugin(bb: BbPluginApi) {
   });
 
   bb.cli.register({
-    name: "thread-workflow",
-    summary: "Organize root threads into workflow stages",
+    name: "thread-stages",
+    summary: "Organize root threads into stages",
     commands: [
       {
         name: "list",
-        summary: "List threads by workflow stage",
-        usage: "bb thread-workflow list [--stage <stage>] [--json]",
+        summary: "List threads by stage",
+        usage: "bb thread-stages list [--stage <stage>] [--json]",
       },
       {
         name: "show",
-        summary: "Show workflow details",
-        usage: "bb thread-workflow show [id] [--self] [--json]",
+        summary: "Show stage details",
+        usage: "bb thread-stages show [id] [--self] [--json]",
       },
       {
         name: "update",
-        summary: "Update a workflow stage or position",
+        summary: "Update a stage or position",
         usage:
-          "bb thread-workflow update [id] [--self] [--stage <stage>] [--after <id>] [--before <id>] [--json]",
+          "bb thread-stages update [id] [--self] [--stage <stage>] [--after <id>] [--before <id>] [--json]",
       },
     ],
     async run(argv, context) {
@@ -351,5 +351,5 @@ export default function plugin(bb: BbPluginApi) {
   registerThreadWorkflow(bb, store);
   registerThreadPreviews(bb, store);
 
-  bb.log.info("Thread workflow loaded");
+  bb.log.info("Thread stages loaded");
 }

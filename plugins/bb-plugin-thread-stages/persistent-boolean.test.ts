@@ -11,4 +11,10 @@ describe("parseStoredBoolean", () => {
     expect(parseStoredBoolean("true", false)).toBe(true);
     expect(parseStoredBoolean("false", true)).toBe(false);
   });
+
+  it("falls back to a legacy key when the current key is missing", () => {
+    expect(parseStoredBoolean(null, false, "true")).toBe(true);
+    expect(parseStoredBoolean(null, true, "false")).toBe(false);
+    expect(parseStoredBoolean("false", true, "true")).toBe(false);
+  });
 });

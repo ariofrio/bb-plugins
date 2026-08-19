@@ -1,26 +1,26 @@
-# Thread workflow
+# Thread stages
 
-A bb sidebar that organizes root threads into workflow stages. It preserves
+A bb sidebar that organizes root threads into stages. It preserves
 bb's pinned-thread and subthread behavior, then groups the remaining root
 threads into manually ordered **Backlog**, **To do**, **Working**, **Blocked**,
 **Done**, and **Canceled** sections.
 
-Child threads do not have workflow stages or positions of their own. They
+Child threads do not have stages or positions of their own. They
 always render beneath their parent, inherit the root parent's stage, and move
-with that parent. Their thread actions therefore omit workflow-stage controls.
+with that parent. Their thread actions therefore omit stage controls.
 
 Each row shows its project's icon when the [Project
 icons](../bb-plugin-project-icons#readme) plugin is installed, so a
 stage-grouped list still tells you what a thread belongs to. Without that
 plugin the rows look as they always have.
 
-Use the project filter above the workflow to focus the whole sidebar—including
+Use the project filter above the stages to focus the whole sidebar—including
 pinned and search results—on one project. The selection is stored only in the
-current browser and does not change workflow assignments or synchronization.
+current browser and does not change stage assignments or synchronization.
 The same menu can hide the stage counts, which show the number of filtered
 root threads in each unpinned stage and are enabled by default.
 
-Drag root threads to reorder or change their workflow stage. Ordering uses
+Drag root threads to reorder or change their stage. Ordering uses
 fractional keys, so a move updates only the moved thread. Root threads enter
 **Working** when they start and return to **To do** when they stop, unless you
 manually move them after the transition. A thread blocked on a question or an
@@ -31,23 +31,23 @@ approval counts as **To do** while it waits, because the next move is yours.
 Install it from this repository's plugin collection:
 
 ```sh
-bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin thread-workflow
+bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin thread-stages
 ```
 
-Then select **Thread workflow** in **Settings → Appearance → Sidebar**.
+Then select **Thread stages** in **Settings → Appearance → Sidebar**.
 
 Update an installed copy with:
 
 ```sh
-bb plugin update thread-workflow
+bb plugin update thread-stages
 ```
 
 ## Keyboard shortcuts
 
-On a thread route, `.` chords set the open thread's workflow stage and move you
+On a thread route, `.` chords set the open thread's stage and move you
 on:
 
-| Shortcut | Workflow stage | Then                           |
+| Shortcut | Stage       | Then                           |
 | -------: | ----------- | ------------------------------ |
 |       ⌘. | Done        | Go to the thread below it      |
 |      ⇧⌘. | To do       | Stay, or undo your last filing |
@@ -55,7 +55,7 @@ on:
 |      ⌃⌘. | Backlog     | Go to the thread below it      |
 |      ⌥⌘. | Canceled    | Go to the thread below it      |
 
-**Working** has no chord because the workflow assigns it automatically.
+**Working** has no chord because Thread stages assigns it automatically.
 Moving a thread to **Done** does not archive it.
 
 Filing a thread moves you down the To do stage, so the chords walk it in
@@ -82,7 +82,7 @@ A move that would leave a thread where it already is does nothing, and moving
 to another stage appends it there. Reordering moves root threads
 while keeping their entire child-thread hierarchy attached, and reorders a
 pinned root thread within the pinned section. The backend resolves each move
-and rejects workflow shortcuts on child threads, whichever sidebar is displayed.
+and rejects stage shortcuts on child threads, whichever sidebar is displayed.
 
 All of these shortcuts work while an input, editor, or composer has focus. They
 use exact modifier matching, ignore held-key repeats, and stop matched key
@@ -91,24 +91,24 @@ events from propagating to downstream BB or editor handlers.
 ## CLI
 
 ```sh
-bb thread-workflow list [--stage <stage>] [--json]
-bb thread-workflow show [<thread-id> | --self] [--json]
-bb thread-workflow update [<thread-id> | --self] [--stage <stage>] [--after <thread-id>] [--before <thread-id>] [--json]
+bb thread-stages list [--stage <stage>] [--json]
+bb thread-stages show [<thread-id> | --self] [--json]
+bb thread-stages update [<thread-id> | --self] [--stage <stage>] [--after <thread-id>] [--before <thread-id>] [--json]
 ```
 
-Workflow-stage input is case-insensitive. `update` without `--after` or `--before`
+Stage input is case-insensitive. `update` without `--after` or `--before`
 places a thread at the bottom only when its stage changes; repeating its
 current stage is a no-op. A neighbor outside the destination stage is ignored with a
 warning.
 
-Child thread IDs are rejected because their workflow stage belongs to the root
+Child thread IDs are rejected because their stage belongs to the root
 thread.
 
 ## Development
 
 ```sh
 npm run release:check
-bb plugin reload thread-workflow
+bb plugin reload thread-stages
 npm run qa:project-filter-hover
 ```
 

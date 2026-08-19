@@ -52,7 +52,7 @@ describe("task workflow", () => {
 
     try {
       registerThreadWorkflow(bb, store);
-      expect(services.has("workflow-automation")).toBe(true);
+      expect(services.has("stage-automation")).toBe(true);
 
       await handlers.get("thread.active")?.({
         thread: { id: "thr_a", status: "active" },

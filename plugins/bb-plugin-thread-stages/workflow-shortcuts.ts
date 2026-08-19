@@ -17,7 +17,7 @@ interface StageChord {
   stage: WorkflowStage;
 }
 
-// Working is omitted because automatic workflow assigns it.
+// Working is omitted because automatic stage handling assigns it.
 const STAGE_CHORDS: readonly StageChord[] = [
   { altKey: false, ctrlKey: false, shiftKey: false, stage: "Done" },
   { altKey: false, ctrlKey: false, shiftKey: true, stage: "To do" },

@@ -9,13 +9,13 @@ afterEach(async () => {
 });
 
 function createPluginHarness() {
-  const host = createFakePluginHost({ pluginId: "thread-workflow" });
+  const host = createFakePluginHost({ pluginId: "thread-stages" });
   plugin(host.bb);
   disposeHosts.push(() => host.harness.lifecycle.dispose());
   return host.harness;
 }
 
-describe("thread workflow plugin API", () => {
+describe("thread stages plugin API", () => {
   it("registers its complete host-facing contract", () => {
     const harness = createPluginHarness();
 
@@ -32,8 +32,8 @@ describe("thread workflow plugin API", () => {
     ]);
     expect(
       harness.inspection.registrations.services.map(({ name }) => name),
-    ).toEqual(["workflow-automation", "thread-previews"]);
-    expect(harness.inspection.registrations.cli?.name).toBe("thread-workflow");
+    ).toEqual(["stage-automation", "thread-previews"]);
+    expect(harness.inspection.registrations.cli?.name).toBe("thread-stages");
     expect(harness.inspection.registrations.threadEventHandlers).toMatchObject({
       "thread.active": 1,
       "thread.created": 1,
@@ -65,7 +65,7 @@ describe("thread workflow plugin API", () => {
     await expect(harness.behavior.runCli(["--help"])).resolves.toMatchObject({
       exitCode: 0,
       stderr: "",
-      stdout: expect.stringContaining("bb thread-workflow [options] [command]"),
+      stdout: expect.stringContaining("bb thread-stages [options] [command]"),
     });
   });
 });

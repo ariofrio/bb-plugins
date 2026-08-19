@@ -9,7 +9,7 @@ Personal plugins for [bb](https://getbb.app).
   <li><img src="assets/plugin-icons/zap.svg" alt="" width="20" height="20" align="left"><ul type="none"><li><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Missing keyboard shortcuts</a> — adds shortcuts for starting threads, navigating history, focusing the primary composer, and toggling a side chat or thread terminal.</li></ul></li>
   <li><img src="assets/plugin-icons/folder.svg" alt="" width="20" height="20" align="left"><ul type="none"><li><a href="plugins/bb-plugin-project-header-breadcrumb#readme">Project header breadcrumb</a> — adds the current project and its native actions menu before each thread title.</li></ul></li>
   <li><img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20" align="left"><ul type="none"><li><a href="plugins/bb-plugin-project-icons#readme">Project icons</a> — gives each project an icon and optional color, shown next to its name in the thread header.</li></ul></li>
-  <li><img src="assets/plugin-icons/list-todo.svg" alt="" width="20" height="20" align="left"><ul type="none"><li><a href="plugins/bb-plugin-thread-workflow#readme">Thread workflow</a> — organizes sidebar threads into manually ordered Backlog, To do, Working, Blocked, Done, and Canceled workflow stages.</li></ul></li>
+  <li><img src="assets/plugin-icons/list-todo.svg" alt="" width="20" height="20" align="left"><ul type="none"><li><a href="plugins/bb-plugin-thread-stages#readme">Thread stages</a> — organizes sidebar threads into manually ordered Backlog, To do, Working, Blocked, Done, and Canceled stages.</li></ul></li>
 </ul>
 
 ## Install

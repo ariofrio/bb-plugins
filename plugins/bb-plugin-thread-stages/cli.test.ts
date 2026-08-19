@@ -7,7 +7,7 @@ import {
   type ThreadWorkflowStore,
 } from "./store";
 
-describe("task CLI", () => {
+describe("thread stages CLI", () => {
   let db: Database.Database;
   let store: ThreadWorkflowStore;
 
@@ -19,11 +19,12 @@ describe("task CLI", () => {
 
   afterEach(() => db.close());
 
-  it("uses the thread-workflow command and stage vocabulary in top-level help", () => {
+  it("uses the thread-stages command and stage vocabulary in top-level help", () => {
     const result = runThreadWorkflowCli(store, ["--help"]);
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("bb thread-workflow [options] [command]");
-    expect(result.stdout).toContain("Organize root threads into workflow stages");
+    expect(result.stdout).toContain("bb thread-stages [options] [command]");
+    expect(result.stdout).toContain("Organize root threads into stages");
+    expect(result.stdout).not.toContain("workflow stage");
     expect(result.stdout).toContain("list [options]");
     expect(result.stdout).toContain("show [options] [id]");
     expect(result.stdout).toContain("update [options] [id]");
@@ -33,7 +34,7 @@ describe("task CLI", () => {
   it("shows the effective default stage as human and JSON output", () => {
     expect(runThreadWorkflowCli(store, ["show", "thr_a"])).toEqual({
       exitCode: 0,
-      stdout: "Thread: thr_a\n  Workflow stage: To do (default)\n  Order: -\n",
+      stdout: "Thread: thr_a\n  Stage: To do (default)\n  Order: -\n",
     });
     const result = runThreadWorkflowCli(store, ["show", "thr_a", "--json"]);
     const task = JSON.parse(result.stdout ?? "");
@@ -57,7 +58,7 @@ describe("task CLI", () => {
     });
   });
 
-  it("updates the workflow stage through --stage", () => {
+  it("updates the stage through --stage", () => {
     const result = runThreadWorkflowCli(store, [
       "update",
       "thr_a",
@@ -85,7 +86,7 @@ describe("task CLI", () => {
     });
   });
 
-  it("lists a JSON array and filters by workflow stage", () => {
+  it("lists a JSON array and filters by stage", () => {
     store.setStage("thr_a", "Working");
     store.setStage("thr_b", "Done");
 
@@ -254,7 +255,7 @@ describe("task CLI", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe(
-      "Warning: --after thread thr_done is not in workflow stage Working; ignoring --after.\n",
+      "Warning: --after thread thr_done is not in stage Working; ignoring --after.\n",
     );
     expect(
       store

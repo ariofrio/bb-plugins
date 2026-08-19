@@ -20,30 +20,30 @@ interface ParsedArguments {
 
 const STAGE_LABELS = WORKFLOW_STAGES.join(", ");
 const USAGE = {
-  list: "Usage: bb thread-workflow list [--stage <stage>] [--json]\n",
-  show: "Usage: bb thread-workflow show [id] [--self] [--json]\n",
+  list: "Usage: bb thread-stages list [--stage <stage>] [--json]\n",
+  show: "Usage: bb thread-stages show [id] [--self] [--json]\n",
   update:
-    "Usage: bb thread-workflow update [id] [--self] [--stage <stage>] [--after <id>] [--before <id>] [--json]\n",
+    "Usage: bb thread-stages update [id] [--self] [--stage <stage>] [--after <id>] [--before <id>] [--json]\n",
 } as const;
 
-const HELP = `Usage: bb thread-workflow [options] [command]
+const HELP = `Usage: bb thread-stages [options] [command]
 
-Organize root threads into workflow stages
+Organize root threads into stages
 
 Options:
   -h, --help                         display help for command
 
 Commands:
   list [options]                     List threads
-  show [options] [id]                Show workflow details
-  update [options] [id]              Update a workflow stage or position
+  show [options] [id]                Show stage details
+  update [options] [id]              Update a stage or position
   help [command]                     display help for command
 `;
 
 const COMMAND_HELP: Record<keyof typeof USAGE, string> = {
-  list: `${USAGE.list}\nList threads\n\nOptions:\n  --stage <stage>  Filter by workflow stage\n  --json           Print machine-readable JSON output\n  -h, --help       display help for command\n`,
-  show: `${USAGE.show}\nShow workflow details\n\nOptions:\n  --self      Target the current thread\n  --json      Print machine-readable JSON output\n  -h, --help  display help for command\n`,
-  update: `${USAGE.update}\nUpdate a workflow stage or position\n\nOptions:\n  --self           Target the current thread\n  --stage <stage>  Set the workflow stage: ${STAGE_LABELS}\n  --after <id>     Previous thread, or omit for the start\n  --before <id>    Next thread, or omit for the end\n  --json           Print machine-readable JSON output\n  -h, --help       display help for command\n`,
+  list: `${USAGE.list}\nList threads\n\nOptions:\n  --stage <stage>  Filter by stage\n  --json           Print machine-readable JSON output\n  -h, --help       display help for command\n`,
+  show: `${USAGE.show}\nShow stage details\n\nOptions:\n  --self      Target the current thread\n  --json      Print machine-readable JSON output\n  -h, --help  display help for command\n`,
+  update: `${USAGE.update}\nUpdate a stage or position\n\nOptions:\n  --self           Target the current thread\n  --stage <stage>  Set the stage: ${STAGE_LABELS}\n  --after <id>     Previous thread, or omit for the start\n  --before <id>    Next thread, or omit for the end\n  --json           Print machine-readable JSON output\n  -h, --help       display help for command\n`,
 };
 
 function json(value: unknown): string {
@@ -114,8 +114,8 @@ function resolveRootThreadId(
     if (rootId !== threadId) {
       throw new Error(
         rootId === null
-          ? `Child thread ${threadId} has no workflow stage.`
-          : `Child thread ${threadId} has no workflow stage; its stage belongs to root thread ${rootId}.`,
+          ? `Child thread ${threadId} has no stage.`
+          : `Child thread ${threadId} has no stage; its stage belongs to root thread ${rootId}.`,
       );
     }
   }
@@ -123,7 +123,7 @@ function resolveRootThreadId(
 }
 
 function humanWorkflow(value: ReturnType<ThreadWorkflowStore["get"]>): string {
-  return `Thread: ${value.threadId}\n  Workflow stage: ${value.workflowStage}${
+  return `Thread: ${value.threadId}\n  Stage: ${value.workflowStage}${
     value.explicit ? "" : " (default)"
   }\n  Order: ${value.sortKey ?? "-"}\n`;
 }
@@ -133,7 +133,7 @@ function humanWorkflowList(
 ): string {
   if (assignments.length === 0) return "No threads found\n";
   const rows = [
-    ["ID", "Workflow stage"],
+    ["ID", "Stage"],
     ...assignments.map((assignment) => [
       assignment.threadId,
       assignment.workflowStage,
@@ -193,7 +193,7 @@ export function runThreadWorkflowCli(
       const stage =
         typeof rawStage === "string" ? parseWorkflowStage(rawStage) : null;
       if (rawStage && !stage) {
-        throw new Error(`Unknown workflow stage. Expected one of: ${STAGE_LABELS}`);
+        throw new Error(`Unknown stage. Expected one of: ${STAGE_LABELS}`);
       }
       const listedThreadIds = context.listThreadIds
         ? new Set(context.listThreadIds)
@@ -258,7 +258,7 @@ export function runThreadWorkflowCli(
           ? parseWorkflowStage(rawStage)
           : current.workflowStage;
       if (!stage) {
-        throw new Error(`Unknown workflow stage. Expected one of: ${STAGE_LABELS}`);
+        throw new Error(`Unknown stage. Expected one of: ${STAGE_LABELS}`);
       }
 
       const warnings: string[] = [];
@@ -270,7 +270,7 @@ export function runThreadWorkflowCli(
         const neighbor = store.get(value);
         if (!neighbor.explicit || neighbor.workflowStage !== stage) {
           warnings.push(
-            `Warning: ${flag} thread ${value} is not in workflow stage ${stage}; ignoring ${flag}.`,
+            `Warning: ${flag} thread ${value} is not in stage ${stage}; ignoring ${flag}.`,
           );
           return null;
         }

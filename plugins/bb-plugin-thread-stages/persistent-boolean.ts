@@ -3,16 +3,27 @@ import { useCallback, useEffect, useState } from "react";
 export function parseStoredBoolean(
   raw: string | null,
   defaultValue: boolean,
+  legacyRaw: string | null = null,
 ): boolean {
   if (raw === "true") return true;
   if (raw === "false") return false;
+  if (legacyRaw === "true") return true;
+  if (legacyRaw === "false") return false;
   return defaultValue;
 }
 
-function readStoredBoolean(key: string, defaultValue: boolean): boolean {
+function readStoredBoolean(
+  key: string,
+  defaultValue: boolean,
+  legacyKey?: string,
+): boolean {
   if (typeof window === "undefined") return defaultValue;
   try {
-    return parseStoredBoolean(window.localStorage.getItem(key), defaultValue);
+    return parseStoredBoolean(
+      window.localStorage.getItem(key),
+      defaultValue,
+      legacyKey ? window.localStorage.getItem(legacyKey) : null,
+    );
   } catch {
     return defaultValue;
   }
@@ -21,9 +32,10 @@ function readStoredBoolean(key: string, defaultValue: boolean): boolean {
 export function usePersistentBoolean(
   key: string,
   defaultValue: boolean,
+  legacyKey?: string,
 ): readonly [boolean, (value: boolean) => void] {
   const [value, setValue] = useState(() =>
-    readStoredBoolean(key, defaultValue),
+    readStoredBoolean(key, defaultValue, legacyKey),
   );
 
   useEffect(() => {

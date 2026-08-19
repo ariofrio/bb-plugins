@@ -77,8 +77,12 @@ import {
 const COLLAPSED_STATUSES_STORAGE_KEY =
   "bb.plugin.workflow-stage.collapsedStatuses";
 const COLLAPSED_THREADS_STORAGE_KEY = "bb.sidebar.collapsedThreads";
-const PROJECT_FILTER_STORAGE_KEY = "bb.plugin.thread-workflow.projectFilter";
+const PROJECT_FILTER_STORAGE_KEY = "bb.plugin.thread-stages.projectFilter";
+const LEGACY_PROJECT_FILTER_STORAGE_KEY =
+  "bb.plugin.thread-workflow.projectFilter";
 const SHOW_STAGE_COUNTS_STORAGE_KEY =
+  "bb.plugin.thread-stages.showStageCounts";
+const LEGACY_SHOW_STAGE_COUNTS_STORAGE_KEY =
   "bb.plugin.thread-workflow.showStageCounts";
 const PINNED_SECTION = "Pinned" as const;
 type SidebarGroup = WorkflowStage | typeof PINNED_SECTION;
@@ -428,7 +432,7 @@ function SidebarSection({
   threads,
 }: SidebarSectionProps) {
   const activityThread = collapsed ? groupIndicator(threads) : null;
-  const id = `thread-workflow-group-${label.replace(/\s/g, "-")}`;
+  const id = `thread-stages-group-${label.replace(/\s/g, "-")}`;
   return (
     <section
       data-sidebar-sticky-group=""
@@ -583,6 +587,7 @@ function WorkflowStageList({
   const [showStageCounts, setShowStageCounts] = usePersistentBoolean(
     SHOW_STAGE_COUNTS_STORAGE_KEY,
     true,
+    LEGACY_SHOW_STAGE_COUNTS_STORAGE_KEY,
   );
   const [mutationPending, setMutationPending] = useState(false);
   const [pinnedThreadIds, setPinnedThreadIds] = useState<readonly string[]>([]);
@@ -590,7 +595,8 @@ function WorkflowStageList({
     () =>
       typeof window === "undefined"
         ? null
-        : window.localStorage.getItem(PROJECT_FILTER_STORAGE_KEY),
+        : (window.localStorage.getItem(PROJECT_FILTER_STORAGE_KEY) ??
+          window.localStorage.getItem(LEGACY_PROJECT_FILTER_STORAGE_KEY)),
   );
   const wasConnected = useRef(false);
   const syncInFlight = useRef(false);
@@ -611,7 +617,7 @@ function WorkflowStageList({
       setError(null);
     } catch (cause) {
       const message =
-        cause instanceof Error ? cause.message : "Could not load workflow.";
+        cause instanceof Error ? cause.message : "Could not load stages.";
       if (organizationLoaded.current) setError(message);
       else setLoadError(message);
     }
@@ -630,7 +636,7 @@ function WorkflowStageList({
       );
     } catch {
       // A missing preview is a valid transient state while the backend catches
-      // up; workflow organization remains usable without secondary text.
+      // up; stage organization remains usable without secondary text.
     }
   }, [rpc]);
 
@@ -775,7 +781,7 @@ function WorkflowStageList({
       })
       .catch((cause) => {
         setError(
-          cause instanceof Error ? cause.message : "Could not save workflow order.",
+          cause instanceof Error ? cause.message : "Could not save stage order.",
         );
       })
       .finally(() => {
@@ -999,7 +1005,7 @@ function WorkflowStageList({
           },
         }}
       >
-        Could not load workflow.
+        Could not load stages.
       </SidebarMessage>
     );
   }
@@ -1463,7 +1469,7 @@ async function callWorkflowRpc(
     throw new Error(
       !envelope.ok
         ? rpcErrorMessage(envelope.error, "Failed to move the thread")
-        : `Workflow request failed (${response.status})`,
+        : `Stage request failed (${response.status})`,
     );
   }
   return envelope.result;
@@ -1472,8 +1478,8 @@ async function callWorkflowRpc(
 export default definePluginApp((app) => {
   app.slots.experimental_threadList({
     id: "workflow-stage",
-    title: "Thread workflow",
-    description: "Organize root threads into manually ordered workflow stages.",
+    title: "Thread stages",
+    description: "Organize root threads into manually ordered stages.",
     component: WorkflowStageList,
   });
 

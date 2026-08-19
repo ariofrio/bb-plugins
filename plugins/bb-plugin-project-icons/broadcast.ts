@@ -1,7 +1,7 @@
 /**
  * Plugins cannot subscribe to each other's realtime channels, and the sidebar
  * that draws these icons lives in another plugin, so edits are announced on a
- * broadcast channel that any plugin in the app can listen on. Thread workflow
+ * broadcast channel that any plugin in the app can listen on. Thread stages
  * mirrors this name in its own project-icons module.
  */
 export const PROJECT_ICONS_CHANNEL = "bb.project-icons";

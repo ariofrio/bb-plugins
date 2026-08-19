@@ -2,7 +2,7 @@
 
 Gives every project an icon and an optional color, shown next to the project
 name in the thread header and on each row of the [Thread
-workflow](../bb-plugin-thread-workflow#readme) sidebar.
+stages](../bb-plugin-thread-stages#readme) sidebar.
 
 Click the icon in the header to change it: search 2,532 icons by name or
 synonym, filter by category, and pick a color. Changes save as you click and

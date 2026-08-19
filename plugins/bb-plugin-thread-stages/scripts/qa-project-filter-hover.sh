@@ -7,7 +7,7 @@ if [[ -z "$qa_server_url" ]]; then
   exit 1
 fi
 
-qa_session="thread-workflow-project-filter-qa-$$"
+qa_session="thread-stages-project-filter-qa-$$"
 cleanup() {
   agent-browser --session "$qa_session" close >/dev/null 2>&1 || true
 }
@@ -30,7 +30,7 @@ agent-browser --session "$qa_session" eval '(() => {
     !(tasksRow instanceof HTMLButtonElement) ||
     !(firstStage instanceof HTMLElement)
   ) {
-    throw new Error("Could not find the project filter, Tasks row, and first workflow stage.");
+    throw new Error("Could not find the project filter, Tasks row, and first stage.");
   }
 
   const controlRect = control.getBoundingClientRect();
@@ -41,7 +41,7 @@ agent-browser --session "$qa_session" eval '(() => {
     !(firstSection instanceof HTMLElement) ||
     !(firstSection.nextElementSibling instanceof HTMLElement)
   ) {
-    throw new Error("Could not find a second workflow stage for spacing comparison.");
+    throw new Error("Could not find a second stage for spacing comparison.");
   }
 
   const controlToFirstStage = stageRect.top - controlRect.bottom;
@@ -98,7 +98,7 @@ agent-browser --session "$qa_session" eval '(() => {
     !(label instanceof HTMLElement) ||
     !(toggle instanceof HTMLButtonElement)
   ) {
-    throw new Error("Could not find the first workflow stage label and collapse button.");
+    throw new Error("Could not find the first stage label and collapse button.");
   }
 
   const labelRect = label.getBoundingClientRect();
@@ -127,7 +127,7 @@ agent-browser --session "$qa_session" eval '(() => {
   }
   const icon = toggle.querySelector("svg");
   if (!(icon instanceof SVGElement)) {
-    throw new Error("Could not find the workflow stage chevron icon.");
+    throw new Error("Could not find the stage chevron icon.");
   }
   const iconRect = icon.getBoundingClientRect();
   if (
@@ -164,7 +164,7 @@ agent-browser --session "$qa_session" eval '(() => {
     "[data-sidebar-sticky-tier=\"label\"] button[aria-label^=\"Collapse \"]",
   );
   if (!(toggle instanceof HTMLButtonElement)) {
-    throw new Error("Could not find the expanded workflow stage toggle on hover.");
+    throw new Error("Could not find the expanded stage toggle on hover.");
   }
   const style = getComputedStyle(toggle);
   const opacity = Number.parseFloat(style.opacity);
@@ -217,7 +217,7 @@ agent-browser --session "$qa_session" eval '(() => {
     !(firstStage instanceof HTMLElement) ||
     !(firstSection instanceof HTMLElement)
   ) {
-    throw new Error("Could not find sticky workflow layout after scrolling.");
+    throw new Error("Could not find sticky stage layout after scrolling.");
   }
 
   const controlRect = control.getBoundingClientRect();
