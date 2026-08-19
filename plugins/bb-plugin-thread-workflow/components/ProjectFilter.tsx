@@ -36,7 +36,7 @@ export function ProjectFilter({
   const activeIcon = value === null ? null : projectIcons.get(value);
 
   return (
-    <div className="mb-2 flex min-w-0">
+    <div className="mb-4 flex min-w-0">
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
           <button

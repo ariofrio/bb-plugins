@@ -27,6 +27,22 @@ agent-browser --session "$qa_session" eval '(() => {
 
   const controlRect = control.getBoundingClientRect();
   const stageRect = firstStage.getBoundingClientRect();
+  const firstSection = firstStage.closest("section");
+  if (
+    !(firstSection instanceof HTMLElement) ||
+    !(firstSection.nextElementSibling instanceof HTMLElement)
+  ) {
+    throw new Error("Could not find a second workflow stage for spacing comparison.");
+  }
+
+  const controlToFirstStage = stageRect.top - controlRect.bottom;
+  const betweenStages = Number.parseFloat(getComputedStyle(firstSection).marginBottom);
+  if (Math.abs(controlToFirstStage - betweenStages) > 0.25) {
+    throw new Error(
+      `Project filter gap is ${controlToFirstStage}px; stage gap is ${betweenStages}px.`,
+    );
+  }
+
   const shieldHeight = Number.parseFloat(
     getComputedStyle(firstStage, "::before").height,
   );
@@ -44,6 +60,8 @@ agent-browser --session "$qa_session" eval '(() => {
 
   return JSON.stringify({
     controlBottom: controlRect.bottom,
+    controlToFirstStage,
+    betweenStages,
     shieldTop,
     gap: shieldTop - controlRect.bottom,
     cursor,
