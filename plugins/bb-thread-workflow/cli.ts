@@ -1,0 +1,312 @@
+import { WORKFLOW_STAGES, parseWorkflowStage } from "./workflow-stage";
+import type { ThreadWorkflowStore } from "./store";
+
+interface CliResult {
+  exitCode: number;
+  stdout?: string;
+  stderr?: string;
+}
+
+export interface ThreadWorkflowCliContext {
+  listThreadIds?: readonly string[];
+  rootIdsByThreadId?: ReadonlyMap<string, string | null>;
+  threadId?: string;
+}
+
+interface ParsedArguments {
+  options: Map<string, string | true>;
+  positionals: string[];
+}
+
+const STAGE_LABELS = WORKFLOW_STAGES.join(", ");
+const USAGE = {
+  list: "Usage: bb thread-workflow list [--stage <stage>] [--json]\n",
+  show: "Usage: bb thread-workflow show [id] [--self] [--json]\n",
+  update:
+    "Usage: bb thread-workflow update [id] [--self] [--stage <stage>] [--after <id>] [--before <id>] [--json]\n",
+} as const;
+
+const HELP = `Usage: bb thread-workflow [options] [command]
+
+Organize root threads into workflow stages
+
+Options:
+  -h, --help                         display help for command
+
+Commands:
+  list [options]                     List threads
+  show [options] [id]                Show workflow details
+  update [options] [id]              Update a workflow stage or position
+  help [command]                     display help for command
+`;
+
+const COMMAND_HELP: Record<keyof typeof USAGE, string> = {
+  list: `${USAGE.list}\nList threads\n\nOptions:\n  --stage <stage>  Filter by workflow stage\n  --json           Print machine-readable JSON output\n  -h, --help       display help for command\n`,
+  show: `${USAGE.show}\nShow workflow details\n\nOptions:\n  --self      Target the current thread\n  --json      Print machine-readable JSON output\n  -h, --help  display help for command\n`,
+  update: `${USAGE.update}\nUpdate a workflow stage or position\n\nOptions:\n  --self           Target the current thread\n  --stage <stage>  Set the workflow stage: ${STAGE_LABELS}\n  --after <id>     Previous thread, or omit for the start\n  --before <id>    Next thread, or omit for the end\n  --json           Print machine-readable JSON output\n  -h, --help       display help for command\n`,
+};
+
+function json(value: unknown): string {
+  return `${JSON.stringify(value, null, 2)}\n`;
+}
+
+function workflowAssignmentJson(
+  assignment: ReturnType<ThreadWorkflowStore["listState"]>["assignments"][number],
+) {
+  const { threadId, workflowStage, sortKey: _sortKey, ...workflow } = assignment;
+  return { id: threadId, workflowStage, ...workflow };
+}
+
+function workflowLookupJson(value: ReturnType<ThreadWorkflowStore["get"]>) {
+  const { threadId, workflowStage, ...workflow } = value;
+  return { id: threadId, workflowStage, ...workflow };
+}
+
+function parseArguments(
+  args: readonly string[],
+  valueOptions: readonly string[],
+  booleanOptions: readonly string[] = [],
+): ParsedArguments {
+  const options = new Map<string, string | true>();
+  const positionals: string[] = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index] ?? "";
+    if (!arg.startsWith("--")) {
+      positionals.push(arg);
+      continue;
+    }
+    if (options.has(arg)) throw new Error(`Option ${arg} cannot be repeated.`);
+    if (booleanOptions.includes(arg)) {
+      options.set(arg, true);
+      continue;
+    }
+    if (!valueOptions.includes(arg)) throw new Error(`Unknown option: ${arg}`);
+    const value = args[index + 1];
+    if (!value || value.startsWith("--")) {
+      throw new Error(`Option ${arg} requires a value.`);
+    }
+    options.set(arg, value);
+    index += 1;
+  }
+  return { options, positionals };
+}
+
+function resolveRootThreadId(
+  positionalId: string | undefined,
+  self: boolean,
+  context: ThreadWorkflowCliContext,
+): string {
+  if (self && positionalId) {
+    throw new Error("Cannot combine a thread ID argument with --self.");
+  }
+  let threadId: string;
+  if (self) {
+    if (!context.threadId) throw new Error("--self requires a current bb thread.");
+    threadId = context.threadId;
+  } else if (positionalId) {
+    threadId = positionalId;
+  } else {
+    throw new Error("Missing thread ID. Pass <id> or use --self.");
+  }
+
+  if (context.rootIdsByThreadId?.has(threadId)) {
+    const rootId = context.rootIdsByThreadId.get(threadId) ?? null;
+    if (rootId !== threadId) {
+      throw new Error(
+        rootId === null
+          ? `Child thread ${threadId} has no workflow stage.`
+          : `Child thread ${threadId} has no workflow stage; its stage belongs to root thread ${rootId}.`,
+      );
+    }
+  }
+  return threadId;
+}
+
+function humanWorkflow(value: ReturnType<ThreadWorkflowStore["get"]>): string {
+  return `Thread: ${value.threadId}\n  Workflow stage: ${value.workflowStage}${
+    value.explicit ? "" : " (default)"
+  }\n  Order: ${value.sortKey ?? "-"}\n`;
+}
+
+function humanWorkflowList(
+  assignments: ReturnType<ThreadWorkflowStore["listState"]>["assignments"],
+): string {
+  if (assignments.length === 0) return "No threads found\n";
+  const rows = [
+    ["ID", "Workflow stage"],
+    ...assignments.map((assignment) => [
+      assignment.threadId,
+      assignment.workflowStage,
+    ]),
+  ];
+  const widths = [0, 1].map((column) =>
+    Math.max(...rows.map((row) => row[column]?.length ?? 0)),
+  );
+  return `\n${rows
+    .map((row) =>
+      row
+        .map((value, column) => value.padEnd(widths[column] ?? value.length))
+        .join("  ")
+        .trimEnd(),
+    )
+    .join("\n")}\n\n`;
+}
+
+function commandHelp(command: string | undefined): string | null {
+  if (!command) return HELP;
+  if (command in COMMAND_HELP) {
+    return COMMAND_HELP[command as keyof typeof COMMAND_HELP];
+  }
+  return null;
+}
+
+export function runThreadWorkflowCli(
+  store: ThreadWorkflowStore,
+  argv: readonly string[],
+  context: ThreadWorkflowCliContext = {},
+): CliResult {
+  const wantsJson = argv.includes("--json");
+  const args = argv.filter((arg) => arg !== "--json");
+  const command = args[0];
+
+  try {
+    if (!command || command === "--help" || command === "-h") {
+      return { exitCode: 0, stdout: HELP };
+    }
+    if (command === "help") {
+      const help = commandHelp(args[1]);
+      return help
+        ? { exitCode: 0, stdout: help }
+        : { exitCode: 2, stderr: `Unknown command: ${args[1]}\n\n${HELP}` };
+    }
+    if (args[1] === "--help" || args[1] === "-h") {
+      const help = commandHelp(command);
+      return help
+        ? { exitCode: 0, stdout: help }
+        : { exitCode: 2, stderr: `Unknown command: ${command}\n\n${HELP}` };
+    }
+
+    if (command === "list") {
+      const { options, positionals } = parseArguments(args.slice(1), ["--stage"]);
+      if (positionals.length > 0) return { exitCode: 2, stderr: USAGE.list };
+      const rawStage = options.get("--stage");
+      const stage =
+        typeof rawStage === "string" ? parseWorkflowStage(rawStage) : null;
+      if (rawStage && !stage) {
+        throw new Error(`Unknown workflow stage. Expected one of: ${STAGE_LABELS}`);
+      }
+      const listedThreadIds = context.listThreadIds
+        ? new Set(context.listThreadIds)
+        : null;
+      const assignments = store.listState().assignments.filter(
+        (assignment) =>
+          (!listedThreadIds || listedThreadIds.has(assignment.threadId)) &&
+          (!stage || assignment.workflowStage === stage),
+      );
+      return {
+        exitCode: 0,
+        stdout: wantsJson
+          ? json(assignments.map(workflowAssignmentJson))
+          : humanWorkflowList(assignments),
+      };
+    }
+
+    if (command === "show") {
+      const { options, positionals } = parseArguments(args.slice(1), [], ["--self"]);
+      if (positionals.length > 1) return { exitCode: 2, stderr: USAGE.show };
+      const threadId = resolveRootThreadId(
+        positionals[0],
+        options.get("--self") === true,
+        context,
+      );
+      const workflow = store.get(threadId);
+      return {
+        exitCode: 0,
+        stdout: wantsJson
+          ? json(workflowLookupJson(workflow))
+          : humanWorkflow(workflow),
+      };
+    }
+
+    if (command === "update") {
+      const { options, positionals } = parseArguments(
+        args.slice(1),
+        ["--stage", "--after", "--before"],
+        ["--self"],
+      );
+      if (positionals.length > 1) return { exitCode: 2, stderr: USAGE.update };
+      const rawStage = options.get("--stage");
+      const rawAfter = options.get("--after");
+      const rawBefore = options.get("--before");
+      if (
+        typeof rawStage !== "string" &&
+        typeof rawAfter !== "string" &&
+        typeof rawBefore !== "string"
+      ) {
+        throw new Error(
+          "No changes requested. Provide --stage, --after, or --before.",
+        );
+      }
+      const threadId = resolveRootThreadId(
+        positionals[0],
+        options.get("--self") === true,
+        context,
+      );
+      const current = store.get(threadId);
+      const stage =
+        typeof rawStage === "string"
+          ? parseWorkflowStage(rawStage)
+          : current.workflowStage;
+      if (!stage) {
+        throw new Error(`Unknown workflow stage. Expected one of: ${STAGE_LABELS}`);
+      }
+
+      const warnings: string[] = [];
+      function validNeighbor(
+        flag: "--after" | "--before",
+        value: string | true | undefined,
+      ): string | null {
+        if (typeof value !== "string") return null;
+        const neighbor = store.get(value);
+        if (!neighbor.explicit || neighbor.workflowStage !== stage) {
+          warnings.push(
+            `Warning: ${flag} thread ${value} is not in workflow stage ${stage}; ignoring ${flag}.`,
+          );
+          return null;
+        }
+        return value;
+      }
+
+      const previousThreadId = validNeighbor("--after", rawAfter);
+      const nextThreadId = validNeighbor("--before", rawBefore);
+      const hasValidPosition =
+        previousThreadId !== null || nextThreadId !== null;
+      if (hasValidPosition) {
+        store.reorderThread({
+          threadId,
+          workflowStage: stage,
+          previousThreadId,
+          nextThreadId,
+          source: "cli",
+        });
+      } else if (current.workflowStage !== stage) {
+        store.setStage(threadId, stage, "cli");
+      }
+      const workflow = store.get(threadId);
+      return {
+        exitCode: 0,
+        stdout: wantsJson
+          ? json(workflowLookupJson(workflow))
+          : `Thread ${threadId} updated\n${humanWorkflow(workflow)}`,
+        ...(warnings.length > 0 ? { stderr: `${warnings.join("\n")}\n` } : {}),
+      };
+    }
+
+    return { exitCode: 2, stderr: `Unknown command: ${command}\n\n${HELP}` };
+  } catch (error) {
+    return {
+      exitCode: 1,
+      stderr: `${error instanceof Error ? error.message : String(error)}\n`,
+    };
+  }
+}

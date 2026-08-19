@@ -1,0 +1,116 @@
+# Thread workflow
+
+A bb sidebar that organizes root threads into workflow stages. It preserves
+bb's pinned-thread and subthread behavior, then groups the remaining root
+threads into manually ordered **Backlog**, **To do**, **Working**, **Blocked**,
+**Done**, and **Canceled** sections.
+
+Child threads do not have workflow stages or positions of their own. They
+always render beneath their parent, inherit the root parent's stage, and move
+with that parent. Their thread actions therefore omit workflow-stage controls.
+
+Each row shows its project's icon when the [Project
+icons](../bb-plugin-project-icons#readme) plugin is installed, so a
+stage-grouped list still tells you what a thread belongs to. Without that
+plugin the rows look as they always have.
+
+Drag root threads to reorder or change their workflow stage. Ordering uses
+fractional keys, so a move updates only the moved thread. Root threads enter
+**Working** when they start and return to **To do** when they stop, unless you
+manually move them after the transition. A thread blocked on a question or an
+approval counts as **To do** while it waits, because the next move is yours.
+
+## Install
+
+Install it from this repository's plugin collection:
+
+```sh
+bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin bb-thread-workflow
+```
+
+Then select **Thread workflow** in **Settings → Appearance → Sidebar**.
+
+Update an installed copy with:
+
+```sh
+bb plugin update bb-thread-workflow
+```
+
+## Keyboard shortcuts
+
+On a thread route, `.` chords set the open thread's workflow stage and move you
+on:
+
+| Shortcut | Workflow stage | Then                           |
+| -------: | ----------- | ------------------------------ |
+|       ⌘. | Done        | Go to the thread below it      |
+|      ⇧⌘. | To do       | Stay, or undo your last filing |
+|     ⌃⇧⌘. | Blocked     | Go to the thread below it      |
+|      ⌃⌘. | Backlog     | Go to the thread below it      |
+|      ⌥⌘. | Canceled    | Go to the thread below it      |
+
+**Working** has no chord because the workflow assigns it automatically.
+Moving a thread to **Done** does not archive it.
+
+Filing a thread moves you down the To do stage, so the chords walk it in
+place: you land on the row below the one you filed, or on the row above it
+when you file the last one. Filing a thread that was not in To do starts you at
+the top instead. Pinned threads are skipped, and when To do empties you land on
+a composer with no project selected.
+
+**⇧⌘.** brings the open thread back to To do and leaves you there. When it is
+*already* To do, the shortcut undoes instead: the thread you filed most recently
+returns to To do, in the position it held, and you go to it. Press again to
+walk further back, like reopening closed tabs. Only moves you made in bb count
+as yours, so a thread an agent filed itself stays filed.
+
+Arrow chords move the open root thread:
+
+|    Shortcut | Move                               |
+| ----------: | ---------------------------------- |
+|   ⌥⌘↑ / ⌥⌘↓ | One position within its stage     |
+| ⌥⇧⌘↑ / ⌥⇧⌘↓ | To the top or bottom of its stage |
+|   ⌃⌘↑ / ⌃⌘↓ | To the stage above or below       |
+
+A move that would leave a thread where it already is does nothing, and moving
+to another stage appends it there. Reordering moves root threads
+while keeping their entire child-thread hierarchy attached, and reorders a
+pinned root thread within the pinned section. The backend resolves each move
+and rejects workflow shortcuts on child threads, whichever sidebar is displayed.
+
+All of these shortcuts work while an input, editor, or composer has focus. They
+use exact modifier matching, ignore held-key repeats, and stop matched key
+events from propagating to downstream BB or editor handlers.
+
+## CLI
+
+```sh
+bb thread-workflow list [--stage <stage>] [--json]
+bb thread-workflow show [<thread-id> | --self] [--json]
+bb thread-workflow update [<thread-id> | --self] [--stage <stage>] [--after <thread-id>] [--before <thread-id>] [--json]
+```
+
+Workflow-stage input is case-insensitive. `update` without `--after` or `--before`
+places a thread at the bottom only when its stage changes; repeating its
+current stage is a no-op. A neighbor outside the destination stage is ignored with a
+warning.
+
+Child thread IDs are rejected because their workflow stage belongs to the root
+thread.
+
+## Development
+
+```sh
+npm run release:check
+bb plugin reload bb-thread-workflow
+```
+
+`release:check` runs the tests and typecheck, checks the committed SDK
+declarations are current, builds, and installs the packed npm artifact in a
+temporary directory to validate its contents. `dist/` is built, never
+committed. The package is not published to npm yet, but it stays publishable
+so it can be.
+
+## License
+
+[MIT](LICENSE)
