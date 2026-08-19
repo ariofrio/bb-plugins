@@ -2,6 +2,7 @@
 set -euo pipefail
 
 qa_server_url="${1:-${BB_SERVER_URL:-}}"
+qa_empty_project_name="${2:-homelab}"
 if [[ -z "$qa_server_url" ]]; then
   echo "Pass the bb server URL or set BB_SERVER_URL." >&2
   exit 1
@@ -301,4 +302,62 @@ agent-browser --session "$qa_session" eval '(() => {
     stageTop: stageRect.top,
     betweenStages,
   });
+})()'
+
+agent-browser --session "$qa_session" eval '(() => {
+  const control = document.querySelector("button[aria-label^=\"Filter threads\"]");
+  const row = control?.parentElement;
+  const stack = control?.closest("[data-sidebar-sticky-stack]");
+  if (
+    !(control instanceof HTMLElement) ||
+    !(row instanceof HTMLElement) ||
+    !(stack instanceof HTMLElement)
+  ) {
+    throw new Error("Could not find the populated-state thread filter layout.");
+  }
+  const rowRect = row.getBoundingClientRect();
+  const stackRect = stack.getBoundingClientRect();
+  window.__threadStagesExpectedFilterInsets = {
+    left: rowRect.left - stackRect.left,
+    right: stackRect.right - rowRect.right,
+  };
+  return JSON.stringify({
+    populatedFilterInsets: window.__threadStagesExpectedFilterInsets,
+  });
+})()'
+agent-browser --session "$qa_session" click \
+  'button[aria-label^="Filter threads"]' >/dev/null
+agent-browser --session "$qa_session" find role menuitemradio click \
+  --name "$qa_empty_project_name" >/dev/null
+agent-browser --session "$qa_session" wait --text \
+  "No threads in this project" >/dev/null
+agent-browser --session "$qa_session" eval '(() => {
+  const expected = window.__threadStagesExpectedFilterInsets;
+  const control = document.querySelector("button[aria-label^=\"Filter threads\"]");
+  const row = control?.parentElement;
+  const content = control?.closest("[data-sidebar=\"content\"]");
+  if (
+    typeof expected !== "object" ||
+    expected === null ||
+    !(control instanceof HTMLElement) ||
+    !(row instanceof HTMLElement) ||
+    !(content instanceof HTMLElement)
+  ) {
+    throw new Error("Could not find the empty-state thread filter layout.");
+  }
+  const rowRect = row.getBoundingClientRect();
+  const contentRect = content.getBoundingClientRect();
+  const actual = {
+    left: rowRect.left - contentRect.left,
+    right: contentRect.right - rowRect.right,
+  };
+  if (
+    Math.abs(actual.left - expected.left) > 0.25 ||
+    Math.abs(actual.right - expected.right) > 0.25
+  ) {
+    throw new Error(
+      `Empty-project filter insets are ${actual.left}px/${actual.right}px; populated-state insets are ${expected.left}px/${expected.right}px.`,
+    );
+  }
+  return JSON.stringify({ emptyProjectFilterInsets: actual });
 })()'

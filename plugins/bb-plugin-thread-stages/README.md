@@ -121,7 +121,8 @@ committed. The package is not published to npm yet, but it stays publishable
 so it can be.
 
 `qa:project-filter-hover` opens an isolated browser against `BB_SERVER_URL` and
-fails if a sticky stage shield covers the thread filter's rounded bottom edge.
+fails if a sticky stage shield covers the thread filter's rounded bottom edge
+or an empty project filter loses the sidebar's horizontal inset.
 
 ## License
 

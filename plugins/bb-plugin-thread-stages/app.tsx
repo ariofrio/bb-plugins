@@ -581,6 +581,45 @@ function SidebarMessage({
   );
 }
 
+function SidebarStageLayout({
+  children,
+  dialog,
+  error,
+  filterControl,
+  onDragEnd,
+}: {
+  children: React.ReactNode;
+  dialog: React.ReactNode;
+  error: string | null;
+  filterControl: React.ReactNode;
+  onDragEnd: (event: DragEvent<HTMLDivElement>) => void;
+}) {
+  return (
+    <div
+      data-sidebar="group"
+      data-sidebar-sticky-stack=""
+      data-sidebar-sticky-density="compact-actions"
+      className="relative flex w-full min-w-0 flex-col"
+      style={
+        {
+          "--bb-sidebar-sticky-label-top":
+            "calc(var(--bb-sidebar-sticky-stack-padding-top) + 2.75rem)",
+        } as CSSProperties
+      }
+      onDragEnd={onDragEnd}
+    >
+      {error ? (
+        <div className="mb-2 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-xs text-destructive">
+          {error}
+        </div>
+      ) : null}
+      {filterControl}
+      {children}
+      {dialog}
+    </div>
+  );
+}
+
 function WorkflowStageList({
   activeThreadId,
   onNavigate,
@@ -1162,44 +1201,31 @@ function WorkflowStageList({
   }
   if (displayThreads.length === 0) {
     return (
-      <>
-        <div className="w-full min-w-0">
-          {filterControl}
-          <SidebarMessage icon="CircleQuestion">
-            {normalizedSearch
-              ? "No matching threads"
-              : threadFilter?.kind === "project"
-                ? "No threads in this project"
-                : threadFilter?.kind === "section"
-                  ? "No threads in this section"
-                  : "No threads yet"}
-          </SidebarMessage>
-        </div>
-        {newSectionDialog}
-      </>
+      <SidebarStageLayout
+        dialog={newSectionDialog}
+        error={error}
+        filterControl={filterControl}
+        onDragEnd={clearDrag}
+      >
+        <SidebarMessage icon="CircleQuestion">
+          {normalizedSearch
+            ? "No matching threads"
+            : threadFilter?.kind === "project"
+              ? "No threads in this project"
+              : threadFilter?.kind === "section"
+                ? "No threads in this section"
+                : "No threads yet"}
+        </SidebarMessage>
+      </SidebarStageLayout>
     );
   }
-
   return (
-    <div
-      data-sidebar="group"
-      data-sidebar-sticky-stack=""
-      data-sidebar-sticky-density="compact-actions"
-      className="relative flex w-full min-w-0 flex-col"
-      style={
-        {
-          "--bb-sidebar-sticky-label-top":
-            "calc(var(--bb-sidebar-sticky-stack-padding-top) + 2.75rem)",
-        } as CSSProperties
-      }
+    <SidebarStageLayout
+      dialog={newSectionDialog}
+      error={error}
+      filterControl={filterControl}
       onDragEnd={clearDrag}
     >
-      {error ? (
-        <div className="mb-2 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-xs text-destructive">
-          {error}
-        </div>
-      ) : null}
-      {filterControl}
       <div className="space-y-4">
         {pinnedState.pinnedThreads.length > 0 ? (
           <SidebarSection
@@ -1520,8 +1546,7 @@ function WorkflowStageList({
           );
         })}
       </div>
-      {newSectionDialog}
-    </div>
+    </SidebarStageLayout>
   );
 }
 
