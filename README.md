@@ -6,31 +6,31 @@ Personal plugins for [bb](https://getbb.app).
 
 <ul type="none">
   <li>
-    <img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20" align="middle">
+    <img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20" align="absmiddle">
     <strong><a href="plugins/bb-plugin-codex-theme#readme">Codex theme</a></strong><br>
     Matches bb's palette to the OpenAI ChatGPT desktop app in light and dark
     mode.
   </li>
   <li>
-    <img src="assets/plugin-icons/zap.svg" alt="" width="20" height="20" align="middle">
+    <img src="assets/plugin-icons/zap.svg" alt="" width="20" height="20" align="absmiddle">
     <strong><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Missing keyboard shortcuts</a></strong><br>
     Adds shortcuts for starting threads, navigating history, focusing the
     primary composer, and toggling a side chat or thread terminal.
   </li>
   <li>
-    <img src="assets/plugin-icons/folder.svg" alt="" width="20" height="20" align="middle">
+    <img src="assets/plugin-icons/folder.svg" alt="" width="20" height="20" align="absmiddle">
     <strong><a href="plugins/bb-plugin-project-header-breadcrumb#readme">Project header breadcrumb</a></strong><br>
     Adds the current project and its native actions menu before each thread
     title.
   </li>
   <li>
-    <img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20" align="middle">
+    <img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20" align="absmiddle">
     <strong><a href="plugins/bb-plugin-project-icons#readme">Project icons</a></strong><br>
     Gives each project an icon and optional color, shown next to its name in
     the thread header.
   </li>
   <li>
-    <img src="assets/plugin-icons/list-todo.svg" alt="" width="20" height="20" align="middle">
+    <img src="assets/plugin-icons/list-todo.svg" alt="" width="20" height="20" align="absmiddle">
     <strong><a href="plugins/bb-plugin-thread-workflow#readme">Thread workflow</a></strong><br>
     Organizes sidebar threads into manually ordered Backlog, To do, Working,
     Blocked, Done, and Canceled workflow stages.
