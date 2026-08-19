@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { categoryLabel, iconLabel, searchIcons } from "./icon-search";
 import type { CatalogEntry } from "./icon-search";
 
-const catalog: CatalogEntry[] = [
+// searchIcons is generic over CatalogEntry, so the fixture carries the extra
+// field real catalog entries ship with.
+const catalog: Array<CatalogEntry & { export: string }> = [
   { name: "book-02", export: "Book02Icon", category: "education", tags: ["read", "library"] },
   { name: "bookmark-01", export: "Bookmark01Icon", category: "bookmark", tags: ["save"] },
   { name: "rocket", export: "RocketIcon", category: "space", tags: ["launch", "ship", "startup"] },

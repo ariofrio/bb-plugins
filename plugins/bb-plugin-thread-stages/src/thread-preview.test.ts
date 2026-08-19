@@ -32,6 +32,12 @@ const error = {
   detail: "Connection failed",
   sourceSeqEnd: 30,
 } as const;
+const turn = {
+  id: "turn",
+  kind: "turn",
+  status: "completed",
+  sourceSeqEnd: 40,
+} as const;
 
 describe("thread preview", () => {
   it("renders Markdown message content as plain-text subtitle text", () => {
@@ -98,15 +104,7 @@ describe("thread preview", () => {
 
   it("finds messages nested inside turns", () => {
     expect(
-      deriveThreadPreview([
-        {
-          id: "turn",
-          kind: "turn",
-          status: "completed",
-          sourceSeqEnd: 40,
-          children: [user, assistant],
-        },
-      ]),
+      deriveThreadPreview([{ ...turn, children: [user, assistant] }]),
     ).toBe("Latest assistant message");
   });
 
@@ -122,14 +120,14 @@ describe("thread preview", () => {
     const db = new Database(":memory:");
     for (const migration of THREAD_WORKFLOW_MIGRATIONS) db.exec(migration);
     const store = createThreadWorkflowStore(db);
-    let service: { start(signal: AbortSignal): unknown } | null = null;
-    let changed:
+    let service = null as { start(signal: AbortSignal): unknown } | null;
+    let changed = null as
       | ((event: {
           id?: string;
           changes: readonly string[];
           metadata?: { eventTypes?: readonly string[] };
         }) => void)
-      | null = null;
+      | null;
     const publish = vi.fn();
     const timeline = vi.fn(async () => ({ rows: [user, assistant] }));
     const bb = {

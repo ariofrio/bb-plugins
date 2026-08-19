@@ -18,13 +18,11 @@
       ]
     },
     "noEmit": true,
-    "skipLibCheck": false
+    "skipLibCheck": false,
+    "allowJs": true
   },
   "include": [
-    "src"
-  ],
-  "exclude": [
-    "src/**/*.test.ts",
-    "src/**/*.test.tsx"
+    "src",
+    "vitest.config.ts"
   ]
 }

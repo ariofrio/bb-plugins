@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { COLORS, SURFACES, evaluateShipped } from "../scripts/fit-palette.mjs";
 import { projectIconColor, projectIconColorStyle } from "./project-icon-colors";
+import type { ProjectIconColor } from "./store";
 
 describe("project icon colors", () => {
   it("gives every color its own lightness per mode", () => {
@@ -37,7 +38,7 @@ describe("project icon colors", () => {
   });
 
   it("covers every color the picker offers", () => {
-    for (const color of COLORS) {
+    for (const color of COLORS as ProjectIconColor[]) {
       expect(projectIconColor(color)).toMatch(/^light-dark\(oklch\(/u);
     }
   });

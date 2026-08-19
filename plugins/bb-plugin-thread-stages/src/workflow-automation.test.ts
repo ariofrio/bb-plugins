@@ -197,13 +197,12 @@ describe("task workflow", () => {
     const db = new Database(":memory:");
     for (const migration of THREAD_WORKFLOW_MIGRATIONS) db.exec(migration);
     const store = createThreadWorkflowStore(db);
-    let changed: ((event: {
-      id?: string;
-      changes: readonly string[];
-    }) => void) | null = null;
+    let changed = null as
+      | ((event: { id?: string; changes: readonly string[] }) => void)
+      | null;
     let lifecycleStatus = "stopping" as "stopping" | "idle";
     let pendingInteractions: Array<{ status: string }> = [];
-    let service: { start(signal: AbortSignal): unknown } | null = null;
+    let service = null as { start(signal: AbortSignal): unknown } | null;
     const bb = {
       events: { on: () => undefined },
       background: {
