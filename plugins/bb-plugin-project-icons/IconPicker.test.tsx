@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { CircleIcon } from "@hugeicons/core-free-icons";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -48,7 +49,10 @@ function mockMatchMedia(matches: boolean) {
   });
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 beforeEach(() => {
   mockMatchMedia(false);
@@ -261,6 +265,85 @@ describe("IconPicker", () => {
       block: "nearest",
       inline: "nearest",
     });
+  });
+
+  it("shows scroll-edge fades only where more icons are hidden", () => {
+    const resizeObservers: Array<{
+      callback: ResizeObserverCallback;
+      targets: Element[];
+    }> = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        private readonly observer: (typeof resizeObservers)[number];
+
+        constructor(callback: ResizeObserverCallback) {
+          this.observer = { callback, targets: [] };
+          resizeObservers.push(this.observer);
+        }
+
+        observe(target: Element) {
+          this.observer.targets.push(target);
+        }
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    render(
+      <IconPicker
+        catalog={catalog}
+        loading={false}
+        open
+        onOpenChange={vi.fn()}
+        projectName="Example project"
+        icon="circle"
+        defaultIcon="folder"
+        color={null}
+        onPick={vi.fn()}
+        onPickColor={vi.fn()}
+        onReset={vi.fn()}
+        trigger={<button type="button">Change icon</button>}
+      />,
+    );
+
+    const catalogRegion = screen.getByRole("region", {
+      name: "Icon catalog",
+    });
+    Object.defineProperties(catalogRegion, {
+      clientHeight: { configurable: true, value: 100 },
+      scrollHeight: { configurable: true, value: 300 },
+      scrollTop: { configurable: true, value: 0, writable: true },
+    });
+    const topFade = document.querySelector<HTMLElement>(
+      '[data-scroll-fade="top"]',
+    );
+    const bottomFade = document.querySelector<HTMLElement>(
+      '[data-scroll-fade="bottom"]',
+    );
+    expect(topFade).not.toBeNull();
+    expect(bottomFade).not.toBeNull();
+
+    act(() => {
+      const catalogObserver = resizeObservers.find(({ targets }) =>
+        targets.includes(catalogRegion),
+      );
+      if (catalogObserver === undefined) {
+        throw new Error("Catalog was not observed");
+      }
+      catalogObserver.callback([], {} as ResizeObserver);
+    });
+    expect(getComputedStyle(topFade!).opacity).toBe("0");
+    expect(getComputedStyle(bottomFade!).opacity).toBe("1");
+
+    catalogRegion.scrollTop = 100;
+    fireEvent.scroll(catalogRegion);
+    expect(getComputedStyle(topFade!).opacity).toBe("1");
+    expect(getComputedStyle(bottomFade!).opacity).toBe("1");
+
+    catalogRegion.scrollTop = 200;
+    fireEvent.scroll(catalogRegion);
+    expect(getComputedStyle(topFade!).opacity).toBe("1");
+    expect(getComputedStyle(bottomFade!).opacity).toBe("0");
   });
 
   it("opens as a non-modal editor", () => {

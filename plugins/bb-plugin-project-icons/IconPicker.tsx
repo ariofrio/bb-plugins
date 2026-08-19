@@ -66,9 +66,16 @@ export function IconPicker({
     left: false,
     right: false,
   });
+  const [catalogOverflow, setCatalogOverflow] = useState({
+    top: false,
+    bottom: false,
+  });
+  const [catalogScroller, setCatalogScroller] =
+    useState<HTMLDivElement | null>(null);
   const titleId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const categoryScrollerRef = useRef<HTMLDivElement>(null);
+  const catalogContentRef = useRef<HTMLDivElement>(null);
   const categoryChipRefs = useRef(new Map<string, HTMLButtonElement>());
   const sectionRefs = useRef(new Map<string, HTMLElement>());
   const groups = useMemo(() => groupCatalog(catalog), [catalog]);
@@ -112,6 +119,42 @@ export function IconPicker({
     window.addEventListener("resize", updateCategoryOverflow);
     return () => window.removeEventListener("resize", updateCategoryOverflow);
   }, [groups]);
+
+  const updateCatalogOverflow = (scroller = catalogScroller) => {
+    if (scroller === null) return;
+    setCatalogOverflow({
+      top: scroller.scrollTop > 1,
+      bottom:
+        scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 1,
+    });
+  };
+
+  useEffect(() => {
+    const scroller = catalogScroller;
+    if (scroller === null) return;
+    updateCatalogOverflow(scroller);
+    const handleResize = () => updateCatalogOverflow();
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(() => updateCatalogOverflow(scroller));
+    resizeObserver?.observe(scroller);
+    if (catalogContentRef.current !== null) {
+      resizeObserver?.observe(catalogContentRef.current);
+    }
+    window.addEventListener("resize", handleResize);
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [
+    catalog.length,
+    catalogScroller,
+    loading,
+    open,
+    results.length,
+    searching,
+  ]);
 
   const scrollCategories = (direction: -1 | 1) => {
     categoryScrollerRef.current?.scrollBy({
@@ -272,53 +315,71 @@ export function IconPicker({
             </nav>
           ) : null}
 
-          <div
-            role="region"
-            aria-label={searching ? "Icon search results" : "Icon catalog"}
-            className="min-h-0 flex-1 overflow-y-auto pr-1"
-            onScroll={(event) => {
-              if (!searching) trackVisibleCategory(event.currentTarget);
-            }}
-          >
-            {loading ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                Loading icons…
-              </p>
-            ) : searching && results.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                No icons match.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {visibleGroups.map(({ name, entries }) => {
-                  const headingId = `${titleId}-${name}`;
-                  return (
-                    <section
-                      key={name}
-                      ref={(node) => {
-                        if (node === null) sectionRefs.current.delete(name);
-                        else sectionRefs.current.set(name, node);
-                      }}
-                      aria-labelledby={headingId}
-                      className="scroll-mt-1 [content-visibility:auto] [contain-intrinsic-size:auto_12rem]"
-                    >
-                      <h3
-                        id={headingId}
-                        className="mb-1.5 text-xs font-medium text-muted-foreground"
-                      >
-                        {titleCase(categoryLabel(name))}
-                      </h3>
-                      <IconGrid
-                        entries={entries}
-                        icon={icon}
-                        color={color}
-                        onPick={onPick}
-                      />
-                    </section>
-                  );
-                })}
+          <div className="relative min-h-0 flex-1">
+            <div
+              ref={setCatalogScroller}
+              role="region"
+              aria-label={searching ? "Icon search results" : "Icon catalog"}
+              className="h-full overflow-y-auto pr-1"
+              onScroll={(event) => {
+                updateCatalogOverflow(event.currentTarget);
+                if (!searching) trackVisibleCategory(event.currentTarget);
+              }}
+            >
+              <div ref={catalogContentRef}>
+                {loading ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    Loading icons…
+                  </p>
+                ) : searching && results.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    No icons match.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {visibleGroups.map(({ name, entries }) => {
+                      const headingId = `${titleId}-${name}`;
+                      return (
+                        <section
+                          key={name}
+                          ref={(node) => {
+                            if (node === null) sectionRefs.current.delete(name);
+                            else sectionRefs.current.set(name, node);
+                          }}
+                          aria-labelledby={headingId}
+                          className="scroll-mt-1 [content-visibility:auto] [contain-intrinsic-size:auto_12rem]"
+                        >
+                          <h3
+                            id={headingId}
+                            className="mb-1.5 text-xs font-medium text-muted-foreground"
+                          >
+                            {titleCase(categoryLabel(name))}
+                          </h3>
+                          <IconGrid
+                            entries={entries}
+                            icon={icon}
+                            color={color}
+                            onPick={onPick}
+                          />
+                        </section>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+            <div
+              aria-hidden
+              data-scroll-fade="top"
+              style={{ opacity: catalogOverflow.top ? 1 : 0 }}
+              className="pointer-events-none absolute inset-x-0 top-0 z-10 h-6 bg-gradient-to-b from-popover to-transparent transition-opacity"
+            />
+            <div
+              aria-hidden
+              data-scroll-fade="bottom"
+              style={{ opacity: catalogOverflow.bottom ? 1 : 0 }}
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-6 bg-gradient-to-t from-popover to-transparent transition-opacity"
+            />
           </div>
         </div>
       </PopoverContent>
