@@ -233,7 +233,7 @@ export function IconPicker({
               aria-label="Remove custom icon"
               onClick={onReset}
               disabled={icon === defaultIcon && color === null}
-              className="shrink-0 rounded-md px-1.5 py-1 text-xs text-destructive transition-colors hover:bg-destructive/15 hover:text-destructive active:bg-destructive/20 disabled:invisible"
+              className="shrink-0 cursor-pointer rounded-md px-1.5 py-1 text-xs text-destructive transition-colors hover:bg-destructive/15 hover:text-destructive active:bg-destructive/20 disabled:invisible"
             >
               Remove
             </button>
@@ -264,7 +264,7 @@ export function IconPicker({
                   setQuery("");
                   searchInputRef.current?.focus();
                 }}
-                className="absolute top-1/2 right-1 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="absolute top-1/2 right-1 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 <Icon name="X" aria-hidden className="size-3.5" />
               </button>
@@ -281,7 +281,7 @@ export function IconPicker({
                 aria-label="Previous categories"
                 disabled={!categoryOverflow.left}
                 onClick={() => scrollCategories(-1)}
-                className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground disabled:opacity-30"
+                className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
               >
                 <Icon name="ChevronLeft" aria-hidden className="size-3.5" />
               </button>
@@ -308,7 +308,7 @@ export function IconPicker({
                 aria-label="Next categories"
                 disabled={!categoryOverflow.right}
                 onClick={() => scrollCategories(1)}
-                className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground disabled:opacity-30"
+                className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
               >
                 <Icon name="ChevronRight" aria-hidden className="size-3.5" />
               </button>
@@ -408,7 +408,7 @@ function ColorSwatch({
       aria-pressed={selected}
       onClick={onClick}
       style={style}
-      className={`size-5 shrink-0 rounded-full border transition-colors ${className} ${
+      className={`size-5 shrink-0 cursor-pointer rounded-full border transition-colors ${className} ${
         selected
           ? "ring-2 ring-ring ring-offset-1 ring-offset-background"
           : "border-transparent"
@@ -434,7 +434,7 @@ function CategoryChip({
       type="button"
       aria-current={active ? "true" : undefined}
       onClick={onClick}
-      className={`shrink-0 rounded-full px-2 py-0.5 text-xs transition-colors ${
+      className={`shrink-0 cursor-pointer rounded-full px-2 py-0.5 text-xs transition-colors ${
         active
           ? "bg-state-active text-foreground"
           : "text-muted-foreground hover:text-foreground"
@@ -467,7 +467,7 @@ function IconGrid({
           aria-pressed={entry.name === icon}
           onClick={() => onPick(entry.name)}
           style={projectIconColorStyle(color)}
-          className={`flex aspect-square items-center justify-center rounded-md transition-colors ${
+          className={`flex aspect-square cursor-pointer items-center justify-center rounded-md transition-colors ${
             entry.name === icon
               ? "bg-state-active"
               : color === null

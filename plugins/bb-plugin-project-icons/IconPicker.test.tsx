@@ -51,11 +51,16 @@ function mockMatchMedia(matches: boolean) {
 
 afterEach(() => {
   cleanup();
+  document.head.querySelector("[data-cursor-test-styles]")?.remove();
   vi.unstubAllGlobals();
 });
 
 beforeEach(() => {
   mockMatchMedia(false);
+  const styles = document.createElement("style");
+  styles.dataset.cursorTestStyles = "";
+  styles.textContent = ".cursor-pointer { cursor: pointer; }";
+  document.head.append(styles);
 });
 
 describe("IconPicker", () => {
@@ -209,6 +214,41 @@ describe("IconPicker", () => {
     expect(
       screen.queryByRole("button", { name: "Clear search" }),
     ).toBeNull();
+  });
+
+  it("uses the hand cursor for every popover button", () => {
+    render(
+      <IconPicker
+        catalog={catalog}
+        loading={false}
+        open
+        onOpenChange={vi.fn()}
+        projectName="Example project"
+        icon="circle"
+        defaultIcon="folder"
+        color="red"
+        onPick={vi.fn()}
+        onPickColor={vi.fn()}
+        onReset={vi.fn()}
+        trigger={<button type="button">Change icon</button>}
+      />,
+    );
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search icons" }), {
+      target: { value: "circ" },
+    });
+    const popover = screen.getByRole("dialog", {
+      name: "Icon for Example project",
+    });
+
+    const enabledButtons = within(popover)
+      .getAllByRole("button")
+      .filter((button) => !button.hasAttribute("disabled"));
+    for (const button of enabledButtons) {
+      const label =
+        button.getAttribute("aria-label") ?? button.textContent ?? "button";
+      expect(getComputedStyle(button).cursor, label).toBe("pointer");
+    }
   });
 
   it("selects the category currently at the top of the scrolling catalog", () => {
