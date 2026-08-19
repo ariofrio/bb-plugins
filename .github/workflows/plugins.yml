@@ -8,6 +8,18 @@ permissions:
   contents: read
 
 jobs:
+  release-automation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts --workspaces=false
+      - run: npm test
+
   discover:
     runs-on: ubuntu-latest
     outputs:

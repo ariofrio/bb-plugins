@@ -4,7 +4,16 @@
   "private": true,
   "license": "MIT",
   "type": "module",
+  "workspaces": [
+    "plugins/*"
+  ],
   "scripts": {
-    "install:plugins": "node scripts/install-plugins.mjs"
+    "changeset": "changeset",
+    "install:plugins": "node scripts/install-plugins.mjs",
+    "test": "node --test scripts/*.test.mjs",
+    "version:plugins": "changeset version && node scripts/sync-plugin-lockfiles.mjs"
+  },
+  "devDependencies": {
+    "@changesets/cli": "3.0.0"
   }
 }

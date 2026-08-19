@@ -1,0 +1,36 @@
+name: Version plugins
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: changesets-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts --workspaces=false
+      - uses: changesets/action@v2.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          version-script: npm run version:plugins
+          commit-message: Version plugins
+          pr-title: Version plugins
+          pr-base-branch: main
+          create-github-releases: false
+          push-git-tags: false

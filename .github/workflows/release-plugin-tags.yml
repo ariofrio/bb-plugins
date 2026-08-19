@@ -1,0 +1,71 @@
+name: Release plugin tags
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'changeset-release/main'
+    runs-on: ubuntu-latest
+    outputs:
+      releases: ${{ steps.plan.outputs.releases }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - id: plan
+        run: >-
+          node scripts/plan-plugin-releases.mjs
+          ${{ github.event.pull_request.base.sha }}
+          ${{ github.event.pull_request.merge_commit_sha }}
+
+  verify:
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        release: ${{ fromJSON(needs.plan.outputs.releases) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.release.directory }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.release.directory }}/package-lock.json
+      - run: npm ci
+      - run: npm run release:check
+
+  tag:
+    needs: [plan, verify]
+    if: needs.plan.outputs.count != '0'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - run: node scripts/create-release-tags.mjs --push
+        env:
+          RELEASES: ${{ needs.plan.outputs.releases }}
+          TARGET_SHA: ${{ github.event.pull_request.merge_commit_sha }}
