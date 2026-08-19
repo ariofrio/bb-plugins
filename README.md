@@ -54,36 +54,19 @@ npm run install:plugins
 Run the same command after a `git pull`: it installs whatever is missing, then
 rebuilds and reloads every plugin.
 
-## Releases
+### Releases
 
-User-visible plugin changes carry a Changeset created with `npm run
-changeset`. After those changes reach `main`, the Version plugins workflow
-opens or updates a release pull request with version, lockfile, and changelog
-updates. Merging that pull request runs the affected plugins' full release
-checks and creates immutable `<plugin-id>/vX.Y.Z` Git tags. Marketplace ranges
-then discover compatible releases without another listing pull request.
+Create a Changeset with `npm run changeset` for every user-visible plugin
+change. After the change reaches `main`, automation opens or updates a release
+pull request with version, lockfile, and changelog updates. Merging that pull
+request validates the affected plugins and creates immutable
+`<plugin-id>/vX.Y.Z` Git tags. Marketplace semver ranges then expose compatible
+releases without catalog changes.
 
-Every plugin owns its lockfile, pinned `bb-app` build dependency, `LICENSE`,
-`files` allowlist, and `prepublishOnly` hook, so each one builds and packages
-on its own and stays ready to publish. Two repository scripts enforce the
-shared release contract:
-
-- `scripts/verify-types.mjs` fails when a plugin's committed SDK declarations
-  are stale or edited. `bb plugin build` never rewrites `types/`, so nothing
-  else catches it.
-- `scripts/verify-package.mjs` packs the plugin, checks the tarball against the
-  files its manifest and build produce, and installs it in a temporary
-  directory to validate the installed manifest and build metadata.
-
-Both run from a plugin directory through `npm run release:check`, which builds
-before packing and which [CI](.github/workflows/plugins.yml) runs for every
-plugin. The root `package.json` carries no dependencies; it only holds
-`install:plugins`, which discovers plugin directories the same way CI does.
-
-`dist/` is generated, not committed: every way of installing a plugin builds
-it. A path install compiles the app bundle and runs the server from source, a
-git install compiles both, and `prepublishOnly` builds before `npm publish`
-packs the `files` allowlist.
+`npm run release:check` runs each plugin's tests, type checks, build, SDK
+declaration verification, and packed artifact verification.
+[CI](.github/workflows/plugins.yml) runs the same check for every plugin. Build
+output in `dist/` is generated and is not committed.
 
 ## License
 
