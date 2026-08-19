@@ -263,6 +263,31 @@ describe("ThreadFilter", () => {
     expect(screen.queryByRole("menu")).toBeNull();
   });
 
+  it("keeps the creation actions visible while the filter menu is open", () => {
+    render(
+      <ThreadFilter
+        projects={projects}
+        sections={sections}
+        value={null}
+        onChange={() => {}}
+        onNewProject={() => {}}
+        onNewSection={() => {}}
+      />,
+    );
+
+    const creationActions = document.querySelector(
+      "[data-thread-filter-actions]",
+    );
+    expect(creationActions?.getAttribute("data-state")).toBe("closed");
+
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Projects and sections" }),
+      { key: "Enter" },
+    );
+
+    expect(creationActions?.getAttribute("data-state")).toBe("open");
+  });
+
   it("shows built-in-style tooltips for the creation actions", async () => {
     render(
       <ThreadFilter

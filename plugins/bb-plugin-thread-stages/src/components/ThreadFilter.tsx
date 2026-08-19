@@ -267,7 +267,8 @@ export function ThreadFilter({
       <TooltipProvider>
         <span
           data-thread-filter-actions=""
-          className="relative z-20 flex shrink-0 items-center gap-1 opacity-0 pointer-events-none group-hover/thread-filter:opacity-100 group-hover/thread-filter:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto max-md:pointer-coarse:opacity-100 max-md:pointer-coarse:pointer-events-auto"
+          data-state={open ? "open" : "closed"}
+          className="relative z-20 flex shrink-0 items-center gap-1 opacity-0 pointer-events-none group-hover/thread-filter:opacity-100 group-hover/thread-filter:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto max-md:pointer-coarse:opacity-100 max-md:pointer-coarse:pointer-events-auto"
         >
           <ThreadFilterAction
             disabled={newProjectDisabled}
