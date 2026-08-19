@@ -1048,7 +1048,7 @@ function WorkflowStageList({
       style={
         {
           "--bb-sidebar-sticky-label-top":
-            "calc(var(--bb-sidebar-sticky-stack-padding-top) + 3.75rem)",
+            "calc(var(--bb-sidebar-sticky-stack-padding-top) + 2.75rem)",
         } as CSSProperties
       }
       onDragEnd={clearDrag}

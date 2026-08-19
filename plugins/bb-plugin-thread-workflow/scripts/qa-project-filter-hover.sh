@@ -20,12 +20,21 @@ agent-browser --session "$qa_session" wait 300 >/dev/null
 agent-browser --session "$qa_session" hover 'button[aria-label^="Filter by project"]' >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const control = document.querySelector("button[aria-label^=\"Filter by project\"]");
+  const tasksLabel = [...document.querySelectorAll("button span")].find(
+    (node) => node.textContent?.trim() === "Tasks",
+  );
+  const tasksRow = tasksLabel?.closest("button");
   const firstStage = document.querySelector("[data-sidebar-sticky-tier=\"label\"]");
-  if (!(control instanceof HTMLElement) || !(firstStage instanceof HTMLElement)) {
-    throw new Error("Could not find the project filter and first workflow stage.");
+  if (
+    !(control instanceof HTMLElement) ||
+    !(tasksRow instanceof HTMLButtonElement) ||
+    !(firstStage instanceof HTMLElement)
+  ) {
+    throw new Error("Could not find the project filter, Tasks row, and first workflow stage.");
   }
 
   const controlRect = control.getBoundingClientRect();
+  const tasksRect = tasksRow.getBoundingClientRect();
   const stageRect = firstStage.getBoundingClientRect();
   const firstSection = firstStage.closest("section");
   if (
@@ -36,6 +45,11 @@ agent-browser --session "$qa_session" eval '(() => {
   }
 
   const controlToFirstStage = stageRect.top - controlRect.bottom;
+  if (Math.abs(controlRect.height - tasksRect.height) > 0.25) {
+    throw new Error(
+      `All threads is ${controlRect.height}px tall; the built-in Tasks row is ${tasksRect.height}px.`,
+    );
+  }
   const betweenStages = Number.parseFloat(getComputedStyle(firstSection).marginBottom);
   if (Math.abs(controlToFirstStage - betweenStages) > 0.25) {
     throw new Error(
@@ -60,6 +74,8 @@ agent-browser --session "$qa_session" eval '(() => {
 
   return JSON.stringify({
     controlBottom: controlRect.bottom,
+    controlHeight: controlRect.height,
+    tasksHeight: tasksRect.height,
     controlToFirstStage,
     betweenStages,
     shieldTop,
