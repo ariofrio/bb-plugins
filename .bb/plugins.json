@@ -4,8 +4,8 @@
   "name": "ariofrio-bb-plugins",
   "plugins": [
     {
-      "name": "codex-theme",
-      "source": "./plugins/bb-plugin-codex-theme"
+      "name": "chatgpt-theme",
+      "source": "./plugins/bb-plugin-chatgpt-theme"
     },
     {
       "name": "missing-keyboard-shortcuts",

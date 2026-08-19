@@ -6,17 +6,18 @@
   "description": "Plugins for bb maintained by Andres Riofrio.",
   "plugins": [
     {
-      "id": "codex-theme",
-      "displayName": "Codex theme",
+      "id": "chatgpt-theme",
+      "displayName": "ChatGPT theme",
       "description": "Adds a light-and-dark bb theme based on the OpenAI ChatGPT desktop palette.",
       "icon": {
-        "url": "./plugins/bb-plugin-codex-theme/assets/icon.svg"
+        "url": "./plugins/bb-plugin-chatgpt-theme/assets/icon.svg"
       },
       "tags": [
         "theme",
         "appearance",
         "light",
         "dark",
+        "chatgpt",
         "codex"
       ],
       "author": {
@@ -27,9 +28,9 @@
       "source": {
         "git": {
           "url": "https://github.com/ariofrio/bb-plugins.git",
-          "subdir": "plugins/bb-plugin-codex-theme",
+          "subdir": "plugins/bb-plugin-chatgpt-theme",
           "range": "^0.1.0",
-          "tagPrefix": "codex-theme/"
+          "tagPrefix": "chatgpt-theme/"
         }
       }
     },

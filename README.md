@@ -34,8 +34,8 @@
       </td>
       <td valign="top" align="center">
         <p></p>
-        <p><img src="assets/plugin-icons/chatgpt.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-codex-theme#readme">Codex theme</a></strong></p>
-        <p>Matches bb's palette to the OpenAI ChatGPT desktop app, light and dark</p>
+        <p><img src="assets/plugin-icons/chatgpt.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-chatgpt-theme#readme">ChatGPT theme</a></strong></p>
+        <p>Matches bb's palette to the OpenAI ChatGPT (née Codex) desktop app, light and dark</p>
         <p></p>
       </td>
     </tr>
@@ -74,7 +74,7 @@ To install one plugin directly from `main`, follow its README, or select it
 from the repository's plugin collection:
 
 ```sh
-bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin codex-theme
+bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin chatgpt-theme
 ```
 
 The available collection names are listed in [.bb/plugins.json](.bb/plugins.json).

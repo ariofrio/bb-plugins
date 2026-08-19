@@ -1,5 +1,5 @@
 /*
- * codex — bb theme replicating the OpenAI Codex desktop app.
+ * chatgpt — bb theme replicating the OpenAI ChatGPT (née Codex) desktop app.
  *
  * Values were sourced from the LIVE Codex app DOM (not pixel-sampled). A match
  * is established from corresponding rendered leaves and their effective
@@ -23,7 +23,7 @@
  *
  * Role checks by driving the live app (CDP clicks + computed leaf reads):
  *   - --primary/--file-accent: corresponding general accent/icon leaves.
- *   - --codex-transcript-link: the text-bearing descendant inside actual
+ *   - --chatgpt-transcript-link: the text-bearing descendant inside actual
  *     transcript anchors, not the ordinary-foreground anchor wrapper.
  *   - --popover: opened a real [role=menu]; it renders the same oklab base as
  *     the composer (~#2d2d2d), NOT --color-token-menu-background (#363636).
@@ -64,18 +64,18 @@
   --composer-surface: #ffffff;
 
   /* Component-only values with no distinct bb token */
-  --codex-soft-border: color-mix(in oklab, var(--ink) 8%, transparent);
-  --codex-settings-control: #f6f6f6;
-  --codex-menu-surface: color-mix(in oklab, #ffffff 90%, transparent);
-  --codex-panel-surface: #ffffff;
-  --codex-button-fill: color-mix(in oklab, var(--ink) 5%, transparent);
-  --codex-button-fill-hover: color-mix(in oklab, var(--ink) 10%, transparent);
-  --codex-switch-off: color-mix(in oklab, var(--ink) 10%, transparent);
-  --codex-user-bubble: color-mix(in oklab, var(--ink) 5%, transparent);
-  --codex-inline-code: color-mix(in oklab, var(--ink) 9%, transparent);
-  --codex-worked-metadata: color-mix(in srgb, var(--ink) 65%, transparent);
-  --codex-file-path: color-mix(in srgb, var(--ink) 70%, transparent);
-  --codex-transcript-link: #2e82d2;
+  --chatgpt-soft-border: color-mix(in oklab, var(--ink) 8%, transparent);
+  --chatgpt-settings-control: #f6f6f6;
+  --chatgpt-menu-surface: color-mix(in oklab, #ffffff 90%, transparent);
+  --chatgpt-panel-surface: #ffffff;
+  --chatgpt-button-fill: color-mix(in oklab, var(--ink) 5%, transparent);
+  --chatgpt-button-fill-hover: color-mix(in oklab, var(--ink) 10%, transparent);
+  --chatgpt-switch-off: color-mix(in oklab, var(--ink) 10%, transparent);
+  --chatgpt-user-bubble: color-mix(in oklab, var(--ink) 5%, transparent);
+  --chatgpt-inline-code: color-mix(in oklab, var(--ink) 9%, transparent);
+  --chatgpt-worked-metadata: color-mix(in srgb, var(--ink) 65%, transparent);
+  --chatgpt-file-path: color-mix(in srgb, var(--ink) 70%, transparent);
+  --chatgpt-transcript-link: #2e82d2;
 
   /* Text tiers — text-secondary (65%) / text-tertiary (50%), alpha of ink */
   --muted-foreground: color-mix(in srgb, var(--ink) 65%, transparent);
@@ -153,13 +153,13 @@
   --composer-surface: color-mix(in oklab, #2d2d2d 86.4706%, transparent);
 
   /* Dark variants of component-only values */
-  --codex-settings-control: #141414;
-  --codex-soft-border: color-mix(in oklab, var(--ink) 8.2%, transparent);
-  --codex-menu-surface: #2d2d2d;
-  --codex-panel-surface: #2d2d2d;
-  --codex-inline-code: color-mix(in oklab, var(--ink) 10.7%, transparent);
-  --codex-worked-metadata: color-mix(in srgb, var(--ink) 60%, transparent);
-  --codex-transcript-link: #9ccfff;
+  --chatgpt-settings-control: #141414;
+  --chatgpt-soft-border: color-mix(in oklab, var(--ink) 8.2%, transparent);
+  --chatgpt-menu-surface: #2d2d2d;
+  --chatgpt-panel-surface: #2d2d2d;
+  --chatgpt-inline-code: color-mix(in oklab, var(--ink) 10.7%, transparent);
+  --chatgpt-worked-metadata: color-mix(in srgb, var(--ink) 60%, transparent);
+  --chatgpt-transcript-link: #9ccfff;
 
   /* input-border */
   --input: color-mix(in oklab, var(--ink) 15.7%, transparent);
@@ -255,7 +255,7 @@
 
 /* Right utility panel: Codex uses the elevated dropdown/main-control surface. */
 aside[class~="bg-sidebar"][class~="border-l"] {
-  background-color: var(--codex-panel-surface);
+  background-color: var(--chatgpt-panel-surface);
   border-color: transparent;
   box-shadow:
     -8px 0 16px -8px rgb(0 0 0 / 18%),
@@ -289,10 +289,10 @@ main[class~="bg-background"][class~="flex-1"] {
 
 /* Menus use the same fine outline language with a smaller blur. */
 [role="menu"] {
-  background-color: var(--codex-menu-surface);
+  background-color: var(--chatgpt-menu-surface);
   box-shadow:
-    0 0 0 0.5px var(--codex-soft-border),
-    0 0 0 0.5px var(--codex-soft-border),
+    0 0 0 0.5px var(--chatgpt-soft-border),
+    0 0 0 0.5px var(--chatgpt-soft-border),
     0 8px 16px -4px rgb(0 0 0 / 12%);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
@@ -312,7 +312,7 @@ div:has(> [role="tooltip"]) {
 
 /* Settings cards and their secondary copy. */
 main .rounded-lg.border.border-border.bg-card {
-  border-color: var(--codex-soft-border);
+  border-color: var(--chatgpt-soft-border);
 }
 
 main .bg-card [class~="text-subtle-foreground/75"] {
@@ -321,8 +321,8 @@ main .bg-card [class~="text-subtle-foreground/75"] {
 
 /* Select-style Settings controls. */
 main .bg-card button[aria-haspopup="menu"] {
-  background-color: var(--codex-settings-control);
-  border-color: var(--codex-soft-border);
+  background-color: var(--chatgpt-settings-control);
+  border-color: var(--chatgpt-soft-border);
   box-shadow: 0 1px 2px -1px rgb(0 0 0 / 8%);
 }
 
@@ -338,7 +338,7 @@ main .bg-card [role="switch"][data-state="checked"] {
 }
 
 main .bg-card [role="switch"][data-state="unchecked"] {
-  background-color: var(--codex-switch-off);
+  background-color: var(--chatgpt-switch-off);
   box-shadow: none;
 }
 
@@ -350,13 +350,13 @@ main .bg-card [role="switch"] > span {
 
 /* Visible Settings card actions use a faint fill and transparent border. */
 main .bg-card button[class~="border-input"][class~="bg-transparent"] {
-  background-color: var(--codex-button-fill);
+  background-color: var(--chatgpt-button-fill);
   border-color: transparent;
   color: var(--foreground);
 }
 
 main .bg-card button[class~="border-input"][class~="bg-transparent"]:hover {
-  background-color: var(--codex-button-fill-hover);
+  background-color: var(--chatgpt-button-fill-hover);
 }
 
 /* Icon-only Settings actions are tertiary until their component hover. */
@@ -372,7 +372,7 @@ main button[class~="size-7"][class~="text-muted-foreground"]:hover {
 
 /* Transcript-specific text and surfaces. */
 [data-timeline-row-list] [title^="Worked for"] > span {
-  color: var(--codex-worked-metadata);
+  color: var(--chatgpt-worked-metadata);
 }
 
 /* bb otherwise compounds the intended text/icon colors with a 40% wrapper. */
@@ -386,20 +386,20 @@ main button[class~="size-7"][class~="text-muted-foreground"]:hover {
 }
 
 [data-markdown-preview] a {
-  color: var(--codex-transcript-link);
+  color: var(--chatgpt-transcript-link);
 }
 
 [data-timeline-row-list] [data-icon="FileText"] + span > span:last-child {
-  color: var(--codex-file-path);
+  color: var(--chatgpt-file-path);
 }
 
 [data-markdown-preview] :not(pre) > code {
-  background-color: var(--codex-inline-code);
+  background-color: var(--chatgpt-inline-code);
 }
 
 /* User-message bubble and action colors. */
 [data-timeline-row-list] div[class~="rounded-xl"][class~="border-border-seam"][class~="bg-surface-recessed"] {
-  background-color: var(--codex-user-bubble);
+  background-color: var(--chatgpt-user-bubble);
 }
 
 [data-timeline-row-list] [class~="group/message"] button[class~="size-5"] {

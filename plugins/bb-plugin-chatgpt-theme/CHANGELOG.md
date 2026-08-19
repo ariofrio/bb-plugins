@@ -1,4 +1,4 @@
-# bb-plugin-codex-theme
+# bb-plugin-chatgpt-theme
 
 ## 0.1.0
 

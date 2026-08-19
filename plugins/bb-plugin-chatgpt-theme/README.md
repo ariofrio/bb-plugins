@@ -1,4 +1,4 @@
-# Codex theme
+# ChatGPT theme
 
 An unofficial [bb](https://getbb.app) theme that closely matches the OpenAI
 ChatGPT (née Codex) desktop app. Its colors and shadows are based on computed
@@ -11,24 +11,24 @@ of any elements. Those are explicitly outside its scope.
 
 **Light**
 
-![The Codex theme in bb in light mode](assets/codex-theme-light.png)
+![The ChatGPT theme in bb in light mode](assets/chatgpt-theme-light.png)
 
 **Dark**
 
-![The Codex theme in bb in dark mode](assets/codex-theme-dark.png)
+![The ChatGPT theme in bb in dark mode](assets/chatgpt-theme-dark.png)
 
 ## Install
 
 ```sh
-bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin codex-theme
-bb theme set plugin:codex-theme:codex
+bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin chatgpt-theme
+bb theme set plugin:chatgpt-theme:chatgpt
 ```
 
 Installing the plugin makes the palette available under Settings → Appearance;
 it does not activate the palette automatically. To update it later:
 
 ```sh
-bb plugin update codex-theme
+bb plugin update chatgpt-theme
 ```
 
 bb keeps light/dark appearance as a separate per-client setting; this single

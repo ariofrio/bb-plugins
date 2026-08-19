@@ -1,14 +1,14 @@
 {
-  "name": "bb-plugin-codex-theme",
+  "name": "bb-plugin-chatgpt-theme",
   "version": "0.1.0",
   "description": "Match bb's palette to the OpenAI ChatGPT desktop app.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ariofrio/bb-plugins.git",
-    "directory": "plugins/bb-plugin-codex-theme"
+    "directory": "plugins/bb-plugin-chatgpt-theme"
   },
-  "homepage": "https://github.com/ariofrio/bb-plugins/tree/main/plugins/bb-plugin-codex-theme#readme",
+  "homepage": "https://github.com/ariofrio/bb-plugins/tree/main/plugins/bb-plugin-chatgpt-theme#readme",
   "bugs": {
     "url": "https://github.com/ariofrio/bb-plugins/issues"
   },
@@ -32,7 +32,7 @@
     "bbPluginSdk": "^0.4.8"
   },
   "bb": {
-    "name": "Codex theme",
+    "name": "ChatGPT theme",
     "description": "Match bb's palette to the OpenAI ChatGPT desktop app.",
     "branding": {
       "icon": "./assets/icon.svg"
@@ -41,10 +41,10 @@
     "skills": [],
     "themes": [
       {
-        "id": "codex",
-        "name": "Codex",
+        "id": "chatgpt",
+        "name": "ChatGPT",
         "description": "Colors and shadows measured from the OpenAI ChatGPT desktop app.",
-        "css": "./themes/codex.css"
+        "css": "./themes/chatgpt.css"
       }
     ]
   },
