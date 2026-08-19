@@ -57,3 +57,33 @@ test("publishes every repository plugin from its immutable release line", async 
     );
   }
 });
+
+test("shows one description for each plugin everywhere it appears", async () => {
+  const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+  const listings = new Map(marketplace.plugins.map((plugin) => [plugin.id, plugin]));
+
+  for (const collectionPlugin of collection.plugins) {
+    const directory = collectionPlugin.source.replace(/^\.\//, "");
+    const manifest = await readJson(new URL(`../${directory}/package.json`, import.meta.url));
+    const id = derivePluginId(manifest.name);
+    const description = manifest.bb.description;
+
+    assert.equal(
+      manifest.description,
+      description,
+      `${id} package.json description must match its bb.description`,
+    );
+    assert.equal(
+      listings.get(id).description,
+      description,
+      `${id} marketplace description must match its bb.description`,
+    );
+
+    const cell = new RegExp(
+      `href="${directory.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}#readme"[^]*?<strong>([^<]*)</strong>[^]*?</p>\\s*<p>([^<]*)</p>`,
+    ).exec(readme);
+    assert.ok(cell, `README has no table cell linking to ${directory}`);
+    assert.equal(cell[1], manifest.bb.name, `${id} README heading must match its bb.name`);
+    assert.equal(cell[2], description, `${id} README description must match its bb.description`);
+  }
+});
