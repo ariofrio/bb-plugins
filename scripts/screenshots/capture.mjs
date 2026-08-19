@@ -30,6 +30,7 @@ export function cropRectangle({
   padding,
   width: fixedWidth,
   viewport,
+  align = "center",
   aspectRatio = ASPECT_RATIO,
 }) {
   let width = fixedWidth ?? box.width + padding * 2;
@@ -45,12 +46,14 @@ export function cropRectangle({
     width = height * aspectRatio;
   }
   const centerX = box.x + box.width / 2;
-  const centerY = box.y + box.height / 2;
+  // A column taller than the crop has no meaningful centre; "start" frames it
+  // from its top instead, which is where a sidebar begins.
+  const top = align === "start" ? box.y - padding : box.y + box.height / 2 - height / 2;
   return {
     width: Math.round(width),
     height: Math.round(height),
     x: Math.round(Math.min(Math.max(centerX - width / 2, 0), viewport.width - width)),
-    y: Math.round(Math.min(Math.max(centerY - height / 2, 0), viewport.height - height)),
+    y: Math.round(Math.min(Math.max(top, 0), viewport.height - height)),
   };
 }
 
@@ -338,6 +341,7 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
             box: unionBox(focusBoxes),
             padding: shot.focusPadding ?? 20,
             width: CARD_WIDTH,
+            align: shot.focusAlign,
             viewport: VIEWPORT,
           });
           frames.card[theme] = await write(CARD_FILE(theme), (path) =>

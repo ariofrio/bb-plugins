@@ -11,6 +11,11 @@ const THEME_FILES = [
   "card-dark.png",
 ];
 
+/** bb's own sidebar column, which both sidebar cards are framed from. */
+function bbSidebar(page) {
+  return page.locator('[data-sidebar="sidebar"]');
+}
+
 /** The right panel the ⇧⌘L side chat opens into. */
 function sideChatPanel(page) {
   return page
@@ -78,12 +83,11 @@ export const SHOTS = [
     highlights: (page) => [
       { locator: page.locator("[data-thread-stages-sidebar-root]"), padding: 6 },
     ],
-    // The sidebar is taller than the card, so the card frames the stages that
-    // hold threads rather than the empty ones.
-    focus: (page) => [
-      page.getByRole("region", { name: "To do" }),
-      page.getByRole("region", { name: "Working" }),
-    ],
+    // A sidebar is read from its top, so the card starts at the top of the one
+    // the plugin manages, with bb's own rows just above it left in frame,
+    // shaded, marking where bb stops and the plugin starts.
+    focus: (page) => [page.locator("[data-thread-stages-sidebar-root]")],
+    focusAlign: "start",
   },
   {
     id: "missing-keyboard-shortcuts",
@@ -142,9 +146,10 @@ export const SHOTS = [
     },
     // A palette has nothing to point at: the whole window is the change.
     highlights: () => [],
-    // The card sits on the sidebar, where the palette repaints the most per
-    // pixel — surfaces, rows, icons, and the selected thread — and reaches far
-    // enough into the thread for the diagonal to divide two surfaces.
-    focus: (page) => [page.getByRole("region", { name: "To do" })],
+    // Framed like the Thread stages card, from the top of the same sidebar,
+    // where the palette repaints the most per pixel and the diagonal still has
+    // two surfaces to divide.
+    focus: (page) => [bbSidebar(page)],
+    focusAlign: "start",
   },
 ];
