@@ -227,13 +227,7 @@ export function ThreadFilter({
                     <ThreadFilterItem
                       label="Uncategorized"
                       value="uncategorized"
-                    >
-                      <Icon
-                        name="ListView"
-                        className="size-4 shrink-0"
-                        aria-hidden
-                      />
-                    </ThreadFilterItem>
+                    />
                     {sections.map((section) => (
                       <ActionableThreadFilterItem
                         key={section.id}
@@ -580,7 +574,7 @@ function ThreadFilterItem({
   label,
   value,
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   label: string;
   value: string;
 }) {

@@ -77,6 +77,11 @@ describe("ThreadFilter", () => {
         .getByRole("menuitemradio", { name: "All projects and sections" })
         .querySelector('[data-icon="FolderLibrary"]'),
     ).not.toBeNull();
+    expect(
+      within(menu)
+        .getByRole("menuitemradio", { name: "Uncategorized" })
+        .querySelector("svg"),
+    ).toBeNull();
   });
 
   it("shows the selected project or section icon in the trigger", () => {
