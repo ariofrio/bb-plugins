@@ -42,6 +42,7 @@ import {
   ThreadIndicator,
 } from "./components/ThreadIndicator";
 import { SplitPaneMiniMap } from "./components/SplitPaneMiniMap";
+import { ProjectFilter } from "./components/ProjectFilter";
 import { ThreadRenameDialog } from "./components/ThreadRenameDialog";
 import { createNativeCommandDelegate } from "./native-command-delegation";
 import { notifyNativeShortcutHandled } from "./native-command-hints";
@@ -66,10 +67,15 @@ import {
   effectiveHierarchyParentId,
   flattenThreadHierarchy,
 } from "./thread-hierarchy";
+import {
+  filterThreadsByProject,
+  normalizeProjectFilter,
+} from "./project-filter";
 
 const COLLAPSED_STATUSES_STORAGE_KEY =
   "bb.plugin.workflow-stage.collapsedStatuses";
 const COLLAPSED_THREADS_STORAGE_KEY = "bb.sidebar.collapsedThreads";
+const PROJECT_FILTER_STORAGE_KEY = "bb.plugin.thread-workflow.projectFilter";
 const PINNED_SECTION = "Pinned" as const;
 type SidebarGroup = WorkflowStage | typeof PINNED_SECTION;
 const COLLAPSIBLE_SECTION_SET: ReadonlySet<string> = new Set([
@@ -564,6 +570,12 @@ function WorkflowStageList({
   );
   const [mutationPending, setMutationPending] = useState(false);
   const [pinnedThreadIds, setPinnedThreadIds] = useState<readonly string[]>([]);
+  const [storedProjectFilter, setStoredProjectFilter] = useState<string | null>(
+    () =>
+      typeof window === "undefined"
+        ? null
+        : window.localStorage.getItem(PROJECT_FILTER_STORAGE_KEY),
+  );
   const wasConnected = useRef(false);
   const syncInFlight = useRef(false);
 
@@ -640,6 +652,29 @@ function WorkflowStageList({
     () => sidebar.projects.map((project) => project.id).sort().join(","),
     [sidebar.projects],
   );
+  const projectFilter = useMemo(
+    () => normalizeProjectFilter(storedProjectFilter, sidebar.projects),
+    [sidebar.projects, storedProjectFilter],
+  );
+  useEffect(() => {
+    if (
+      sidebar.status !== "ready" ||
+      storedProjectFilter === null ||
+      projectFilter !== null
+    ) {
+      return;
+    }
+    setStoredProjectFilter(null);
+    window.localStorage.removeItem(PROJECT_FILTER_STORAGE_KEY);
+  }, [projectFilter, sidebar.status, storedProjectFilter]);
+  const changeProjectFilter = useCallback((projectId: string | null) => {
+    setStoredProjectFilter(projectId);
+    if (projectId === null) {
+      window.localStorage.removeItem(PROJECT_FILTER_STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(PROJECT_FILTER_STORAGE_KEY, projectId);
+    }
+  }, []);
   const [projectIcons, setProjectIcons] = useState<
     ReadonlyMap<string, ProjectIconView>
   >(new Map());
@@ -777,7 +812,7 @@ function WorkflowStageList({
     };
   }, [normalizedSearch, rpc, searchQuery]);
 
-  const displayThreads = useMemo(() => {
+  const unfilteredDisplayThreads = useMemo(() => {
     if (!normalizedSearch) return rootThreads;
     if (search.query !== normalizedSearch || search.status !== "ready") return [];
     const liveThreads = new Map(
@@ -792,6 +827,10 @@ function WorkflowStageList({
     ];
     return withThreadAncestors(matches, allThreads);
   }, [normalizedSearch, search, sidebar.threads, rootThreads]);
+  const displayThreads = useMemo(
+    () => filterThreadsByProject(unfilteredDisplayThreads, projectFilter),
+    [projectFilter, unfilteredDisplayThreads],
+  );
   const pinnedState = useMemo(
     () => buildPinnedThreadState(displayThreads, pinnedThreadIds),
     [displayThreads, pinnedThreadIds],
@@ -964,9 +1003,23 @@ function WorkflowStageList({
   }
   if (displayThreads.length === 0) {
     return (
-      <SidebarMessage icon="CircleQuestion">
-        {normalizedSearch ? "No matching threads" : "No threads yet"}
-      </SidebarMessage>
+      <div className="w-full min-w-0">
+        {sidebar.projects.length > 1 ? (
+          <ProjectFilter
+            projectIcons={projectIcons}
+            projects={sidebar.projects}
+            value={projectFilter}
+            onChange={changeProjectFilter}
+          />
+        ) : null}
+        <SidebarMessage icon="CircleQuestion">
+          {normalizedSearch
+            ? "No matching threads"
+            : projectFilter
+              ? "No threads in this project"
+              : "No threads yet"}
+        </SidebarMessage>
+      </div>
     );
   }
 
@@ -982,6 +1035,14 @@ function WorkflowStageList({
         <div className="mb-2 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-xs text-destructive">
           {error}
         </div>
+      ) : null}
+      {sidebar.projects.length > 1 ? (
+        <ProjectFilter
+          projectIcons={projectIcons}
+          projects={sidebar.projects}
+          value={projectFilter}
+          onChange={changeProjectFilter}
+        />
       ) : null}
       <div className="space-y-4">
         {pinnedState.pinnedThreads.length > 0 ? (

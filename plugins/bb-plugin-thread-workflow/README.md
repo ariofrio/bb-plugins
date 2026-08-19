@@ -14,6 +14,10 @@ icons](../bb-plugin-project-icons#readme) plugin is installed, so a
 stage-grouped list still tells you what a thread belongs to. Without that
 plugin the rows look as they always have.
 
+Use the project filter above the workflow to focus the whole sidebar—including
+pinned and search results—on one project. The selection is stored only in the
+current browser and does not change workflow assignments or synchronization.
+
 Drag root threads to reorder or change their workflow stage. Ordering uses
 fractional keys, so a move updates only the moved thread. Root threads enter
 **Working** when they start and return to **To do** when they stop, unless you
