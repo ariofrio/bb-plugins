@@ -36,7 +36,11 @@ async function openFeaturedThread(page) {
   await page.goto(new URL(href, page.url()).toString(), {
     waitUntil: "networkidle",
   });
-  await page.getByText("Dashboard polish is in place.").waitFor();
+  // Exactly, because the sidebar row previews the same reply, at greater
+  // length, and either match would otherwise be ambiguous.
+  await page
+    .getByText("Dashboard polish is in place.", { exact: true })
+    .waitFor();
   await page.waitForTimeout(600);
 }
 

@@ -33,14 +33,6 @@ export const THREADS = [
       "Polish the analytics dashboard. Improve the metric cards, add keyboard navigation, and verify the loading state.",
     reply:
       "Dashboard polish is in place.\n\n- Refined metric formatting and loading states\n- Added keyboard-focus coverage\n- Verified all 18 dashboard tests pass",
-    children: [
-      {
-        title: "Audit keyboard navigation",
-        prompt: "Audit keyboard navigation across the dashboard.",
-        reply:
-          "Every dashboard control is reachable by keyboard, and focus order follows the visual order.",
-      },
-    ],
   },
   {
     project: "Payments API",
@@ -90,29 +82,19 @@ export const THREADS = [
 /** Asked in the side chat the keyboard-shortcut screenshot opens. */
 export const SIDE_CHAT_QUESTION = "What did the dashboard pass end up covering?";
 
-/** Every thread answers from its own entry, plus the turns bb starts itself. */
+/** Every thread answers from its own entry, plus the side chat a shot opens. */
 export const TRANSCRIPTS = [
-  ...THREADS.flatMap((thread) => [thread, ...(thread.children ?? [])]).map(
-    ({ prompt, reply, hang }) => ({
-      prompt,
-      ...(hang ? { hang } : {}),
-      updates: [chunk(reply)],
-    }),
-  ),
+  ...THREADS.map(({ prompt, reply, hang }) => ({
+    prompt,
+    ...(hang ? { hang } : {}),
+    updates: [chunk(reply)],
+  })),
   {
     prompt: SIDE_CHAT_QUESTION,
     updates: [
       chunk(
         "The metric cards, the focus order, and the loading states. Eighteen dashboard tests cover them.",
       ),
-    ],
-  },
-  {
-    // bb tells a parent thread when its child finishes, which starts one more
-    // turn; without a reply for it the parent would end on a stray "Done."
-    prompt: "[bb system]*",
-    updates: [
-      chunk("Keyboard navigation checks out too, so the dashboard work is complete."),
     ],
   },
   { prompt: "*", updates: [chunk("Done.")] },
@@ -201,7 +183,7 @@ export function seed({ stack, workspaceRoot, bb }) {
   }
 
   const threads = new Map();
-  const spawn = (spec, project, parentThreadId) => {
+  const spawn = (spec, project) => {
     const created = runJson([
       "thread",
       "spawn",
@@ -224,26 +206,18 @@ export function seed({ stack, workspaceRoot, bb }) {
       "accept-edits",
       "--prompt",
       spec.prompt,
-      ...(parentThreadId ? ["--parent-thread", parentThreadId] : []),
     ]);
     threads.set(spec.title, created);
     return created;
   };
 
-  for (const spec of THREADS) {
-    const project = projects.get(spec.project);
-    const thread = spawn(spec, project);
-    for (const child of spec.children ?? []) spawn(child, project, thread.id);
-  }
+  for (const spec of THREADS) spawn(spec, projects.get(spec.project));
 
   // Thread stages moves a thread itself while its turn runs, so hand-set
   // stages only stick once every answered thread has settled.
   for (const spec of THREADS) {
     if (spec.stage === null) continue;
     run(["thread", "wait", threads.get(spec.title).id, "--status", "idle"]);
-    for (const child of spec.children ?? []) {
-      run(["thread", "wait", threads.get(child.title).id, "--status", "idle"]);
-    }
   }
   for (const spec of THREADS) {
     if (spec.stage === null) continue;
