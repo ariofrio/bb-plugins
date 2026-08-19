@@ -100,7 +100,7 @@
         "git": {
           "url": "https://github.com/ariofrio/bb-plugins.git",
           "subdir": "plugins/bb-plugin-thread-stages",
-          "range": "^0.5.0",
+          "range": "^0.6.0",
           "tagPrefix": "thread-stages/"
         }
       }
