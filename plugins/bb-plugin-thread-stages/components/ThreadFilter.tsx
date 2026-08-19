@@ -102,58 +102,66 @@ export function ThreadFilter({
               <ThreadFilterItem label="All threads" value="">
                 <Icon name="FilterMail" className="size-4 shrink-0" aria-hidden />
               </ThreadFilterItem>
-              <DropdownMenu.Label className={LABEL_CLASS}>
-                Projects
-              </DropdownMenu.Label>
-              <DropdownMenu.Group>
-                {projects.map((project) => {
-                  const icon = projectIcons.get(project.id);
-                  return (
-                    <ThreadFilterItem
-                      key={project.id}
-                      label={project.name}
-                      value={`project:${project.id}`}
-                    >
-                      {icon ? (
-                        <HugeiconsIcon
-                          icon={icon.glyph}
-                          className="size-4 shrink-0"
-                          style={
-                            icon.color === null
-                              ? undefined
-                              : { color: icon.color }
-                          }
-                          aria-hidden
-                        />
-                      ) : (
+              {projects.length > 0 ? (
+                <>
+                  <DropdownMenu.Label className={LABEL_CLASS}>
+                    Projects
+                  </DropdownMenu.Label>
+                  <DropdownMenu.Group>
+                    {projects.map((project) => {
+                      const icon = projectIcons.get(project.id);
+                      return (
+                        <ThreadFilterItem
+                          key={project.id}
+                          label={project.name}
+                          value={`project:${project.id}`}
+                        >
+                          {icon ? (
+                            <HugeiconsIcon
+                              icon={icon.glyph}
+                              className="size-4 shrink-0"
+                              style={
+                                icon.color === null
+                                  ? undefined
+                                  : { color: icon.color }
+                              }
+                              aria-hidden
+                            />
+                          ) : (
+                            <Icon
+                              name="Folder"
+                              className="size-4 shrink-0"
+                              aria-hidden
+                            />
+                          )}
+                        </ThreadFilterItem>
+                      );
+                    })}
+                  </DropdownMenu.Group>
+                </>
+              ) : null}
+              {sections.length > 0 ? (
+                <>
+                  <DropdownMenu.Label className={LABEL_CLASS}>
+                    Sections
+                  </DropdownMenu.Label>
+                  <DropdownMenu.Group>
+                    {sections.map((section) => (
+                      <ThreadFilterItem
+                        key={section.id}
+                        label={section.name}
+                        value={`section:${section.id}`}
+                      >
                         <Icon
-                          name="Folder"
+                          name="ListView"
                           className="size-4 shrink-0"
                           aria-hidden
                         />
-                      )}
-                    </ThreadFilterItem>
-                  );
-                })}
-              </DropdownMenu.Group>
-              <DropdownMenu.Label className={LABEL_CLASS}>
-                Sections
-              </DropdownMenu.Label>
-              <DropdownMenu.Group>
-                {sections.map((section) => (
-                  <ThreadFilterItem
-                    key={section.id}
-                    label={section.name}
-                    value={`section:${section.id}`}
-                  >
-                    <Icon
-                      name="ListView"
-                      className="size-4 shrink-0"
-                      aria-hidden
-                    />
-                  </ThreadFilterItem>
-                ))}
-              </DropdownMenu.Group>
+                      </ThreadFilterItem>
+                    ))}
+                  </DropdownMenu.Group>
+                </>
+              ) : null}
             </DropdownMenu.RadioGroup>
             <DropdownMenu.Separator className="-mx-1 my-1 h-px bg-border" />
             <DropdownMenu.CheckboxItem

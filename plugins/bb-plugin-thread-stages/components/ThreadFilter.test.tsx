@@ -86,6 +86,36 @@ describe("ThreadFilter", () => {
     expect(onChange).toHaveBeenNthCalledWith(2, null);
   });
 
+  it("omits project and section groups independently when they are empty", () => {
+    const sharedProps = {
+      value: null,
+      showStageCounts: true,
+      onChange: () => {},
+      onNewProject: () => {},
+      onNewSection: () => {},
+      onShowStageCountsChange: () => {},
+    } as const;
+    const { rerender } = render(
+      <ThreadFilter {...sharedProps} projects={[]} sections={sections} />,
+    );
+
+    fireEvent.keyDown(screen.getByRole("button", { name: "Filter threads" }), {
+      key: "Enter",
+    });
+    expect(screen.queryByText("Projects")).toBeNull();
+    expect(screen.getByText("Sections")).toBeDefined();
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    rerender(
+      <ThreadFilter {...sharedProps} projects={projects} sections={[]} />,
+    );
+    fireEvent.keyDown(screen.getByRole("button", { name: "Filter threads" }), {
+      key: "Enter",
+    });
+    expect(screen.getByText("Projects")).toBeDefined();
+    expect(screen.queryByText("Sections")).toBeNull();
+  });
+
   it("runs the two creation actions without opening the filter menu", () => {
     const onNewProject = vi.fn();
     const onNewSection = vi.fn();
