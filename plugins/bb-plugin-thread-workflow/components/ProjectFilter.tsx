@@ -64,7 +64,7 @@ export function ProjectFilter({
             )}
             <span className="truncate">{label}</span>
             <Icon
-              name="ArrowUpDown"
+              name="ArrowDown"
               className="ml-auto size-3.5 shrink-0 text-subtle-foreground/70"
               aria-hidden
             />
