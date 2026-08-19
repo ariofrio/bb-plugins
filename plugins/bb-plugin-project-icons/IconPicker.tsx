@@ -467,7 +467,7 @@ function IconGrid({
           aria-pressed={entry.name === icon}
           onClick={() => onPick(entry.name)}
           style={projectIconColorStyle(color)}
-          className={`flex aspect-square cursor-pointer items-center justify-center rounded-md transition-colors ${
+          className={`flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors ${
             entry.name === icon
               ? "bg-state-active"
               : color === null

@@ -21,7 +21,10 @@ beforeEach(() => {
   }));
   const styles = document.createElement("style");
   styles.dataset.cursorTestStyles = "";
-  styles.textContent = ".cursor-pointer { cursor: pointer; }";
+  styles.textContent = `
+    .cursor-pointer { cursor: pointer; }
+    .size-7 { width: 28px; height: 28px; }
+  `;
   document.head.append(styles);
 });
 
@@ -42,7 +45,7 @@ describe("project icon app registration", () => {
     });
   });
 
-  it("uses the hand cursor for the editable project icon", async () => {
+  it("matches the standard header control size and cursor", async () => {
     document.body.innerHTML = `
       <header>
         <div>
@@ -88,7 +91,10 @@ describe("project icon app registration", () => {
     const trigger = await screen.findByRole("button", {
       name: "Icon for Example project",
     });
-    expect(getComputedStyle(trigger).cursor).toBe("pointer");
+    const style = getComputedStyle(trigger);
+    expect(style.cursor).toBe("pointer");
+    expect(style.width).toBe("28px");
+    expect(style.height).toBe("28px");
     slot.lifecycle.unmount();
   });
 });

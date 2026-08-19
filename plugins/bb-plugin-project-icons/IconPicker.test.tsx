@@ -59,7 +59,10 @@ beforeEach(() => {
   mockMatchMedia(false);
   const styles = document.createElement("style");
   styles.dataset.cursorTestStyles = "";
-  styles.textContent = ".cursor-pointer { cursor: pointer; }";
+  styles.textContent = `
+    .cursor-pointer { cursor: pointer; }
+    .size-7 { width: 28px; height: 28px; }
+  `;
   document.head.append(styles);
 });
 
@@ -249,6 +252,11 @@ describe("IconPicker", () => {
         button.getAttribute("aria-label") ?? button.textContent ?? "button";
       expect(getComputedStyle(button).cursor, label).toBe("pointer");
     }
+
+    const iconButton = within(popover).getByRole("button", { name: "circle" });
+    const iconButtonStyle = getComputedStyle(iconButton);
+    expect(iconButtonStyle.width).toBe("28px");
+    expect(iconButtonStyle.height).toBe("28px");
   });
 
   it("selects the category currently at the top of the scrolling catalog", () => {
