@@ -27,7 +27,7 @@
         <p></p>
       </td>
       <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-project-breadcrumbs#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/card-dark.png"><img src="plugins/bb-plugin-project-breadcrumbs/assets/card-light.png" alt="The Atlas project and its actions menu in a bb thread header" width="100%"></picture></a></p>
+        <p><a href="plugins/bb-plugin-project-breadcrumbs#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/card-dark.png"><img src="plugins/bb-plugin-project-breadcrumbs/assets/card-light.png" alt="The Storefront project and its actions menu in a bb thread header" width="100%"></picture></a></p>
         <p><a href="plugins/bb-plugin-project-breadcrumbs#readme"><img src="plugins/bb-plugin-project-breadcrumbs/assets/icon.svg" alt="" width="40" height="40"><br><strong>Project breadcrumbs</strong></a></p>
         <p>Show and manage a thread's project from its header.</p>
         <p></p>
@@ -41,7 +41,7 @@
     </tr>
     <tr>
       <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-project-icons#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-icons/assets/card-dark.png"><img src="plugins/bb-plugin-project-icons/assets/card-light.png" alt="The icon picker open on the Atlas project's icon in a bb thread header" width="100%"></picture></a></p>
+        <p><a href="plugins/bb-plugin-project-icons#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-icons/assets/card-dark.png"><img src="plugins/bb-plugin-project-icons/assets/card-light.png" alt="The icon picker open on the Storefront project's icon in a bb thread header" width="100%"></picture></a></p>
         <p><a href="plugins/bb-plugin-project-icons#readme"><img src="plugins/bb-plugin-project-icons/assets/icon.svg" alt="" width="40" height="40"><br><strong>Project icons</strong></a></p>
         <p>Give each project an icon and color.</p>
         <p></p>

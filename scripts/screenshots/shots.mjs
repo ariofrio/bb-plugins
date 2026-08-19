@@ -36,12 +36,12 @@ export const SHOTS = [
       await openFeaturedThread(page);
       // The open menu marks the header aria-hidden, so the trigger has to be
       // found by attribute rather than by role.
-      await page.locator('[aria-label="Atlas actions"]').click();
+      await page.locator('[aria-label="Storefront actions"]').click();
       await page.getByRole("menu").waitFor();
       await page.waitForTimeout(400);
     },
     highlights: (page) => [
-      { locator: page.locator('[aria-label="Atlas actions"]') },
+      { locator: page.locator('[aria-label="Storefront actions"]') },
       { locator: page.getByRole("menu") },
     ],
   },
@@ -51,18 +51,18 @@ export const SHOTS = [
     outputs: THEME_FILES,
     async prepare({ page }) {
       await openFeaturedThread(page);
-      await page.locator('[aria-label="Icon for Atlas"]').click();
+      await page.locator('[aria-label="Icon for Storefront"]').click();
       await page.getByRole("dialog").waitFor();
       await page.waitForTimeout(600);
     },
     highlights: (page) => [
-      { locator: page.locator('[aria-label="Icon for Atlas"]') },
+      { locator: page.locator('[aria-label="Icon for Storefront"]') },
       { locator: page.getByRole("dialog") },
     ],
     // The picker is taller than the card, so the card frames its top: the
     // header icon it belongs to, the colors, and the search field.
     focus: (page) => [
-      page.locator('[aria-label="Icon for Atlas"]'),
+      page.locator('[aria-label="Icon for Storefront"]'),
       page.getByPlaceholder("Search icons"),
     ],
   },

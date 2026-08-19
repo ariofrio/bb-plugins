@@ -6,30 +6,39 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+/**
+ * Three projects a reader can place at a glance, each with the icon its own
+ * work suggests rather than a color on the default folder.
+ */
 export const PROJECTS = [
-  { name: "Atlas", icon: "satellite-03", color: "blue" },
-  { name: "Relay", icon: "share-08", color: "teal" },
-  { name: "Orbit", icon: "orbit-01", color: "purple" },
+  { name: "Storefront", icon: "store-01", color: "blue" },
+  { name: "Payments API", icon: "api", color: "teal" },
+  { name: "Docs site", icon: "book-open-01", color: "purple" },
 ];
+
+/** bb's own project for threads that belong to no repository. */
+export const PERSONAL_PROJECT_ID = "proj_personal";
 
 // Stage names match the Thread stages plugin's CLI vocabulary.
 export const THREADS = [
   {
-    project: "Atlas",
+    project: "Storefront",
     title: "Polish analytics dashboard",
-    stage: "Done",
+    // The thread the shots open, in the stage a thread sits in most of the
+    // time: bb returns a thread to To do the moment its turn ends.
+    stage: "To do",
     prompt:
       "Polish the analytics dashboard. Improve the metric cards, add keyboard navigation, and verify the loading state.",
     children: [{ title: "Audit keyboard navigation", prompt: "Audit keyboard navigation across the dashboard." }],
   },
   {
-    project: "Atlas",
+    project: "Storefront",
     title: "Add loading-state tests",
     stage: "To do",
     prompt: "Add tests for the dashboard's loading states.",
   },
   {
-    project: "Relay",
+    project: "Payments API",
     title: "Investigate webhook retries",
     // Its turn never ends, which is how the fixture keeps one thread running
     // and one stage occupied by a thread bb placed there itself.
@@ -37,22 +46,30 @@ export const THREADS = [
     prompt: "Investigate why webhook retries stall after the third attempt.",
   },
   {
-    project: "Relay",
+    project: "Payments API",
     title: "Harden events API",
     stage: "Blocked",
     prompt: "Harden the events API against duplicate deliveries.",
   },
   {
-    project: "Orbit",
+    project: "Docs site",
     title: "Draft release notes",
-    stage: "To do",
+    stage: "Done",
     prompt: "Draft the release notes for this milestone.",
   },
   {
-    project: "Orbit",
+    project: "Docs site",
     title: "Sketch onboarding tour",
     stage: "Backlog",
     prompt: "Sketch an onboarding tour for first-run users.",
+  },
+  {
+    // Not every thread belongs to a repository; this one is bb's personal
+    // project, which the sidebar and the icons both treat differently.
+    project: null,
+    title: "Compare managed Postgres plans",
+    stage: "To do",
+    prompt: "Compare managed Postgres plans for a small production app.",
   },
 ];
 
@@ -101,6 +118,14 @@ export const TRANSCRIPTS = [
   {
     prompt: THREADS[5].prompt,
     updates: [chunk("Sketched a four-step tour that introduces projects, threads, and environments.")],
+  },
+  {
+    prompt: THREADS[6].prompt,
+    updates: [
+      chunk(
+        "For this size, the shared tiers on Neon and Supabase both cover it, and Neon's branching is the one that pays off during migrations.",
+      ),
+    ],
   },
   {
     prompt: SIDE_CHAT_QUESTION,
@@ -175,7 +200,7 @@ export function seed({ stack, workspaceRoot, bb }) {
 
   const projects = new Map();
   for (const project of PROJECTS) {
-    const root = join(workspaceRoot, project.name.toLowerCase());
+    const root = join(workspaceRoot, project.name.toLowerCase().replace(/ /gu, "-"));
     mkdirSync(root, { recursive: true });
     execFileSync("git", ["init", "--quiet", "--initial-branch=main"], { cwd: root });
     writeFileSync(join(root, "README.md"), `# ${project.name}\n`);
@@ -209,11 +234,12 @@ export function seed({ stack, workspaceRoot, bb }) {
       "thread",
       "spawn",
       "--project",
-      project.id,
-      "--machine",
-      "screenshots",
-      "--environment",
-      project.root,
+      // A personal thread has no repository to run in; bb provisions its
+      // workspace itself, so it names neither a machine nor an environment.
+      project?.id ?? PERSONAL_PROJECT_ID,
+      ...(project
+        ? ["--machine", "screenshots", "--environment", project.root]
+        : []),
       "--provider",
       `acp-${AGENT.id}`,
       "--model",

@@ -8,7 +8,7 @@ bb-plugins  >  Add project breadcrumbs
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshot-dark.png">
-  <img src="assets/screenshot-light.png" alt="The Atlas project and its actions menu in a bb thread header">
+  <img src="assets/screenshot-light.png" alt="The Storefront project and its actions menu in a bb thread header">
 </picture>
 
 The project name uses the same muted, hoverable treatment as bb's project

@@ -10,7 +10,7 @@ appear everywhere at once.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshot-dark.png">
-  <img src="assets/screenshot-light.png" alt="The icon picker open on the Atlas project's icon in a bb thread header">
+  <img src="assets/screenshot-light.png" alt="The icon picker open on the Storefront project's icon in a bb thread header">
 </picture>
 
 The icon comes from [Hugeicons](https://hugeicons.com), the same set bb itself
