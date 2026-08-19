@@ -110,9 +110,33 @@ agent-browser --session "$qa_session" eval '(() => {
     );
   }
 
-  const opacity = Number.parseFloat(getComputedStyle(toggle).opacity);
-  if (opacity !== 1) {
-    throw new Error(`Expanded stage toggle opacity is ${opacity}; expected 1.`);
+  const toggleStyle = getComputedStyle(toggle);
+  const opacity = Number.parseFloat(toggleStyle.opacity);
+  if (opacity !== 0 || toggleStyle.pointerEvents !== "none") {
+    throw new Error(
+      `Expanded stage toggle away from hover has opacity ${opacity} and pointer events ${toggleStyle.pointerEvents}; expected the built-in hidden state.`,
+    );
+  }
+  if (
+    Math.abs(toggleRect.width - 24) > 0.25 ||
+    Math.abs(toggleRect.height - 24) > 0.25
+  ) {
+    throw new Error(
+      `Stage toggle is ${toggleRect.width}x${toggleRect.height}px; expected the built-in 24x24px control.`,
+    );
+  }
+  const icon = toggle.querySelector("svg");
+  if (!(icon instanceof SVGElement)) {
+    throw new Error("Could not find the workflow stage chevron icon.");
+  }
+  const iconRect = icon.getBoundingClientRect();
+  if (
+    Math.abs(iconRect.width - 12) > 0.25 ||
+    Math.abs(iconRect.height - 12) > 0.25
+  ) {
+    throw new Error(
+      `Stage chevron is ${iconRect.width}x${iconRect.height}px; expected the built-in 12x12px icon.`,
+    );
   }
 
   if (
@@ -124,8 +148,34 @@ agent-browser --session "$qa_session" eval '(() => {
 
   return JSON.stringify({
     labelToToggle,
-    toggleOpacity: opacity,
+    expandedAwayOpacity: opacity,
+    expandedAwayPointerEvents: toggleStyle.pointerEvents,
+    toggleSize: toggleRect.width,
+    iconSize: iconRect.width,
     countIsRightAligned: count instanceof HTMLElement,
+  });
+})()'
+
+agent-browser --session "$qa_session" hover \
+  '[data-sidebar-sticky-tier="label"]' >/dev/null
+agent-browser --session "$qa_session" wait 100 >/dev/null
+agent-browser --session "$qa_session" eval '(() => {
+  const toggle = document.querySelector(
+    "[data-sidebar-sticky-tier=\"label\"] button[aria-label^=\"Collapse \"]",
+  );
+  if (!(toggle instanceof HTMLButtonElement)) {
+    throw new Error("Could not find the expanded workflow stage toggle on hover.");
+  }
+  const style = getComputedStyle(toggle);
+  const opacity = Number.parseFloat(style.opacity);
+  if (opacity !== 1 || style.pointerEvents !== "auto") {
+    throw new Error(
+      `Expanded stage toggle on hover has opacity ${opacity} and pointer events ${style.pointerEvents}; expected the built-in revealed state.`,
+    );
+  }
+  return JSON.stringify({
+    expandedHoverOpacity: opacity,
+    expandedHoverPointerEvents: style.pointerEvents,
   });
 })()'
 

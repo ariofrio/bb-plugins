@@ -459,7 +459,7 @@ function SidebarSection({
                 ? `Expand ${label} section`
                 : `Collapse ${label} section`
             }
-            className="relative z-10 inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
+            className={`${collapsed ? "" : "bb-sidebar-hover-actions"} relative z-20 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring transition-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2`}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
