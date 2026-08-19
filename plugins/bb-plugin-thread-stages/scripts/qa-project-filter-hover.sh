@@ -361,3 +361,39 @@ agent-browser --session "$qa_session" eval '(() => {
   }
   return JSON.stringify({ emptyProjectFilterInsets: actual });
 })()'
+agent-browser --session "$qa_session" eval '(() => {
+  const control = document.querySelector("button[aria-label^=\"Projects and sections\"]");
+  const controlIcon = control?.querySelector("svg");
+  const controlLabel = control?.querySelector("span");
+  const messageLabel = [...document.querySelectorAll("span")].find(
+    (node) => node.textContent?.trim() === "No threads in this project",
+  );
+  const messageRow = messageLabel?.parentElement;
+  const messageIcon = messageRow?.querySelector("svg");
+  if (
+    !(controlIcon instanceof SVGElement) ||
+    !(controlLabel instanceof HTMLElement) ||
+    !(messageIcon instanceof SVGElement) ||
+    !(messageLabel instanceof HTMLElement)
+  ) {
+    throw new Error("Could not find the thread filter and empty-state contents.");
+  }
+  const controlIconLeft = controlIcon.getBoundingClientRect().left;
+  const controlLabelLeft = controlLabel.getBoundingClientRect().left;
+  const messageIconLeft = messageIcon.getBoundingClientRect().left;
+  const messageLabelLeft = messageLabel.getBoundingClientRect().left;
+  if (
+    Math.abs(messageIconLeft - controlIconLeft) > 0.25 ||
+    Math.abs(messageLabelLeft - controlLabelLeft) > 0.25
+  ) {
+    throw new Error(
+      `Empty-state content starts at ${messageIconLeft}px/${messageLabelLeft}px; thread filter content starts at ${controlIconLeft}px/${controlLabelLeft}px.`,
+    );
+  }
+  return JSON.stringify({
+    emptyProjectContentLeft: {
+      icon: messageIconLeft,
+      label: messageLabelLeft,
+    },
+  });
+})()'

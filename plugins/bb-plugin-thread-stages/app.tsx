@@ -557,7 +557,7 @@ function SidebarMessage({
   isLoading?: boolean;
 }) {
   return (
-    <div className="mx-2 flex min-h-8 items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
+    <div className="flex min-h-8 items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
       <Icon
         name={icon}
         className={`size-4 shrink-0 ${isLoading ? "animate-spin" : ""}`}
