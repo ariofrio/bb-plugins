@@ -127,7 +127,7 @@ function ContextMenuItems(props: CommonMenuProps) {
       {workflowStage === null ? null : (
         <ContextMenu.Sub>
           <ContextMenu.SubTrigger disabled={disabled} className={ITEM_CLASS}>
-            <Icon name="ListTodo" aria-hidden />
+            <Icon name="Progress02" aria-hidden />
             Move to stage
             <Icon name="ChevronRight" className="ml-auto" aria-hidden />
           </ContextMenu.SubTrigger>
@@ -258,7 +258,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
       {workflowStage === null ? null : (
         <DropdownMenu.Sub>
           <DropdownMenu.SubTrigger disabled={disabled} className={ITEM_CLASS}>
-            <Icon name="ListTodo" aria-hidden />
+            <Icon name="Progress02" aria-hidden />
             Move to stage
             <Icon name="ChevronRight" className="ml-auto" aria-hidden />
           </DropdownMenu.SubTrigger>

@@ -9,7 +9,6 @@ import {
   Cancel01Icon,
   CheckmarkCircle02Icon,
   CheckmarkSquare02Icon,
-  CheckListIcon,
   CircleIcon,
   Clock05Icon,
   DashedLineCircleIcon,
@@ -42,6 +41,7 @@ import {
 import {
   ClockSquareIcon,
   DashedSquareIcon,
+  Progress02Icon,
   SectionAddIcon,
 } from "./composed-icons";
 
@@ -71,7 +71,6 @@ const ICONS = {
   DashedCircle: DashedLineCircleIcon,
   DashedSquare: DashedSquareIcon,
   Diamond: DiamondIcon,
-  ListTodo: CheckListIcon,
   ListView: ListViewIcon,
   Loading: Loading03Icon,
   Mail: Mail01Icon,
@@ -79,6 +78,7 @@ const ICONS = {
   MoreHorizontal: MoreHorizontalIcon,
   Pin: PinIcon,
   PinOff: PinOffIcon,
+  Progress02: Progress02Icon,
   Search: Search01Icon,
   Settings: Settings02Icon,
   SectionAdd: SectionAddIcon,

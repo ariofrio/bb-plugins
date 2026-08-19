@@ -82,7 +82,12 @@ describe("ThreadActionsDropdown", () => {
     expect(screen.getByText("Mark read")).toBeDefined();
     expect(screen.getByText("Pin")).toBeDefined();
     expect(screen.getByText("Rename")).toBeDefined();
-    expect(screen.getByText("Move to stage")).toBeDefined();
+    const moveToStageItem = screen
+      .getByText("Move to stage")
+      .closest('[role="menuitem"]');
+    expect(
+      moveToStageItem?.querySelector("svg")?.getAttribute("data-icon"),
+    ).toBe("Progress02");
     const moveToSectionItem = screen
       .getByText("Move to section")
       .closest('[role="menuitem"]');

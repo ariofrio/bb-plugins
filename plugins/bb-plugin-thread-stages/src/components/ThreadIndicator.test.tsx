@@ -51,6 +51,16 @@ describe("ThreadIndicator", () => {
     const rendered = render(<ThreadIndicator indicator="none" label={null} />);
     expect(rendered.container.innerHTML).toBe("");
   });
+
+  it("uses the plugin progress icon for plan mode", () => {
+    const rendered = render(
+      <ThreadIndicator indicator="plan-mode" label="Planning" />,
+    );
+
+    expect(
+      rendered.container.querySelector("svg")?.getAttribute("data-icon"),
+    ).toBe("Progress02");
+  });
 });
 
 describe("groupIndicator", () => {

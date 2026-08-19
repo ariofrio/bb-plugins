@@ -52,7 +52,7 @@ export function ThreadIndicator({
     case "background-command":
       return <WorkingIcon name="Terminal" label={ariaLabel} />;
     case "plan-mode":
-      return <WorkingIcon name="ListTodo" label={ariaLabel} />;
+      return <WorkingIcon name="Progress02" label={ariaLabel} />;
     case "goal":
       return <WorkingIcon name="Target" label={ariaLabel} />;
     case "draft":
@@ -90,7 +90,7 @@ function WorkingIcon({
   name,
   label,
 }: {
-  name: "Workflow" | "UserRoundPlus" | "Terminal" | "ListTodo" | "Target";
+  name: "Workflow" | "UserRoundPlus" | "Terminal" | "Progress02" | "Target";
   label: string | undefined;
 }) {
   return (
