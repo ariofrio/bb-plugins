@@ -1,27 +1,48 @@
-# bb-plugins
+# ariofrio's bb plugins
 
 Personal plugins for [bb](https://getbb.app).
 
 ## Plugins
 
-<img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20" align="absmiddle"> **[Codex theme](plugins/bb-plugin-codex-theme#readme)**<br>
-Matches bb's palette to the OpenAI ChatGPT desktop app in light and dark
-mode.
-
-<img src="assets/plugin-icons/zap.svg" alt="" width="20" height="20" align="absmiddle"> **[Missing keyboard shortcuts](plugins/bb-plugin-missing-keyboard-shortcuts#readme)**<br>
-Adds shortcuts for starting threads, navigating history, focusing the primary
-composer, and toggling a side chat or thread terminal.
-
-<img src="assets/plugin-icons/folder.svg" alt="" width="20" height="20" align="absmiddle"> **[Project header breadcrumb](plugins/bb-plugin-project-header-breadcrumb#readme)**<br>
-Adds the current project and its native actions menu before each thread title.
-
-<img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20" align="absmiddle"> **[Project icons](plugins/bb-plugin-project-icons#readme)**<br>
-Gives each project an icon and optional color, shown next to its name in the
-thread header.
-
-<img src="assets/plugin-icons/list-todo.svg" alt="" width="20" height="20" align="absmiddle"> **[Thread workflow](plugins/bb-plugin-thread-workflow#readme)**<br>
-Organizes sidebar threads into manually ordered Backlog, To do, Working,
-Blocked, Done, and Canceled workflow stages.
+<table>
+  <thead>
+    <tr>
+      <th align="left" width="33%">Organization</th>
+      <th align="left" width="33%">Navigation</th>
+      <th align="left" width="33%">Themes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td valign="top">
+        <p>
+          <img src="assets/plugin-icons/list-todo.svg" alt="" width="20" height="20" align="absmiddle"> <strong><a href="plugins/bb-plugin-thread-workflow#readme">Thread workflow</a></strong><br>
+          Organizes sidebar threads into manually ordered Backlog, To do, Working, Blocked, Done, and Canceled workflow stages.
+        </p>
+        <p>
+          <img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20" align="absmiddle"> <strong><a href="plugins/bb-plugin-project-icons#readme">Project icons</a></strong><br>
+          Gives each project an icon and optional color, shown next to its name in the thread header.
+        </p>
+      </td>
+      <td valign="top">
+        <p>
+          <img src="assets/plugin-icons/zap.svg" alt="" width="20" height="20" align="absmiddle"> <strong><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Missing keyboard shortcuts</a></strong><br>
+          Adds shortcuts for starting threads, navigating history, focusing the primary composer, and toggling a side chat or thread terminal.
+        </p>
+        <p>
+          <img src="assets/plugin-icons/folder.svg" alt="" width="20" height="20" align="absmiddle"> <strong><a href="plugins/bb-plugin-project-header-breadcrumb#readme">Project header breadcrumb</a></strong><br>
+          Adds the current project and its native actions menu before each thread title.
+        </p>
+      </td>
+      <td valign="top">
+        <p>
+          <img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20" align="absmiddle"> <strong><a href="plugins/bb-plugin-codex-theme#readme">Codex theme</a></strong><br>
+          Matches bb's palette to the OpenAI ChatGPT desktop app in light and dark mode.
+        </p>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 ## Install
 
