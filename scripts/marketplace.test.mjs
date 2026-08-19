@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { satisfies } from "semver";
 
 import { derivePluginId } from "./plugin-id.mjs";
 
@@ -35,13 +36,18 @@ test("publishes every repository plugin from its immutable release line", async 
       github: "ariofrio",
       url: "https://github.com/ariofrio",
     });
-    assert.deepEqual(listing.source, {
+    const { range, ...source } = listing.source.git;
+    assert.deepEqual({ git: source }, {
       git: {
         url: "https://github.com/ariofrio/bb-plugins.git",
         subdir: directory,
-        range: `^${manifest.version}`,
         tagPrefix: `${id}/`,
       },
     });
+    assert.equal(
+      satisfies(manifest.version, range),
+      true,
+      `${id} version ${manifest.version} must satisfy marketplace range ${range}`,
+    );
   }
 });
