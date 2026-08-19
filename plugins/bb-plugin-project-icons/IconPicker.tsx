@@ -189,7 +189,7 @@ export function IconPicker({
               aria-label="Remove custom icon"
               onClick={onReset}
               disabled={icon === defaultIcon && color === null}
-              className="shrink-0 rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground disabled:invisible"
+              className="shrink-0 rounded-md px-1.5 py-1 text-xs text-destructive transition-colors hover:bg-destructive/15 hover:text-destructive active:bg-destructive/20 disabled:invisible"
             >
               Remove
             </button>
