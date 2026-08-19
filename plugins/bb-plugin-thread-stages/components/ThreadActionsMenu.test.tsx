@@ -166,7 +166,7 @@ describe("ThreadActionsDropdown", () => {
 
     fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
     fireEvent.click(screen.getByText("Move to section"));
-    expect(screen.getByText("No section")).toBeDefined();
+    expect(screen.getByText("Uncategorized")).toBeDefined();
     expect(screen.getByText("Now")).toBeDefined();
     expect(screen.getByText("Later")).toBeDefined();
     const newSectionItem = screen
@@ -180,7 +180,7 @@ describe("ThreadActionsDropdown", () => {
 
     fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
     fireEvent.click(screen.getByText("Move to section"));
-    fireEvent.click(screen.getByText("No section"));
+    fireEvent.click(screen.getByText("Uncategorized"));
     expect(onSetSection).toHaveBeenCalledWith(null);
 
     view.rerender(
@@ -203,7 +203,7 @@ describe("ThreadActionsDropdown", () => {
     );
     fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
     fireEvent.click(screen.getByText("Move to section"));
-    fireEvent.click(screen.getByText("No section"));
+    fireEvent.click(screen.getByText("Uncategorized"));
     expect(onSetSection).toHaveBeenCalledTimes(2);
 
     fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
@@ -281,6 +281,7 @@ describe("ThreadActionsContextMenu", () => {
     const parentMenu = screen.getByRole("menu", { name: "Thread actions" });
     fireEvent.click(screen.getByText("Move to section"));
 
+    expect(screen.getByText("Uncategorized")).toBeDefined();
     expect(screen.getByText("Later")).toBeDefined();
     expect(screen.getByText("New section")).toBeDefined();
     expect(parentMenu.contains(screen.getByText("New section"))).toBe(false);

@@ -178,7 +178,7 @@ function ContextMenuItems(props: CommonMenuProps) {
                   <Icon name="Check" aria-hidden />
                 ) : null}
               </span>
-              No section
+              Uncategorized
             </ContextMenu.Item>
             {props.sections.map((section) => (
               <ContextMenu.Item
@@ -309,7 +309,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
                   <Icon name="Check" aria-hidden />
                 ) : null}
               </span>
-              No section
+              Uncategorized
             </DropdownMenu.Item>
             {props.sections.map((section) => (
               <DropdownMenu.Item
