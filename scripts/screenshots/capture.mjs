@@ -16,7 +16,7 @@ export const VIEWPORT = { width: 1280, height: 900 };
 export const CARD_WIDTH = 560;
 export const THEMES = ["light", "dark"];
 
-export const FULL_WINDOW_FILE = (theme) => `screenshot-${theme}.png`;
+export const FULL_WINDOW_FILE = (theme, name = "screenshot") => `${name}-${theme}.png`;
 export const CARD_FILE = (theme) => `card-${theme}.png`;
 
 /** The mode a split shot pairs with the one it is named for. */
@@ -411,6 +411,9 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
         };
         const takeFullWindow = ({ page }) =>
           page.screenshot({ clip: { x: 0, y: 0, ...VIEWPORT } });
+        // A shot of the whole collection has no card and nothing to focus on,
+        // so it never measures one.
+        const wantsCard = outputs[CARD_FILE(theme)] !== undefined;
         if (shot.card === undefined) {
           const [fullWindow, card] = await render({
             browser,
@@ -419,7 +422,10 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
             shot,
             theme,
             async take(frame) {
-              return [await takeFullWindow(frame), await takeCard(frame, VIEWPORT)];
+              return [
+                await takeFullWindow(frame),
+                wantsCard ? await takeCard(frame, VIEWPORT) : undefined,
+              ];
             },
           });
           frames.fullWindow[theme] = fullWindow;
@@ -452,7 +458,12 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
       for (const theme of shot.themes ?? THEMES) {
         const other = OTHER_THEME[theme];
         for (const [name, frame, taken, size] of [
-          [FULL_WINDOW_FILE(theme), WINDOW_FRAME, frames.fullWindow, VIEWPORT],
+          [
+            FULL_WINDOW_FILE(theme, shot.fileName),
+            WINDOW_FRAME,
+            frames.fullWindow,
+            VIEWPORT,
+          ],
           [CARD_FILE(theme), CARD_FRAME, frames.card, frames.card.clip],
         ]) {
           if (outputs[name] === undefined) continue;

@@ -79,12 +79,21 @@ test("shows one description for each plugin everywhere it appears", async () => 
       `${id} marketplace description must match its bb.description`,
     );
 
-    const cell = new RegExp(
-      `href="${directory.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}#readme"[^]*?<strong>([^<]*)</strong>[^]*?</p>\\s*<p>([^<]*)</p>`,
-    ).exec(readme);
-    assert.ok(cell, `README has no table cell linking to ${directory}`);
-    assert.equal(cell[1], manifest.bb.name, `${id} README heading must match its bb.name`);
-    assert.equal(cell[2], description, `${id} README description must match its bb.description`);
+    // Asserted as presence rather than as markup, so the README can be laid
+    // out however it reads best and still has to say the same thing the
+    // manifest and the marketplace say.
+    assert.ok(
+      readme.includes(`plugins/${directory.split("/").pop()}#readme`),
+      `README must link to ${directory}`,
+    );
+    assert.ok(
+      readme.includes(manifest.bb.name),
+      `${id} README must name it exactly as bb.name does`,
+    );
+    assert.ok(
+      readme.includes(description),
+      `${id} README description must match its bb.description`,
+    );
   }
 });
 

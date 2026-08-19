@@ -46,6 +46,20 @@ async function openFeaturedThread(page) {
 
 export const SHOTS = [
   {
+    // The collection, not a plugin: one window with four of the five at work —
+    // the stage sidebar, a project icon on every row and in the header, and the
+    // project the thread belongs to before its title. Nothing is shaded here,
+    // because nothing is being pointed at.
+    id: "collection",
+    plugin: null,
+    fileName: "hero",
+    outputs: ["hero-light.png", "hero-dark.png"],
+    async prepare({ page }) {
+      await openFeaturedThread(page);
+    },
+    highlights: () => [],
+  },
+  {
     id: "project-breadcrumbs",
     plugin: "bb-plugin-project-breadcrumbs",
     outputs: THEME_FILES,

@@ -51,23 +51,32 @@ function parseArguments(argv) {
 }
 
 function shotFiles(shot) {
-  const pluginDirectory = join(repositoryRoot, "plugins", shot.plugin);
   return Object.fromEntries(
-    shot.outputs.map((output) => [
-      output,
-      join(pluginDirectory, "assets", output),
-    ]),
+    shot.outputs.map((output) => [output, join(assetsDirectory(shot), output)]),
   );
+}
+
+/** A shot of the whole collection belongs to the repository, not to a plugin. */
+function assetsDirectory(shot) {
+  return shot.plugin === null
+    ? join(repositoryRoot, "assets")
+    : join(repositoryRoot, "plugins", shot.plugin, "assets");
+}
+
+function pluginDirectoriesFor(shot) {
+  const directory = (plugin) => join(repositoryRoot, "plugins", plugin);
+  return shot.plugin === null
+    ? SHOTS.flatMap((each) => (each.plugin === null ? [] : [directory(each.plugin)]))
+    : [directory(shot.plugin)];
 }
 
 function expectedLock() {
   const shotsEntry = {};
   for (const shot of SHOTS) {
-    const pluginDirectory = join(repositoryRoot, "plugins", shot.plugin);
     shotsEntry[shot.id] = {
       inputs: inputDigest({
         repositoryRoot,
-        pluginDirectory,
+        pluginDirectories: pluginDirectoriesFor(shot),
         harnessDirectory,
       }),
       files: Object.fromEntries(
