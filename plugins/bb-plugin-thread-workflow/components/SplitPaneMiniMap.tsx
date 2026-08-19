@@ -1,4 +1,4 @@
-import type { PluginSidebarThreadSplit } from "@bb/plugin-sdk/app";
+import type { PluginSidebarThreadSplit } from "@get-bb/plugin-sdk/app";
 
 export function SplitPaneMiniMap({
   layout,

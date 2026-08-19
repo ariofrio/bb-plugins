@@ -9,7 +9,7 @@ import {
   type PluginSidebarThread,
   type PluginSidebarThreadActions,
   type PluginThreadListProps,
-} from "@bb/plugin-sdk/app";
+} from "@get-bb/plugin-sdk/app";
 import {
   useCallback,
   useEffect,

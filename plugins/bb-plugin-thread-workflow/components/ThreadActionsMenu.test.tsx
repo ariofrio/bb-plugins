@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type {
   PluginSidebarThread,
   PluginSidebarThreadActions,
-} from "@bb/plugin-sdk/app";
+} from "@get-bb/plugin-sdk/app";
 import {
   ThreadActionsContextMenu,
   ThreadActionsDropdown,

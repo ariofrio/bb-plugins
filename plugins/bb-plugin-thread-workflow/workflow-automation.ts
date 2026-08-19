@@ -1,4 +1,4 @@
-import type { BbPluginApi } from "@bb/plugin-sdk";
+import type { BbPluginApi } from "@get-bb/plugin-sdk";
 import { listAllThreads } from "./list-all-threads";
 import type { ThreadWorkflowStore } from "./store";
 

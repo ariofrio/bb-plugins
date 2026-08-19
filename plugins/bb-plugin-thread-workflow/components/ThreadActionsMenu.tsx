@@ -4,7 +4,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type {
   PluginSidebarThread,
   PluginSidebarThreadActions,
-} from "@bb/plugin-sdk/app";
+} from "@get-bb/plugin-sdk/app";
 import { WORKFLOW_STAGES, type WorkflowStage } from "../workflow-stage";
 import { portalScopeProps } from "../lib/portal-scope";
 import { Icon, type IconName } from "./Icon";

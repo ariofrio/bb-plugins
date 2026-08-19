@@ -1,4 +1,4 @@
-import type { PluginSidebarThreadsState } from "@bb/plugin-sdk/app";
+import type { PluginSidebarThreadsState } from "@get-bb/plugin-sdk/app";
 
 export function shouldSyncThreads({
   hasOrganization,

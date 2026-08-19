@@ -1,7 +1,7 @@
 import type {
   PluginSidebarThread,
   PluginSidebarThreadIndicator,
-} from "@bb/plugin-sdk/app";
+} from "@get-bb/plugin-sdk/app";
 import { Icon } from "./Icon";
 
 export function hasIndicator(
