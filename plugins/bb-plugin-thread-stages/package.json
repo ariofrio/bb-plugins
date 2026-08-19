@@ -24,9 +24,10 @@
   "scripts": {
     "build": "bb plugin build",
     "qa:project-filter-hover": "bash scripts/qa-project-filter-hover.sh",
+    "verify:lockfile": "npm ci --workspaces=false --ignore-scripts --dry-run --no-audit --no-fund --loglevel=error",
     "verify:types": "node ../../scripts/verify-types.mjs",
     "verify:package": "node ../../scripts/verify-package.mjs",
-    "release:check": "npm test && npm run typecheck && npm run verify:types && npm run build && npm run verify:package",
+    "release:check": "npm run verify:lockfile && npm test && npm run typecheck && npm run verify:types && npm run build && npm run verify:package",
     "prepublishOnly": "npm run release:check",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
