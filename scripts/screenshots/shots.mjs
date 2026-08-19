@@ -137,13 +137,10 @@ export const SHOTS = [
   {
     id: "chatgpt-theme",
     plugin: "bb-plugin-chatgpt-theme",
-    outputs: [
-      "screenshot-light.png",
-      "screenshot-dark.png",
-      "screenshot.png",
-      "card.png",
-    ],
-    // The two palettes meet along the diagonal in one image for the README.
+    outputs: THEME_FILES,
+    // The palette has no light-mode screenshot and dark-mode screenshot to
+    // choose between: each of its files shows both palettes, meeting along the
+    // diagonal, with the mode it is named for in the top-left corner.
     split: true,
     // The palette is server state, so it is switched on for this shot only and
     // switched back after it, leaving every other shot on bb's own default.

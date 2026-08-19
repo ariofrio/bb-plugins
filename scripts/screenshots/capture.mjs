@@ -18,8 +18,9 @@ export const THEMES = ["light", "dark"];
 
 export const FULL_WINDOW_FILE = (theme) => `screenshot-${theme}.png`;
 export const CARD_FILE = (theme) => `card-${theme}.png`;
-export const SPLIT_FULL_WINDOW_FILE = "screenshot.png";
-export const SPLIT_CARD_FILE = "card.png";
+
+/** The mode a split shot pairs with the one it is named for. */
+const OTHER_THEME = { light: "dark", dark: "light" };
 
 /**
  * Grows a box into a 16:9 window that stays inside the viewport, so shots of
@@ -266,17 +267,18 @@ export async function openApp({ browser, stack, theme, viewport, style }) {
 }
 
 /**
- * Joins a light and a dark capture along the diagonal, which is how the theme
- * plugin shows both of its palettes in one README cell.
+ * Joins two captures along the diagonal, which is how the theme plugin shows
+ * both of its palettes in one image. The base holds the top-left triangle, so
+ * a reader meets the mode they are already in and sees the other alongside it.
  */
-async function writeDiagonalSplit({ browser, light, dark, output, size }) {
+async function writeDiagonalSplit({ browser, base, corner, output, size }) {
   const context = await browser.newContext({ viewport: size, deviceScaleFactor: 2 });
   const sheet = await context.newPage();
   await sheet.setContent(
     `<body style="margin:0"><canvas id="c" width="${size.width * 2}" height="${size.height * 2}" style="width:${size.width}px;height:${size.height}px;display:block"></canvas></body>`,
   );
   await sheet.evaluate(
-    async ({ lightUrl, darkUrl }) => {
+    async ({ baseUrl, cornerUrl }) => {
       const load = (url) =>
         new Promise((resolve) => {
           const image = new Image();
@@ -285,7 +287,7 @@ async function writeDiagonalSplit({ browser, light, dark, output, size }) {
         });
       const canvas = document.getElementById("c");
       const drawing = canvas.getContext("2d");
-      drawing.drawImage(await load(lightUrl), 0, 0);
+      drawing.drawImage(await load(baseUrl), 0, 0);
       drawing.save();
       drawing.beginPath();
       drawing.moveTo(canvas.width, 0);
@@ -293,12 +295,12 @@ async function writeDiagonalSplit({ browser, light, dark, output, size }) {
       drawing.lineTo(0, canvas.height);
       drawing.closePath();
       drawing.clip();
-      drawing.drawImage(await load(darkUrl), 0, 0);
+      drawing.drawImage(await load(cornerUrl), 0, 0);
       drawing.restore();
     },
     {
-      lightUrl: `data:image/png;base64,${light.toString("base64")}`,
-      darkUrl: `data:image/png;base64,${dark.toString("base64")}`,
+      baseUrl: `data:image/png;base64,${base.toString("base64")}`,
+      cornerUrl: `data:image/png;base64,${corner.toString("base64")}`,
     },
   );
   mkdirSync(dirname(output), { recursive: true });
@@ -311,7 +313,9 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
   const captured = [];
   try {
     for (const shot of shots) {
-      const files = shotFiles(shot);
+      // A split shot's own frames are ingredients: each output pairs one mode's
+      // frame with the other's, so nothing is written until both exist.
+      const files = shot.split ? {} : shotFiles(shot);
       await shot.setup?.({ fixture, stack });
       const frames = { fullWindow: {}, card: {} };
       for (const theme of shot.themes ?? THEMES) {
@@ -378,26 +382,22 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
         });
       }
       if (shot.split) {
-        if (files[SPLIT_FULL_WINDOW_FILE] !== undefined) {
-          await writeDiagonalSplit({
-            browser,
-            light: frames.fullWindow.light,
-            dark: frames.fullWindow.dark,
-            output: files[SPLIT_FULL_WINDOW_FILE],
-            size: VIEWPORT,
-          });
-        }
-        if (files[SPLIT_CARD_FILE] !== undefined) {
-          await writeDiagonalSplit({
-            browser,
-            light: frames.card.light,
-            dark: frames.card.dark,
-            output: files[SPLIT_CARD_FILE],
-            size: {
-              width: frames.card.clip.width,
-              height: frames.card.clip.height,
-            },
-          });
+        const outputs = shotFiles(shot);
+        for (const theme of shot.themes ?? THEMES) {
+          const other = OTHER_THEME[theme];
+          for (const [name, taken, size] of [
+            [FULL_WINDOW_FILE(theme), frames.fullWindow, VIEWPORT],
+            [CARD_FILE(theme), frames.card, frames.card.clip],
+          ]) {
+            if (outputs[name] === undefined) continue;
+            await writeDiagonalSplit({
+              browser,
+              base: taken[theme],
+              corner: taken[other],
+              output: outputs[name],
+              size: { width: size.width, height: size.height },
+            });
+          }
         }
       }
       await shot.teardown?.({ fixture, stack });

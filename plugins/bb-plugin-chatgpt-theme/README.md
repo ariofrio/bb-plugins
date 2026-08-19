@@ -9,17 +9,13 @@ of any elements. Those are explicitly outside its scope.
 
 ## Preview
 
-The palette follows the app's light and dark mode; this page shows the one your
-GitHub theme matches.
+Both palettes at once, meeting along the diagonal, with the mode this page is
+being read in in the top-left corner.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshot-dark.png">
-  <img src="assets/screenshot-light.png" alt="bb wearing the ChatGPT palette">
+  <img src="assets/screenshot-light.png" alt="bb wearing the ChatGPT palette, its light and dark halves meeting along the diagonal">
 </picture>
-
-Both at once, split along the diagonal:
-
-![bb wearing the ChatGPT palette, light above the diagonal and dark below it](assets/screenshot.png)
 
 ## Install
 

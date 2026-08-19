@@ -33,7 +33,7 @@
         <p></p>
       </td>
       <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-chatgpt-theme#readme"><img src="plugins/bb-plugin-chatgpt-theme/assets/card.png" alt="bb wearing the ChatGPT palette, light above the diagonal and dark below it" width="100%"></a></p>
+        <p><a href="plugins/bb-plugin-chatgpt-theme#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-dark.png"><img src="plugins/bb-plugin-chatgpt-theme/assets/card-light.png" alt="bb wearing the ChatGPT palette, its light and dark halves meeting along the diagonal" width="100%"></picture></a></p>
         <p><a href="plugins/bb-plugin-chatgpt-theme#readme"><img src="plugins/bb-plugin-chatgpt-theme/assets/icon.svg" alt="" width="40" height="40"><br><strong>ChatGPT theme</strong></a></p>
         <p>Restyle bb to match the OpenAI ChatGPT (Codex) desktop app.</p>
         <p></p>
