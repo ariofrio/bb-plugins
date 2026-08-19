@@ -2,6 +2,8 @@
 
 <p align="center"><strong>Plugins for <a href="https://getbb.app">bb</a>, the agent IDE that builds itself</strong></p>
 
+<br>
+
 <table>
   <thead>
     <tr>
