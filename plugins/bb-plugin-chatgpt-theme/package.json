@@ -1,6 +1,6 @@
 {
   "name": "bb-plugin-chatgpt-theme",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Match bb's palette to the OpenAI ChatGPT desktop app.",
   "license": "MIT",
   "repository": {
