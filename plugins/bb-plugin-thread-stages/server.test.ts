@@ -1,5 +1,5 @@
 import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import plugin from "./server";
 
 const disposeHosts: Array<() => Promise<void>> = [];
@@ -20,11 +20,14 @@ describe("thread stages plugin API", () => {
     const harness = createPluginHarness();
 
     expect(harness.inspection.registrations.rpcMethods).toEqual([
+      "createSectionForThread",
+      "listSections",
       "listState",
       "listPreviews",
       "listPinnedThreadIds",
       "reorderPinnedThread",
       "searchThreads",
+      "setThreadSection",
       "syncThreads",
       "moveThread",
       "setWorkflowStage",
@@ -40,6 +43,93 @@ describe("thread stages plugin API", () => {
       "thread.deleted": 1,
       "thread.failed": 1,
       "thread.idle": 1,
+    });
+  });
+
+  it("lists the sections available to thread actions", async () => {
+    const list = vi.fn(async () => [
+      { id: "section_1", name: "Now", createdAt: 1, updatedAt: 2 },
+      { id: "section_2", name: "Later", createdAt: 3, updatedAt: 4 },
+    ]);
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: { threadSections: { list } },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("listSections", null),
+    ).resolves.toEqual({
+      sections: [
+        { id: "section_1", name: "Now" },
+        { id: "section_2", name: "Later" },
+      ],
+    });
+    expect(list).toHaveBeenCalledWith();
+  });
+
+  it("assigns and clears a thread section through the bb SDK", async () => {
+    const update = vi.fn(async () => ({}));
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: { threads: { update } },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("setThreadSection", {
+        threadId: "thr_1",
+        sectionId: "section_1",
+      }),
+    ).resolves.toEqual({ sectionId: "section_1" });
+    await expect(
+      host.harness.behavior.callRpc("setThreadSection", {
+        threadId: "thr_1",
+        sectionId: null,
+      }),
+    ).resolves.toEqual({ sectionId: null });
+    expect(update).toHaveBeenNthCalledWith(1, {
+      threadId: "thr_1",
+      sectionId: "section_1",
+    });
+    expect(update).toHaveBeenNthCalledWith(2, {
+      threadId: "thr_1",
+      sectionId: null,
+    });
+  });
+
+  it("creates a section and assigns the requesting thread", async () => {
+    const create = vi.fn(async () => ({
+      id: "section_new",
+      name: "Waiting",
+      createdAt: 1,
+      updatedAt: 1,
+    }));
+    const update = vi.fn(async () => ({}));
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: {
+        threadSections: { create },
+        threads: { update },
+      },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("createSectionForThread", {
+        threadId: "thr_1",
+        name: "  Waiting  ",
+      }),
+    ).resolves.toEqual({
+      section: { id: "section_new", name: "Waiting" },
+    });
+    expect(create).toHaveBeenCalledWith({ name: "Waiting" });
+    expect(update).toHaveBeenCalledWith({
+      threadId: "thr_1",
+      sectionId: "section_new",
     });
   });
 

@@ -20,6 +20,12 @@ import {
 } from "./root-thread-ownership";
 
 const workflowStageSchema = z.enum(WORKFLOW_STAGES);
+const sectionSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+  })
+  .strict();
 const assignmentSchema = z
   .object({
     threadId: z.string(),
@@ -76,6 +82,19 @@ const searchResultSchema = z
   .strict();
 
 export const rpcContract = defineRpcContract({
+  createSectionForThread: {
+    input: z
+      .object({
+        threadId: z.string().min(1).max(256),
+        name: z.string().trim().min(1).max(256),
+      })
+      .strict(),
+    output: z.object({ section: sectionSchema }).strict(),
+  },
+  listSections: {
+    input: z.null(),
+    output: z.object({ sections: z.array(sectionSchema) }).strict(),
+  },
   listState: {
     input: z.null(),
     output: stateSchema,
@@ -105,6 +124,15 @@ export const rpcContract = defineRpcContract({
       })
       .strict(),
     output: searchResultSchema,
+  },
+  setThreadSection: {
+    input: z
+      .object({
+        threadId: z.string().min(1).max(256),
+        sectionId: z.string().min(1).max(256).nullable(),
+      })
+      .strict(),
+    output: z.object({ sectionId: z.string().nullable() }).strict(),
   },
   syncThreads: {
     input: z
@@ -166,6 +194,17 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   bb.rpc.register(rpcContract, {
+    async createSectionForThread({ threadId, name }) {
+      const section = await bb.sdk.threadSections.create({ name });
+      await bb.sdk.threads.update({ threadId, sectionId: section.id });
+      return { section: { id: section.id, name: section.name } };
+    },
+    async listSections() {
+      const sections = await bb.sdk.threadSections.list();
+      return {
+        sections: sections.map(({ id, name }) => ({ id, name })),
+      };
+    },
     listState: () => store.listState(),
     listPreviews: () => ({ previews: store.listPreviews() }),
     async listPinnedThreadIds() {
@@ -186,6 +225,10 @@ export default function plugin(bb: BbPluginApi) {
       return {
         threads: sidebarThreadsFromSearchResult(result),
       };
+    },
+    async setThreadSection({ threadId, sectionId }) {
+      await bb.sdk.threads.update({ threadId, sectionId });
+      return { sectionId };
     },
     syncThreads({ rootThreadIds, childThreadIds }) {
       const previousIds = store

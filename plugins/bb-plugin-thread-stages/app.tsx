@@ -37,6 +37,7 @@ import { WorkflowStageIcon } from "./components/WorkflowStageIcon";
 import {
   ThreadActionsContextMenu,
   ThreadActionsDropdown,
+  type ThreadSectionOption,
 } from "./components/ThreadActionsMenu";
 import {
   groupIndicator,
@@ -45,6 +46,7 @@ import {
 import { SplitPaneMiniMap } from "./components/SplitPaneMiniMap";
 import { ProjectFilter } from "./components/ProjectFilter";
 import { ThreadRenameDialog } from "./components/ThreadRenameDialog";
+import { ThreadSectionDialog } from "./components/ThreadSectionDialog";
 import { createNativeCommandDelegate } from "./native-command-delegation";
 import { notifyNativeShortcutHandled } from "./native-command-hints";
 import { usePersistentStringSet } from "./persistent-string-set";
@@ -148,17 +150,21 @@ interface ThreadRowProps {
   childrenCollapsed: boolean;
   indicatorThread: PluginSidebarThread;
   onChangeStage: (stage: WorkflowStage) => void;
+  onCreateSection: (name: string) => Promise<void>;
   onDragEnd: () => void;
   onDragOver: (event: DragEvent<HTMLElement>) => void;
   onDragStart: (event: DragEvent<HTMLElement>) => void;
   onDrop: (event: DragEvent<HTMLElement>) => void;
   onNavigate: () => void;
+  onRefreshSections: () => void;
+  onSetSection: (sectionId: string | null) => void;
   onToggleChildren: () => void;
   preview: string | null;
   projectIcon: ProjectIconView | null;
   reorderable: boolean;
   showDropAfter: boolean;
   showDropBefore: boolean;
+  sections: readonly ThreadSectionOption[];
   workflowStage: WorkflowStage | null;
   thread: PluginSidebarThread;
 }
@@ -177,17 +183,21 @@ function ThreadRow({
   childrenCollapsed,
   indicatorThread,
   onChangeStage,
+  onCreateSection,
   onDragEnd,
   onDragOver,
   onDragStart,
   onDrop,
   onNavigate,
+  onRefreshSections,
+  onSetSection,
   onToggleChildren,
   preview,
   projectIcon,
   reorderable,
   showDropAfter,
   showDropBefore,
+  sections,
   workflowStage,
   thread,
 }: ThreadRowProps) {
@@ -196,6 +206,7 @@ function ThreadRow({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
+  const [newSectionOpen, setNewSectionOpen] = useState(false);
   const title = threadTitle(thread);
   const accessibleTitle = preview ? `${title} — ${preview}` : title;
   const actionsOpen = dropdownOpen || contextOpen;
@@ -218,10 +229,16 @@ function ThreadRow({
   const commonMenuProps = {
     actions,
     disabled,
+    sections,
+    onNewSection: () =>
+      window.setTimeout(() => {
+        setNewSectionOpen(true);
+      }, 0),
     onRename: () =>
       window.setTimeout(() => {
         setRenameOpen(true);
       }, 0),
+    onSetSection,
     onSetWorkflowStage: onChangeStage,
     splitAvailable,
     workflowStage,
@@ -379,7 +396,10 @@ function ThreadRow({
             >
               <ThreadActionsDropdown
                 {...commonMenuProps}
-                onOpenChange={setDropdownOpen}
+                onOpenChange={(open) => {
+                  setDropdownOpen(open);
+                  if (open) onRefreshSections();
+                }}
               />
             </span>
           ) : null}
@@ -394,7 +414,10 @@ function ThreadRow({
     <>
       <ThreadActionsContextMenu
         {...commonMenuProps}
-        onOpenChange={setContextOpen}
+        onOpenChange={(open) => {
+          setContextOpen(open);
+          if (open) onRefreshSections();
+        }}
       >
         {row}
       </ThreadActionsContextMenu>
@@ -403,6 +426,11 @@ function ThreadRow({
         open={renameOpen}
         onOpenChange={setRenameOpen}
         onRename={(nextTitle) => actions.rename(thread.id, nextTitle)}
+      />
+      <ThreadSectionDialog
+        open={newSectionOpen}
+        onCreate={onCreateSection}
+        onOpenChange={setNewSectionOpen}
       />
     </>
   );
@@ -565,6 +593,7 @@ function WorkflowStageList({
   const [previews, setPreviews] = useState<ReadonlyMap<string, string | null>>(
     () => new Map(),
   );
+  const [sections, setSections] = useState<readonly ThreadSectionOption[]>([]);
   const organizationLoaded = useRef(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -640,10 +669,21 @@ function WorkflowStageList({
     }
   }, [rpc]);
 
+  const refreshSections = useCallback(async () => {
+    try {
+      const result = await rpc.call("listSections", null);
+      setSections(result.sections);
+    } catch {
+      // Section organization remains usable through the native sidebar if its
+      // options are temporarily unavailable to this plugin surface.
+    }
+  }, [rpc]);
+
   useEffect(() => {
     void refresh();
     void refreshPreviews();
-  }, [refresh, refreshPreviews]);
+    void refreshSections();
+  }, [refresh, refreshPreviews, refreshSections]);
 
   useRealtime("state-changed", () => {
     void refresh();
@@ -657,9 +697,10 @@ function WorkflowStageList({
     if (connectionState === "connected" && wasConnected.current) {
       void refresh();
       void refreshPreviews();
+      void refreshSections();
     }
     wasConnected.current = connectionState === "connected";
-  }, [connectionState, refresh, refreshPreviews]);
+  }, [connectionState, refresh, refreshPreviews, refreshSections]);
 
   const rootThreads = useMemo(
     () => sidebar.threads.filter((thread) => !thread.isArchived),
@@ -964,6 +1005,35 @@ function WorkflowStageList({
     [clearDrag, mutationPending, pinnedRootIds, pinnedRootThreads, rpc],
   );
 
+  const setThreadSection = useCallback(
+    async (threadId: string, sectionId: string | null) => {
+      try {
+        await rpc.call("setThreadSection", { threadId, sectionId });
+      } catch (cause) {
+        toast.error(
+          cause instanceof Error
+            ? cause.message
+            : "Could not change the thread section.",
+        );
+      }
+    },
+    [rpc],
+  );
+
+  const createSectionForThread = useCallback(
+    async (threadId: string, name: string) => {
+      const { section } = await rpc.call("createSectionForThread", {
+        threadId,
+        name,
+      });
+      setSections((current) => [
+        ...current.filter(({ id }) => id !== section.id),
+        section,
+      ]);
+    },
+    [rpc],
+  );
+
   function toggleCollapsed(group: SidebarGroup): void {
     setCollapsedSections((current) => {
       const next = new Set(current);
@@ -1136,6 +1206,9 @@ function WorkflowStageList({
                       onChangeStage={(nextStage) => {
                         void commitMove(thread.id, nextStage, null);
                       }}
+                      onCreateSection={(name) =>
+                        createSectionForThread(thread.id, name)
+                      }
                       onDragEnd={clearDrag}
                       onDragOver={(event) => {
                         if (
@@ -1183,6 +1256,10 @@ function WorkflowStageList({
                         void commitPinnedMove(draggingThreadId, dropBefore);
                       }}
                       onNavigate={onNavigate}
+                      onRefreshSections={() => void refreshSections()}
+                      onSetSection={(sectionId) =>
+                        void setThreadSection(thread.id, sectionId)
+                      }
                       onToggleChildren={() =>
                         toggleThreadCollapsed(thread.id)
                       }
@@ -1198,6 +1275,7 @@ function WorkflowStageList({
                         dropAfter === null &&
                         dropBefore === thread.id
                       }
+                      sections={sections}
                       workflowStage={workflowStage}
                       thread={thread}
                     />
@@ -1289,6 +1367,9 @@ function WorkflowStageList({
                             void commitMove(thread.id, nextStage, null);
                           }
                         }}
+                        onCreateSection={(name) =>
+                          createSectionForThread(thread.id, name)
+                        }
                         onDragEnd={clearDrag}
                         onDragOver={(event) => {
                           const draggedThread = rootThreads.find(
@@ -1351,6 +1432,10 @@ function WorkflowStageList({
                           void commitMove(draggingThreadId, stage, dropBefore);
                         }}
                         onNavigate={onNavigate}
+                        onRefreshSections={() => void refreshSections()}
+                        onSetSection={(sectionId) =>
+                          void setThreadSection(thread.id, sectionId)
+                        }
                         onToggleChildren={() =>
                           toggleThreadCollapsed(thread.id)
                         }
@@ -1365,6 +1450,7 @@ function WorkflowStageList({
                           dropAfter === null &&
                           dropBefore === thread.id
                         }
+                        sections={sections}
                         workflowStage={isRoot ? stage : null}
                         thread={thread}
                       />
