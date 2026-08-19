@@ -1,5 +1,4 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import * as Tooltip from "@radix-ui/react-tooltip";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { portalScopeProps } from "../lib/portal-scope";
@@ -9,6 +8,12 @@ import {
   type ThreadFilter as ThreadFilterValue,
 } from "../thread-filter";
 import { Icon } from "./Icon";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 interface ThreadFilterProject {
   id: string;
@@ -38,8 +43,6 @@ const ITEM_CLASS =
 const ACTION_CLASS =
   "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none ring-sidebar-ring transition-none hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 max-md:pointer-coarse:size-9";
 const ACTION_TOOLTIP_DELAY_MS = 350;
-const TOOLTIP_CLASS =
-  "z-50 max-w-[min(20rem,var(--radix-tooltip-content-available-width))] overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground break-words animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2";
 const LABEL_CLASS =
   "px-2 py-1.5 text-[11px] font-medium text-muted-foreground";
 
@@ -172,7 +175,7 @@ export function ThreadFilter({
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
-      <Tooltip.Provider>
+      <TooltipProvider>
         <span
           data-thread-filter-actions=""
           className="relative z-20 flex shrink-0 items-center gap-1 opacity-0 pointer-events-none group-hover/thread-filter:opacity-100 group-hover/thread-filter:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto max-md:pointer-coarse:opacity-100 max-md:pointer-coarse:pointer-events-auto"
@@ -189,7 +192,7 @@ export function ThreadFilter({
             onClick={onNewSection}
           />
         </span>
-      </Tooltip.Provider>
+      </TooltipProvider>
     </div>
   );
 }
@@ -226,25 +229,12 @@ function ThreadFilterAction({
   );
 
   return (
-    <Tooltip.Root
-      delayDuration={ACTION_TOOLTIP_DELAY_MS}
-      disableHoverableContent
-    >
-      <Tooltip.Trigger asChild>
+    <Tooltip delayDuration={ACTION_TOOLTIP_DELAY_MS} disableHoverableContent>
+      <TooltipTrigger asChild>
         {disabled ? <span className="inline-flex">{button}</span> : button}
-      </Tooltip.Trigger>
-      <Tooltip.Portal>
-        <Tooltip.Content
-          {...portalScopeProps()}
-          side="bottom"
-          sideOffset={4}
-          collisionPadding={8}
-          className={TOOLTIP_CLASS}
-        >
-          {label}
-        </Tooltip.Content>
-      </Tooltip.Portal>
-    </Tooltip.Root>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
   );
 }
 

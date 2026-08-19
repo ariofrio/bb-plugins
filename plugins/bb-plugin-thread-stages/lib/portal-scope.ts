@@ -1,7 +1,7 @@
 /** Restore the plugin's CSS scope on Radix content portaled to the document. */
 declare const __BB_PLUGIN_ID__: string | undefined;
 
-export function portalScopeProps(): {
+export function usePortalScopeProps(): {
   "data-bb-portaled-overlay": "";
   "data-bb-plugin-root": "";
   "data-bb-plugin"?: string;
@@ -14,3 +14,5 @@ export function portalScopeProps(): {
     ...(pluginId === undefined ? {} : { "data-bb-plugin": pluginId }),
   };
 }
+
+export const portalScopeProps = usePortalScopeProps;

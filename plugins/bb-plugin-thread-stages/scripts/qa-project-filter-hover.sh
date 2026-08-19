@@ -109,6 +109,39 @@ agent-browser --session "$qa_session" eval '(() => {
   }
   return JSON.stringify({ actionsOnHover: state });
 })()'
+agent-browser --session "$qa_session" hover 'button[aria-label="New project"]' >/dev/null
+agent-browser --session "$qa_session" wait 450 >/dev/null
+agent-browser --session "$qa_session" eval '(() => {
+  const accessibleTooltip = document.querySelector("[role=\"tooltip\"]");
+  const tooltip = document.querySelector(
+    "[data-bb-portaled-overlay][data-state]",
+  );
+  if (
+    !(accessibleTooltip instanceof HTMLElement) ||
+    !(tooltip instanceof HTMLElement)
+  ) {
+    throw new Error("New project did not render its tooltip after real hover.");
+  }
+  const style = getComputedStyle(tooltip);
+  const state = {
+    backgroundColor: style.backgroundColor,
+    color: style.color,
+    pluginRoot: tooltip.hasAttribute("data-bb-plugin-root"),
+    portaledOverlay: tooltip.hasAttribute("data-bb-portaled-overlay"),
+    text: accessibleTooltip.textContent?.trim(),
+  };
+  if (
+    state.text !== "New project" ||
+    !state.pluginRoot ||
+    !state.portaledOverlay ||
+    state.backgroundColor === "rgba(0, 0, 0, 0)"
+  ) {
+    throw new Error(`Unexpected vendored tooltip rendering: ${JSON.stringify(state)}.`);
+  }
+  return JSON.stringify({ vendoredTooltip: state });
+})()'
+agent-browser --session "$qa_session" hover '[data-thread-filter-trigger]' >/dev/null
+agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const control = document.querySelector("[data-thread-filter-trigger]");
   const navigation = document.querySelector(
