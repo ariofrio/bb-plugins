@@ -1,6 +1,6 @@
 {
   "name": "bb-plugin-project-icons",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Give each bb project an icon and optional color.",
   "license": "MIT",
   "repository": {
