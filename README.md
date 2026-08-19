@@ -15,31 +15,36 @@ Personal plugins for [bb](https://getbb.app).
   <tbody>
     <tr>
       <td valign="top" align="center">
-        <img src="assets/plugin-icons/list-todo.svg" alt="" width="40" height="40"><br>
-        <strong><a href="plugins/bb-plugin-thread-workflow#readme">Thread workflow</a></strong><br>
-        Organizes sidebar threads into manually ordered Backlog, To do, Working, Blocked, Done, and Canceled workflow stages.
+        <p></p>
+        <p><img src="assets/plugin-icons/list-todo.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-thread-workflow#readme">Thread workflow</a></strong></p>
+        <p>Groups sidebar threads into drag-ordered workflow stages</p>
+        <p></p>
       </td>
       <td valign="top" align="center">
-        <img src="assets/plugin-icons/folder.svg" alt="" width="40" height="40"><br>
-        <strong><a href="plugins/bb-plugin-project-header-breadcrumb#readme">Project header breadcrumb</a></strong><br>
-        Adds the current project and its native actions menu before each thread title.
+        <p></p>
+        <p><img src="assets/plugin-icons/folder.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-project-header-breadcrumb#readme">Project header breadcrumb</a></strong></p>
+        <p>Adds the current project and its native actions menu before each thread title</p>
+        <p></p>
       </td>
       <td valign="top" align="center">
-        <img src="assets/plugin-icons/palette.svg" alt="" width="40" height="40"><br>
-        <strong><a href="plugins/bb-plugin-codex-theme#readme">Codex theme</a></strong><br>
-        Matches bb's palette to the OpenAI ChatGPT desktop app in light and dark mode.
+        <p></p>
+        <p><img src="assets/plugin-icons/palette.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-codex-theme#readme">Codex theme</a></strong></p>
+        <p>Matches bb's palette to the OpenAI ChatGPT desktop app, light and dark</p>
+        <p></p>
       </td>
     </tr>
     <tr>
       <td valign="top" align="center">
-        <img src="assets/plugin-icons/palette.svg" alt="" width="40" height="40"><br>
-        <strong><a href="plugins/bb-plugin-project-icons#readme">Project icons</a></strong><br>
-        Gives each project an icon and optional color, shown next to its name in the thread header.
+        <p></p>
+        <p><img src="assets/plugin-icons/palette.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-project-icons#readme">Project icons</a></strong></p>
+        <p>Gives each project an icon and optional color, in the thread header and sidebar</p>
+        <p></p>
       </td>
       <td valign="top" align="center">
-        <img src="assets/plugin-icons/zap.svg" alt="" width="40" height="40"><br>
-        <strong><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Missing keyboard shortcuts</a></strong><br>
-        Adds shortcuts for starting threads, navigating history, focusing the primary composer, and toggling a side chat or thread terminal.
+        <p></p>
+        <p><img src="assets/plugin-icons/zap.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Missing keyboard shortcuts</a></strong></p>
+        <p>Adds shortcuts for threads, history, the composer, side chats, and terminals</p>
+        <p></p>
       </td>
       <td></td>
     </tr>
