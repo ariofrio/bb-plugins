@@ -1,7 +1,7 @@
 {
   "name": "bb-plugin-chatgpt-theme",
   "version": "0.2.1",
-  "description": "Restyle bb to match the OpenAI ChatGPT (Codex) desktop app, in both light and dark modes.",
+  "description": "Restyle bb to match the OpenAI ChatGPT (Codex) desktop app.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -33,7 +33,7 @@
   },
   "bb": {
     "name": "ChatGPT theme",
-    "description": "Restyle bb to match the OpenAI ChatGPT (Codex) desktop app, in both light and dark modes.",
+    "description": "Restyle bb to match the OpenAI ChatGPT (Codex) desktop app.",
     "branding": {
       "icon": "./assets/icon.svg"
     },

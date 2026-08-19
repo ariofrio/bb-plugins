@@ -8,7 +8,7 @@
     {
       "id": "chatgpt-theme",
       "displayName": "ChatGPT theme",
-      "description": "Restyle bb to match the OpenAI ChatGPT (Codex) desktop app, in both light and dark modes.",
+      "description": "Restyle bb to match the OpenAI ChatGPT (Codex) desktop app.",
       "icon": {
         "url": "./plugins/bb-plugin-chatgpt-theme/assets/icon.svg"
       },

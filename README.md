@@ -35,7 +35,7 @@
       <td valign="top" align="center">
         <p></p>
         <p><a href="plugins/bb-plugin-chatgpt-theme#readme"><img src="plugins/bb-plugin-chatgpt-theme/assets/icon.svg" alt="" width="40" height="40"><br><strong>ChatGPT theme</strong></a></p>
-        <p>Restyle bb to match the OpenAI ChatGPT (Codex) desktop app, in both light and dark modes.</p>
+        <p>Restyle bb to match the OpenAI ChatGPT (Codex) desktop app.</p>
         <p></p>
       </td>
     </tr>
