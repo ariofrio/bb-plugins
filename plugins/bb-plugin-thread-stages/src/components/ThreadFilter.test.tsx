@@ -20,7 +20,7 @@ describe("ThreadFilter", () => {
   ] as const;
   const sections = [{ id: "section_waiting", name: "Waiting" }] as const;
 
-  it("groups project and section filters under an All projects and sections trigger", () => {
+  it("uses a scoped sidebar label while keeping All in the menu option", () => {
     render(
       <ThreadFilter
         projects={projects}
@@ -33,9 +33,11 @@ describe("ThreadFilter", () => {
     );
 
     const trigger = screen.getByRole("button", {
-      name: "All projects and sections",
+      name: "Projects and sections",
     });
-    expect(trigger.querySelector('[data-icon="Folders"]')).not.toBeNull();
+    expect(
+      trigger.querySelector('[data-icon="FolderLibrary"]'),
+    ).not.toBeNull();
     expect(
       screen
         .getByRole("button", { name: "New project" })
@@ -58,7 +60,7 @@ describe("ThreadFilter", () => {
     expect(
       within(menu)
         .getByRole("menuitemradio", { name: "All projects and sections" })
-        .querySelector('[data-icon="Folders"]'),
+        .querySelector('[data-icon="FolderLibrary"]'),
     ).not.toBeNull();
   });
 
@@ -159,7 +161,7 @@ describe("ThreadFilter", () => {
     );
 
     fireEvent.keyDown(
-      screen.getByRole("button", { name: "All projects and sections" }),
+      screen.getByRole("button", { name: "Projects and sections" }),
       { key: "Enter" },
     );
     expect(screen.queryByText("Projects")).toBeNull();
@@ -170,7 +172,7 @@ describe("ThreadFilter", () => {
       <ThreadFilter {...sharedProps} projects={projects} sections={[]} />,
     );
     fireEvent.keyDown(
-      screen.getByRole("button", { name: "All projects" }),
+      screen.getByRole("button", { name: "Projects" }),
       { key: "Enter" },
     );
     const projectsOnlyMenu = screen.getByRole("menu");
@@ -255,7 +257,7 @@ describe("ThreadFilter", () => {
     );
 
     fireEvent.keyDown(
-      screen.getByRole("button", { name: "All projects and sections" }),
+      screen.getByRole("button", { name: "Projects and sections" }),
       { key: "Enter" },
     );
     expect(

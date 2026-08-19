@@ -79,7 +79,7 @@ export function ThreadFilter({
             data-thread-filter-trigger=""
             aria-label={
               activeLabel === null
-                ? allLabel
+                ? scopeLabel
                 : `${scopeLabel}: ${activeLabel}`
             }
             className="thread-filter-trigger flex h-7 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-sidebar-foreground/85 outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-state-active data-[state=open]:text-sidebar-foreground max-md:pointer-coarse:h-9 dark:text-sidebar-foreground"
@@ -89,9 +89,13 @@ export function ThreadFilter({
             ) : activeSection ? (
               <Icon name="ListView" className="size-4 shrink-0" aria-hidden />
             ) : (
-              <Icon name="Folders" className="size-4 shrink-0" aria-hidden />
+              <Icon
+                name="FolderLibrary"
+                className="size-4 shrink-0"
+                aria-hidden
+              />
             )}
-            <span className="truncate">{activeLabel ?? allLabel}</span>
+            <span className="truncate">{activeLabel ?? scopeLabel}</span>
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
@@ -115,7 +119,11 @@ export function ThreadFilter({
               }}
             >
               <ThreadFilterItem label={allLabel} value="">
-                <Icon name="Folders" className="size-4 shrink-0" aria-hidden />
+                <Icon
+                  name="FolderLibrary"
+                  className="size-4 shrink-0"
+                  aria-hidden
+                />
               </ThreadFilterItem>
               {projects.length > 0 ? (
                 <>
