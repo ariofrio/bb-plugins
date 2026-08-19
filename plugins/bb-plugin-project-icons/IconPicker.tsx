@@ -199,7 +199,7 @@ export function IconPicker({
         mobileTitle={null}
         style={isCompactViewport ? undefined : { width: 386 }}
       >
-        <div className="flex h-[calc(var(--radix-popover-content-available-height)-2rem)] max-h-[32rem] flex-col gap-3 max-md:h-[calc(85dvh-3rem)] max-md:max-h-none">
+        <div className="flex h-[calc(var(--radix-popover-content-available-height)-2rem)] max-h-[32rem] flex-col gap-3 pr-1 max-md:h-[calc(85dvh-3rem)] max-md:max-h-none">
           <PopoverTitle id={titleId} className="sr-only">
             Icon for {projectName}
           </PopoverTitle>
@@ -323,7 +323,7 @@ export function IconPicker({
               ref={setCatalogScroller}
               role="region"
               aria-label={searching ? "Icon search results" : "Icon catalog"}
-              className="h-full overflow-y-auto pr-1"
+              className="h-full overflow-y-auto"
               onScroll={(event) => {
                 updateCatalogOverflow(event.currentTarget);
                 trackVisibleCategory(event.currentTarget);

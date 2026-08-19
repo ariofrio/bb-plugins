@@ -63,6 +63,7 @@ beforeEach(() => {
     .cursor-pointer { cursor: pointer; }
     .gap-1 { column-gap: 4px; row-gap: 4px; }
     .grid-cols-11 { grid-template-columns: repeat(11, minmax(0, 1fr)); }
+    .pr-1 { padding-right: 4px; }
     .size-7 { width: 28px; height: 28px; }
   `;
   document.head.append(styles);
@@ -288,7 +289,16 @@ describe("IconPicker", () => {
 
     const popoverStyle = getComputedStyle(popover);
     const gridStyle = getComputedStyle(iconGrid!);
+    const contentColumn = popover.firstElementChild;
+    const catalogRegion = within(popover).getByRole("region", {
+      name: "Icon catalog",
+    });
+    expect(contentColumn).not.toBeNull();
     expect(popoverStyle.width).toBe("386px");
+    expect(getComputedStyle(contentColumn!).paddingRight).toBe("4px");
+    expect(Number.parseFloat(getComputedStyle(catalogRegion).paddingRight)).toBe(
+      0,
+    );
     expect(gridStyle.gridTemplateColumns).toBe(
       "repeat(11, minmax(0, 1fr))",
     );
