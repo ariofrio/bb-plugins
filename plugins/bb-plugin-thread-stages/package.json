@@ -1,6 +1,6 @@
 {
   "name": "bb-plugin-thread-stages",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Organize bb root threads into manually ordered stages.",
   "license": "MIT",
   "repository": {
