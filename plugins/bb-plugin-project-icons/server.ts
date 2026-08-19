@@ -1,4 +1,4 @@
-import { defineRpcContract, type BbPluginApi } from "@bb/plugin-sdk";
+import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
 import { z } from "zod";
 import catalogMetadata from "./icon-catalog.json";
 import { CATALOG_ICONS } from "./icon-catalog.generated";

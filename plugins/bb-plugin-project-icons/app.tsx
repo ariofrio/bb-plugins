@@ -5,7 +5,7 @@ import {
   useRealtime,
   useRpc,
   type PluginThreadHeaderActionProps,
-} from "@bb/plugin-sdk/app";
+} from "@get-bb/plugin-sdk/app";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { announceProjectIconsChanged } from "./broadcast";
