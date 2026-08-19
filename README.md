@@ -66,8 +66,8 @@ Settings → Plugins:
 bb marketplace add git:github.com/ariofrio/bb-plugins@main
 ```
 
-The marketplace tracks each plugin's compatible Git release tags, so new
-releases appear without re-adding it. Its catalog is defined in
+The marketplace tracks each plugin's Git release tags, so new releases appear
+without re-adding it. Its catalog is defined in
 [marketplace.json](marketplace.json).
 
 To install one plugin directly from `main`, follow its README, or select it
@@ -101,8 +101,8 @@ pull request with version, lockfile, and changelog updates. Merging that pull
 request validates the affected plugins, creates immutable `<plugin-id>/vX.Y.Z`
 Git tags, and publishes a
 [GitHub release](https://github.com/ariofrio/bb-plugins/releases) per tag
-carrying that version's changelog entry. Marketplace semver ranges then expose
-compatible releases without catalog changes.
+carrying that version's changelog entry. Every listing accepts any released
+version, so the catalog never changes with a release.
 
 `npm run release:check` runs each plugin's tests, type checks, build, SDK
 declaration verification, and packed artifact verification.

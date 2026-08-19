@@ -29,7 +29,7 @@
         "git": {
           "url": "https://github.com/ariofrio/bb-plugins.git",
           "subdir": "plugins/bb-plugin-chatgpt-theme",
-          "range": "^0.2.0",
+          "range": "*",
           "tagPrefix": "chatgpt-theme/"
         }
       }
@@ -57,7 +57,7 @@
         "git": {
           "url": "https://github.com/ariofrio/bb-plugins.git",
           "subdir": "plugins/bb-plugin-missing-keyboard-shortcuts",
-          "range": "^0.2.0",
+          "range": "*",
           "tagPrefix": "missing-keyboard-shortcuts/"
         }
       }
@@ -84,7 +84,7 @@
         "git": {
           "url": "https://github.com/ariofrio/bb-plugins.git",
           "subdir": "plugins/bb-plugin-project-breadcrumbs",
-          "range": "^0.2.0",
+          "range": "*",
           "tagPrefix": "project-breadcrumbs/"
         }
       }
@@ -112,7 +112,7 @@
         "git": {
           "url": "https://github.com/ariofrio/bb-plugins.git",
           "subdir": "plugins/bb-plugin-project-icons",
-          "range": "^0.2.0",
+          "range": "*",
           "tagPrefix": "project-icons/"
         }
       }
@@ -139,7 +139,7 @@
         "git": {
           "url": "https://github.com/ariofrio/bb-plugins.git",
           "subdir": "plugins/bb-plugin-thread-stages",
-          "range": "^0.6.0",
+          "range": "*",
           "tagPrefix": "thread-stages/"
         }
       }
