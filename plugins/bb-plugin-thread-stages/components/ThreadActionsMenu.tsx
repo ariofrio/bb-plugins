@@ -124,10 +124,42 @@ function ContextMenuItems(props: CommonMenuProps) {
         Rename
       </ContextItem>
       <ContextMenu.Separator className={SEPARATOR_CLASS} />
+      {workflowStage === null ? null : (
+        <ContextMenu.Sub>
+          <ContextMenu.SubTrigger disabled={disabled} className={ITEM_CLASS}>
+            <Icon name="ListTodo" aria-hidden />
+            Move to stage
+            <Icon name="ChevronRight" className="ml-auto" aria-hidden />
+          </ContextMenu.SubTrigger>
+          <ContextMenu.Portal>
+            <ContextMenu.SubContent
+              {...portalScopeProps()}
+              className={SUB_CONTENT_CLASS}
+            >
+              {WORKFLOW_STAGES.map((stage) => (
+                <ContextMenu.Item
+                  key={stage}
+                  className={ITEM_CLASS}
+                  onSelect={() => {
+                    if (stage !== workflowStage) props.onSetWorkflowStage(stage);
+                  }}
+                >
+                  <span className="w-4">
+                    {stage === workflowStage ? (
+                      <Icon name="Check" aria-hidden />
+                    ) : null}
+                  </span>
+                  {stage}
+                </ContextMenu.Item>
+              ))}
+            </ContextMenu.SubContent>
+          </ContextMenu.Portal>
+        </ContextMenu.Sub>
+      )}
       <ContextMenu.Sub>
         <ContextMenu.SubTrigger className={ITEM_CLASS}>
           <Icon name="Folder" aria-hidden />
-          Set section
+          Move to section
           <Icon name="ChevronRight" className="ml-auto" aria-hidden />
         </ContextMenu.SubTrigger>
         <ContextMenu.Portal>
@@ -177,38 +209,6 @@ function ContextMenuItems(props: CommonMenuProps) {
           </ContextMenu.SubContent>
         </ContextMenu.Portal>
       </ContextMenu.Sub>
-      {workflowStage === null ? null : (
-        <ContextMenu.Sub>
-          <ContextMenu.SubTrigger disabled={disabled} className={ITEM_CLASS}>
-            <Icon name="ListTodo" aria-hidden />
-            Set stage
-            <Icon name="ChevronRight" className="ml-auto" aria-hidden />
-          </ContextMenu.SubTrigger>
-          <ContextMenu.Portal>
-            <ContextMenu.SubContent
-              {...portalScopeProps()}
-              className={SUB_CONTENT_CLASS}
-            >
-              {WORKFLOW_STAGES.map((stage) => (
-                <ContextMenu.Item
-                  key={stage}
-                  className={ITEM_CLASS}
-                  onSelect={() => {
-                    if (stage !== workflowStage) props.onSetWorkflowStage(stage);
-                  }}
-                >
-                  <span className="w-4">
-                    {stage === workflowStage ? (
-                      <Icon name="Check" aria-hidden />
-                    ) : null}
-                  </span>
-                  {stage}
-                </ContextMenu.Item>
-              ))}
-            </ContextMenu.SubContent>
-          </ContextMenu.Portal>
-        </ContextMenu.Sub>
-      )}
       <ContextMenu.Separator className={SEPARATOR_CLASS} />
       <ContextItem icon="Archive" onSelect={() => actions.archive(thread.id)}>
         Archive
@@ -255,10 +255,42 @@ function DropdownMenuItems(props: CommonMenuProps) {
         Rename
       </DropdownItem>
       <DropdownMenu.Separator className={SEPARATOR_CLASS} />
+      {workflowStage === null ? null : (
+        <DropdownMenu.Sub>
+          <DropdownMenu.SubTrigger disabled={disabled} className={ITEM_CLASS}>
+            <Icon name="ListTodo" aria-hidden />
+            Move to stage
+            <Icon name="ChevronRight" className="ml-auto" aria-hidden />
+          </DropdownMenu.SubTrigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.SubContent
+              {...portalScopeProps()}
+              className={SUB_CONTENT_CLASS}
+            >
+              {WORKFLOW_STAGES.map((stage) => (
+                <DropdownMenu.Item
+                  key={stage}
+                  className={ITEM_CLASS}
+                  onSelect={() => {
+                    if (stage !== workflowStage) props.onSetWorkflowStage(stage);
+                  }}
+                >
+                  <span className="w-4">
+                    {stage === workflowStage ? (
+                      <Icon name="Check" aria-hidden />
+                    ) : null}
+                  </span>
+                  {stage}
+                </DropdownMenu.Item>
+              ))}
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Sub>
+      )}
       <DropdownMenu.Sub>
         <DropdownMenu.SubTrigger className={ITEM_CLASS}>
           <Icon name="Folder" aria-hidden />
-          Set section
+          Move to section
           <Icon name="ChevronRight" className="ml-auto" aria-hidden />
         </DropdownMenu.SubTrigger>
         <DropdownMenu.Portal>
@@ -308,38 +340,6 @@ function DropdownMenuItems(props: CommonMenuProps) {
           </DropdownMenu.SubContent>
         </DropdownMenu.Portal>
       </DropdownMenu.Sub>
-      {workflowStage === null ? null : (
-        <DropdownMenu.Sub>
-          <DropdownMenu.SubTrigger disabled={disabled} className={ITEM_CLASS}>
-            <Icon name="ListTodo" aria-hidden />
-            Set stage
-            <Icon name="ChevronRight" className="ml-auto" aria-hidden />
-          </DropdownMenu.SubTrigger>
-          <DropdownMenu.Portal>
-            <DropdownMenu.SubContent
-              {...portalScopeProps()}
-              className={SUB_CONTENT_CLASS}
-            >
-              {WORKFLOW_STAGES.map((stage) => (
-                <DropdownMenu.Item
-                  key={stage}
-                  className={ITEM_CLASS}
-                  onSelect={() => {
-                    if (stage !== workflowStage) props.onSetWorkflowStage(stage);
-                  }}
-                >
-                  <span className="w-4">
-                    {stage === workflowStage ? (
-                      <Icon name="Check" aria-hidden />
-                    ) : null}
-                  </span>
-                  {stage}
-                </DropdownMenu.Item>
-              ))}
-            </DropdownMenu.SubContent>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Sub>
-      )}
       <DropdownMenu.Separator className={SEPARATOR_CLASS} />
       <DropdownItem icon="Archive" onSelect={() => actions.archive(thread.id)}>
         Archive

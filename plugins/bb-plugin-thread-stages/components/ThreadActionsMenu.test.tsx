@@ -82,8 +82,14 @@ describe("ThreadActionsDropdown", () => {
     expect(screen.getByText("Mark read")).toBeDefined();
     expect(screen.getByText("Pin")).toBeDefined();
     expect(screen.getByText("Rename")).toBeDefined();
-    expect(screen.getByText("Set section")).toBeDefined();
-    expect(screen.getByText("Set stage")).toBeDefined();
+    expect(screen.getByText("Move to stage")).toBeDefined();
+    expect(screen.getByText("Move to section")).toBeDefined();
+    const organizationItems = screen
+      .getAllByRole("menuitem")
+      .map((item) => item.textContent?.trim());
+    expect(organizationItems.indexOf("Move to stage")).toBeLessThan(
+      organizationItems.indexOf("Move to section"),
+    );
     expect(screen.queryByText("Set workflow stage")).toBeNull();
     expect(screen.queryByText("Move up")).toBeNull();
     expect(screen.queryByText("Move down")).toBeNull();
@@ -118,8 +124,8 @@ describe("ThreadActionsDropdown", () => {
     );
 
     fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
-    expect(screen.queryByText("Set stage")).toBeNull();
-    expect(screen.getByText("Set section")).toBeDefined();
+    expect(screen.queryByText("Move to stage")).toBeNull();
+    expect(screen.getByText("Move to section")).toBeDefined();
   });
 
   it("sets, clears, and creates sections from its submenu", () => {
@@ -154,7 +160,7 @@ describe("ThreadActionsDropdown", () => {
     );
 
     fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
-    fireEvent.click(screen.getByText("Set section"));
+    fireEvent.click(screen.getByText("Move to section"));
     expect(screen.getByText("No section")).toBeDefined();
     expect(screen.getByText("Now")).toBeDefined();
     expect(screen.getByText("Later")).toBeDefined();
@@ -163,7 +169,7 @@ describe("ThreadActionsDropdown", () => {
     expect(onSetSection).toHaveBeenCalledWith("section_2");
 
     fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
-    fireEvent.click(screen.getByText("Set section"));
+    fireEvent.click(screen.getByText("Move to section"));
     fireEvent.click(screen.getByText("No section"));
     expect(onSetSection).toHaveBeenCalledWith(null);
 
@@ -186,12 +192,12 @@ describe("ThreadActionsDropdown", () => {
       />,
     );
     fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
-    fireEvent.click(screen.getByText("Set section"));
+    fireEvent.click(screen.getByText("Move to section"));
     fireEvent.click(screen.getByText("No section"));
     expect(onSetSection).toHaveBeenCalledTimes(2);
 
     fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
-    fireEvent.click(screen.getByText("Set section"));
+    fireEvent.click(screen.getByText("Move to section"));
     fireEvent.click(screen.getByText("New section"));
     expect(onNewSection).toHaveBeenCalledOnce();
   });
@@ -228,7 +234,7 @@ describe("ThreadActionsContextMenu", () => {
 
     fireEvent.contextMenu(screen.getByRole("button", { name: "Thread row" }));
     const parentMenu = screen.getByRole("menu", { name: "Thread actions" });
-    fireEvent.click(screen.getByText("Set stage"));
+    fireEvent.click(screen.getByText("Move to stage"));
 
     expect(parentMenu.contains(screen.getByText("Done"))).toBe(false);
   });
@@ -263,7 +269,7 @@ describe("ThreadActionsContextMenu", () => {
 
     fireEvent.contextMenu(screen.getByRole("button", { name: "Thread row" }));
     const parentMenu = screen.getByRole("menu", { name: "Thread actions" });
-    fireEvent.click(screen.getByText("Set section"));
+    fireEvent.click(screen.getByText("Move to section"));
 
     expect(screen.getByText("Later")).toBeDefined();
     expect(screen.getByText("New section")).toBeDefined();
