@@ -22,10 +22,10 @@ describe("plugin identity", () => {
     expect(manifest.bb.branding.icon).toBe("./assets/icon.svg");
     expect(manifest.files).toContain("assets");
     expect(icon).toContain('viewBox="0 0 24 24"');
-    expect(icon).toContain('color="#737373"');
+    expect(icon).toContain('color="#525252"');
     expect(icon.match(/currentColor/g)).toHaveLength(2);
     expect(icon).toContain(
-      "@media (prefers-color-scheme: dark) { svg { color: #8b949e; } }",
+      "@media (prefers-color-scheme: dark) { svg { color: #b7b7b7; } }",
     );
     expect(icon).toContain('<circle cx="12" cy="12" r="10"');
     expect(icon).toContain(
