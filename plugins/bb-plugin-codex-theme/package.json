@@ -1,7 +1,17 @@
 {
   "name": "bb-plugin-codex-theme",
   "version": "0.1.0",
+  "description": "Match bb's palette to the OpenAI ChatGPT desktop app.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ariofrio/bb-plugins.git",
+    "directory": "plugins/bb-plugin-codex-theme"
+  },
+  "homepage": "https://github.com/ariofrio/bb-plugins/tree/main/plugins/bb-plugin-codex-theme#readme",
+  "bugs": {
+    "url": "https://github.com/ariofrio/bb-plugins/issues"
+  },
   "files": [
     "assets",
     "dist",

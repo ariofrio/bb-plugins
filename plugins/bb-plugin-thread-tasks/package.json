@@ -1,7 +1,17 @@
 {
   "name": "bb-plugin-thread-tasks",
   "version": "0.5.0",
+  "description": "Organize bb root threads as manually ordered tasks grouped by status.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ariofrio/bb-plugins.git",
+    "directory": "plugins/bb-plugin-thread-tasks"
+  },
+  "homepage": "https://github.com/ariofrio/bb-plugins/tree/main/plugins/bb-plugin-thread-tasks#readme",
+  "bugs": {
+    "url": "https://github.com/ariofrio/bb-plugins/issues"
+  },
   "files": [
     "app.tsx",
     "dist",

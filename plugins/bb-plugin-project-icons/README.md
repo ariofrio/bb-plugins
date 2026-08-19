@@ -18,28 +18,17 @@ red, orange, yellow, green, teal, blue, purple, or pink — overrides that.
 
 ## Install
 
-Clone the repository and install this directory:
+Install it from this repository's plugin collection:
 
 ```sh
-git clone https://github.com/ariofrio/bb-plugins.git
-cd bb-plugins/plugins/bb-plugin-project-icons
-npm install
-bb plugin install . --yes
+bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin project-icons
 ```
 
-A direct `bb plugin install git:...` reads the plugin from the repository root,
-so it cannot reach a plugin that lives in a subdirectory
-([get-bb/bb#1097](https://github.com/get-bb/bb/issues/1097) tracks multi-plugin
-repositories). Update an installed copy with:
+Update an installed copy with:
 
 ```sh
-git pull
-npm install
-npm run build
-bb plugin reload project-icons
+bb plugin update project-icons
 ```
-
-Installing a path builds the plugin; reloading loads what is already built.
 
 ## Where the catalog lives
 

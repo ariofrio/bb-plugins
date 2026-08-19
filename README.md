@@ -1,6 +1,6 @@
 # bb-plugins
 
-Personal plugins for [bb](https://github.com/ymichael/bb).
+Personal plugins for [bb](https://getbb.app).
 
 ## Plugins
 
