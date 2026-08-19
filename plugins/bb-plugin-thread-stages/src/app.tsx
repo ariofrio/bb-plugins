@@ -536,7 +536,7 @@ function SidebarSection({
             data-sidebar-hover-actions-open={
               optionsOpen ? "true" : undefined
             }
-            className="bb-sidebar-hover-actions-fade pointer-events-none mr-2 shrink-0 tabular-nums text-subtle-foreground/60"
+            className="bb-sidebar-hover-actions-fade pointer-events-none absolute right-0 z-20 inline-flex size-7 items-center justify-center tabular-nums text-xs text-subtle-foreground/60"
           >
             {count}
           </span>
