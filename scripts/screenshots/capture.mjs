@@ -277,9 +277,12 @@ export async function openApp({ browser, stack, theme, viewport, style }) {
  */
 const WINDOW_FRAME = {
   // macOS's own window rounding, so the silhouette matches the app rather than
-  // a card. The margin holds the shadow and nothing else.
+  // a card. The margin holds the shadow and nothing else — and none of it goes
+  // at the sides, because a margin there is margin a reader sees: it pushes the
+  // window's edge inward while the text beside it stays flush with the column.
+  // What that clips is the shadow's side tail, which never exceeds 6% opacity.
   radius: 10,
-  padding: { top: 32, side: 40, bottom: 48 },
+  padding: { top: 2, side: 0, bottom: 26 },
   light: {
     edge: "rgba(0, 0, 0, 0.16)",
     shadow:
@@ -301,7 +304,10 @@ const WINDOW_FRAME = {
  */
 const CARD_FRAME = {
   radius: 14,
-  padding: { top: 14, side: 14, bottom: 14 },
+  // Sides flush for the same reason as a window's, which matters most here:
+  // a card sits against the right edge of the column with the plugin's name
+  // against the left, and any margin baked into the image breaks that pairing.
+  padding: { top: 0, side: 0, bottom: 10 },
   light: { edge: null, shadow: "0 8px 20px -10px rgba(15, 15, 20, 0.45)" },
   dark: { edge: null, shadow: "0 8px 20px -10px rgba(0, 0, 0, 0.85)" },
 };
