@@ -14,7 +14,9 @@ const ITEM_CLASS =
 const SELECTABLE_ITEM_CLASS =
   "relative flex cursor-default select-none items-center gap-2 rounded-sm py-[0.3125rem] pl-7 pr-2 text-xs outline-none transition-colors data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground";
 const TRIGGER_CLASS =
-  "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none ring-sidebar-ring transition-none hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-foreground";
+  "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none ring-sidebar-ring transition-colors focus-visible:ring-2 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-foreground";
+const PANEL_OPTIONS_TRIGGER_CLASS =
+  "relative m-1 h-5 w-5 p-0 hover:bg-state-hover hover:text-foreground after:absolute after:left-1/2 after:top-1/2 after:h-7 after:w-7 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] max-md:pointer-coarse:m-0 max-md:pointer-coarse:h-9 max-md:pointer-coarse:w-9 max-md:pointer-coarse:after:hidden";
 
 interface ThreadFilterOptionsMenuProps {
   countMode: SidebarFilterCountMode;
@@ -35,9 +37,13 @@ export function ThreadFilterOptionsMenu({
         <button
           type="button"
           aria-label="Projects and sections options"
-          className={`${TRIGGER_CLASS} size-7 max-md:pointer-coarse:size-9`}
+          className={`${TRIGGER_CLASS} ${PANEL_OPTIONS_TRIGGER_CLASS}`}
         >
-          <Icon name="MoreHorizontal" className="size-4" aria-hidden />
+          <Icon
+            name="MoreHorizontal"
+            className="size-4 max-md:pointer-coarse:size-5"
+            aria-hidden
+          />
         </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
@@ -110,7 +116,7 @@ export function StageOptionsMenu({
         <button
           type="button"
           aria-label={`${stage} stage options`}
-          className={`${TRIGGER_CLASS} size-6 max-md:pointer-coarse:size-9`}
+          className={`${TRIGGER_CLASS} size-6 hover:bg-sidebar-accent hover:text-sidebar-foreground max-md:pointer-coarse:size-9`}
         >
           <Icon name="MoreHorizontal" className="size-4" aria-hidden />
         </button>

@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   StageOptionsMenu,
@@ -20,10 +26,28 @@ describe("sidebar options menus", () => {
       />,
     );
 
+    const trigger = screen.getByRole("button", {
+      name: "Projects and sections options",
+    });
+    for (const className of [
+      "m-1",
+      "h-5",
+      "w-5",
+      "after:h-7",
+      "after:w-7",
+      "after:-translate-x-1/2",
+      "after:-translate-y-1/2",
+      "transition-colors",
+      "hover:bg-state-hover",
+      "hover:text-foreground",
+    ]) {
+      expect(trigger.classList.contains(className), className).toBe(true);
+    }
+    expect(trigger.classList.contains("size-7")).toBe(false);
+    expect(trigger.classList.contains("hover:bg-accent")).toBe(false);
+
     fireEvent.keyDown(
-      screen.getByRole("button", {
-        name: "Projects and sections options",
-      }),
+      trigger,
       { key: "Enter" },
     );
     expect(
@@ -52,7 +76,9 @@ describe("sidebar options menus", () => {
       }),
       { key: "Enter" },
     );
-    fireEvent.click(screen.getByRole("menuitem", { name: "Hide from sidebar" }));
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "Hide from sidebar" }),
+    );
     expect(onHide).toHaveBeenCalledTimes(1);
   });
 
