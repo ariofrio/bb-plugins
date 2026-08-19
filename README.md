@@ -2,6 +2,8 @@
 
 <p align="center"><strong>Plugins for <a href="https://getbb.app">bb</a>, the agent IDE that builds itself</strong></p>
 
+<p align="center"><img src="https://img.shields.io/badge/bb-0.39%2B-88C0D0?style=flat-square" alt="bb 0.39+"></p>
+
 <br>
 
 <table>
