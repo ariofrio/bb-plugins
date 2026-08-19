@@ -22,59 +22,92 @@ agent-browser --session "$qa_session" hover \
   '[data-sidebar-sticky-tier="label"]' >/dev/null
 agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
-  const actions = ["New project", "New section"].map((label) =>
-    document.querySelector(`button[aria-label="${label}"]`),
-  );
-  if (actions.some((action) => !(action instanceof HTMLButtonElement))) {
-    throw new Error("Could not find both thread filter creation actions.");
+  const actions = document.querySelector("[data-thread-filter-actions]");
+  if (!(actions instanceof HTMLElement)) {
+    throw new Error("Could not find the thread filter creation actions.");
   }
-  const states = actions.map((action) => {
-    const style = getComputedStyle(action);
-    return {
-      label: action.getAttribute("aria-label"),
-      opacity: Number.parseFloat(style.opacity),
-      pointerEvents: style.pointerEvents,
-    };
-  });
-  if (
-    states.some(
-      ({ opacity, pointerEvents }) =>
-        opacity !== 0 || pointerEvents !== "none",
-    )
-  ) {
+  const style = getComputedStyle(actions);
+  const state = {
+    opacity: Number.parseFloat(style.opacity),
+    pointerEvents: style.pointerEvents,
+  };
+  if (state.opacity !== 0 || state.pointerEvents !== "none") {
     throw new Error(
-      `Thread filter creation actions are visible away from hover: ${JSON.stringify(states)}.`,
+      `Thread filter creation actions are visible away from hover: ${JSON.stringify(state)}.`,
     );
   }
-  return JSON.stringify({ actionsAwayFromHover: states });
+  return JSON.stringify({ actionsAwayFromHover: state });
+})()'
+agent-browser --session "$qa_session" eval '(() => {
+  const previous = document.querySelector(
+    "button[aria-label=\"Tasks panel options\"]",
+  );
+  if (!(previous instanceof HTMLButtonElement)) {
+    throw new Error("Could not find the control before the thread filter.");
+  }
+  previous.focus();
+})()'
+agent-browser --session "$qa_session" press Tab >/dev/null
+agent-browser --session "$qa_session" eval '(() => {
+  const control = document.querySelector(
+    "button[aria-label^=\"Projects and sections\"]",
+  );
+  const row = control?.parentElement;
+  const actions = document.querySelector("[data-thread-filter-actions]");
+  if (
+    !(control instanceof HTMLButtonElement) ||
+    !(row instanceof HTMLElement) ||
+    !(actions instanceof HTMLElement)
+  ) {
+    throw new Error("Could not find the keyboard-focused thread filter row.");
+  }
+  if (document.activeElement !== control || !control.matches(":focus-visible")) {
+    throw new Error("Native Tab did not visibly focus the thread filter.");
+  }
+  const actionStyle = getComputedStyle(actions);
+  const actionState = {
+    opacity: Number.parseFloat(actionStyle.opacity),
+    pointerEvents: actionStyle.pointerEvents,
+  };
+  if (actionState.opacity !== 0 || actionState.pointerEvents !== "none") {
+    throw new Error(
+      `Thread filter actions are visible while its main control has keyboard focus: ${JSON.stringify(actionState)}.`,
+    );
+  }
+  const controlShadow = getComputedStyle(control).boxShadow;
+  const rowShadow = getComputedStyle(row).boxShadow;
+  if (controlShadow !== "none" || rowShadow === "none") {
+    throw new Error(
+      `Keyboard focus ring is on the ${controlShadow === "none" ? "row" : "shortened control"}; expected the full row.`,
+    );
+  }
+  return JSON.stringify({
+    keyboardFocus: {
+      controlWidth: control.getBoundingClientRect().width,
+      rowWidth: row.getBoundingClientRect().width,
+      actions: actionState,
+      rowShadow,
+    },
+  });
 })()'
 agent-browser --session "$qa_session" hover 'button[aria-label^="Projects and sections"]' >/dev/null
 agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
-  const actions = ["New project", "New section"].map((label) =>
-    document.querySelector(`button[aria-label="${label}"]`),
-  );
-  if (actions.some((action) => !(action instanceof HTMLButtonElement))) {
-    throw new Error("Could not find both thread filter creation actions.");
+  const actions = document.querySelector("[data-thread-filter-actions]");
+  if (!(actions instanceof HTMLElement)) {
+    throw new Error("Could not find the thread filter creation actions.");
   }
-  const states = actions.map((action) => {
-    const style = getComputedStyle(action);
-    return {
-      label: action.getAttribute("aria-label"),
-      opacity: Number.parseFloat(style.opacity),
-      pointerEvents: style.pointerEvents,
-    };
-  });
-  if (
-    states.some(
-      ({ opacity, pointerEvents }) => opacity !== 1 || pointerEvents !== "auto",
-    )
-  ) {
+  const style = getComputedStyle(actions);
+  const state = {
+    opacity: Number.parseFloat(style.opacity),
+    pointerEvents: style.pointerEvents,
+  };
+  if (state.opacity !== 1 || state.pointerEvents !== "auto") {
     throw new Error(
-      `Thread filter creation actions did not appear on row hover: ${JSON.stringify(states)}.`,
+      `Thread filter creation actions did not appear on row hover: ${JSON.stringify(state)}.`,
     );
   }
-  return JSON.stringify({ actionsOnHover: states });
+  return JSON.stringify({ actionsOnHover: state });
 })()'
 agent-browser --session "$qa_session" eval '(() => {
   const control = document.querySelector("button[aria-label^=\"Projects and sections\"]");
