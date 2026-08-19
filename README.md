@@ -26,12 +26,12 @@ Personal plugins for [bb](https://getbb.app).
       </td>
       <td valign="top">
         <p>
-          <img src="assets/plugin-icons/zap.svg" alt="" width="20" height="20" align="absmiddle"> <strong><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Missing keyboard shortcuts</a></strong><br>
-          Adds shortcuts for starting threads, navigating history, focusing the primary composer, and toggling a side chat or thread terminal.
-        </p>
-        <p>
           <img src="assets/plugin-icons/folder.svg" alt="" width="20" height="20" align="absmiddle"> <strong><a href="plugins/bb-plugin-project-header-breadcrumb#readme">Project header breadcrumb</a></strong><br>
           Adds the current project and its native actions menu before each thread title.
+        </p>
+        <p>
+          <img src="assets/plugin-icons/zap.svg" alt="" width="20" height="20" align="absmiddle"> <strong><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Missing keyboard shortcuts</a></strong><br>
+          Adds shortcuts for starting threads, navigating history, focusing the primary composer, and toggling a side chat or thread terminal.
         </p>
       </td>
       <td valign="top">
