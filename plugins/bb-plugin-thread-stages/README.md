@@ -5,6 +5,11 @@ bb's pinned-thread and subthread behavior, then groups the remaining root
 threads into manually ordered **Backlog**, **To do**, **Working**, **Blocked**,
 **Done**, and **Canceled** sections.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/screenshot-dark.png">
+  <img src="assets/screenshot-light.png" alt="Thread stages grouping the bb sidebar into Backlog, To do, Working, Blocked, and Done">
+</picture>
+
 Child threads do not have stages or positions of their own. They
 always render beneath their parent, inherit the root parent's stage, and move
 with that parent. Their thread actions therefore omit stage controls.

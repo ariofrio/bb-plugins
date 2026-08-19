@@ -1,0 +1,41 @@
+{
+  "bbVersion": "0.39.0",
+  "shots": {
+    "project-breadcrumbs": {
+      "inputs": "c276456a50860be52cfd78cd10a6fc6961327b09c091399f196a89587dfe28bd",
+      "files": {
+        "screenshot-light.png": "dbd7fedc6a5199cab1759344131644b7e24b63ad920236a5223b2aab83d4f76d",
+        "screenshot-dark.png": "32632c74b25624c7f9d5712b7821e4e8ae3339422e44044a5ff9e86937f505da"
+      }
+    },
+    "project-icons": {
+      "inputs": "4c284227fe31f036a84eec363cb1347c8413ed82f0b3023d93327c63a28a4263",
+      "files": {
+        "screenshot-light.png": "23e2f735f6b9222eacb23ee4c4ba0f9e874b84ccca58dbd4d4e37c1d4f7a4a00",
+        "screenshot-dark.png": "02e63f5a4243d8fbb2186770ac6f07293d6a40cbc92b01ceca0fdb41326d8f1a"
+      }
+    },
+    "thread-stages": {
+      "inputs": "73219a20656913b55db9bc21cb3ccf66c5c48764996b710da22b3aa84c289a59",
+      "files": {
+        "screenshot-light.png": "c2959ef685a347271483aff9becda6ad490b0e6c56219ccbcbcfb8d298046f82",
+        "screenshot-dark.png": "6c0dbba33d58909ca3e6a85b66a1a9c28650f97783ff16cc7e41dc7a25addeed"
+      }
+    },
+    "missing-keyboard-shortcuts": {
+      "inputs": "499a5b6d6cc761914c3fa0f389b05444e44bc7baf15f5571d543438914bb6723",
+      "files": {
+        "screenshot-light.png": "65e84379da623a1ba4122a3b61a1bd47edb3c76b2cd04b9dc7f66cf1e031d448",
+        "screenshot-dark.png": "bdd9e08b16ab8bb1e9d6c00d859a0241c8cec16f17234519750912088bf54157"
+      }
+    },
+    "chatgpt-theme": {
+      "inputs": "7a8c6736275b7831540a36a466ac8502c245d54f97a596a533a0beb431c83c16",
+      "files": {
+        "screenshot-light.png": "e7ef8c2a3d08007a34050a5a9daef09a50a1c53ab495b7b2c4efe6161f8c4c60",
+        "screenshot-dark.png": "d1976f8af20f2f9839e2f45edc9bea056cf75190e0f959935d9c6773bd1602ca",
+        "screenshot.png": "13a8d6112cade23e3262076f6a369d36f9d8dc2511ca6b78d62bdb3ae432f611"
+      }
+    }
+  }
+}

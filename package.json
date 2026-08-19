@@ -9,12 +9,15 @@
   ],
   "scripts": {
     "changeset": "changeset",
+    "check:screenshots": "node scripts/screenshots/run.mjs --check",
     "install:plugins": "node scripts/install-plugins.mjs",
-    "test": "node --test scripts/*.test.mjs",
+    "screenshots": "node scripts/screenshots/run.mjs",
+    "test": "node --test scripts/*.test.mjs scripts/screenshots/*.test.mjs",
     "version:plugins": "changeset version && node scripts/sync-plugin-lockfiles.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "3.0.0",
+    "playwright": "^1.62.1",
     "semver": "^7.8.1"
   }
 }

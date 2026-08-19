@@ -8,6 +8,11 @@ Click the icon in the header to change it: search 2,532 icons by name or
 synonym, filter by category, and pick a color. Changes save as you click and
 appear everywhere at once.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/screenshot-dark.png">
+  <img src="assets/screenshot-light.png" alt="The icon picker open on the Atlas project's icon in a bb thread header">
+</picture>
+
 The icon comes from [Hugeicons](https://hugeicons.com), the same set bb itself
 draws from, so it matches bb's chrome exactly. Projects default to a folder;
 bb's personal project always shows a chat bubble and cannot be changed.

@@ -1,0 +1,75 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { ASPECT_RATIO, cropRectangle, unionBox } from "./capture.mjs";
+
+const viewport = { width: 1280, height: 720 };
+
+function aspectOf(rectangle) {
+  return rectangle.width / rectangle.height;
+}
+
+test("a wide box keeps its width and gains height", () => {
+  const clip = cropRectangle({
+    box: { x: 400, y: 300, width: 400, height: 100 },
+    padding: 0,
+    viewport,
+  });
+  assert.equal(clip.width, 400);
+  assert.ok(Math.abs(aspectOf(clip) - ASPECT_RATIO) < 0.01);
+});
+
+test("a tall box keeps its height and gains width", () => {
+  const clip = cropRectangle({
+    box: { x: 0, y: 100, width: 320, height: 400 },
+    padding: 0,
+    viewport,
+  });
+  assert.equal(clip.height, 400);
+  assert.ok(Math.abs(aspectOf(clip) - ASPECT_RATIO) < 0.01);
+});
+
+test("padding grows the crop around the box", () => {
+  const tight = cropRectangle({
+    box: { x: 400, y: 300, width: 200, height: 100 },
+    padding: 0,
+    viewport,
+  });
+  const padded = cropRectangle({
+    box: { x: 400, y: 300, width: 200, height: 100 },
+    padding: 40,
+    viewport,
+  });
+  assert.ok(padded.width > tight.width);
+});
+
+test("a crop never leaves the viewport", () => {
+  const clip = cropRectangle({
+    box: { x: 0, y: 0, width: 320, height: 700 },
+    padding: 80,
+    viewport,
+  });
+  assert.ok(clip.x >= 0 && clip.y >= 0);
+  assert.ok(clip.x + clip.width <= viewport.width);
+  assert.ok(clip.y + clip.height <= viewport.height);
+});
+
+test("an explicit width overrides the box's own size", () => {
+  const clip = cropRectangle({
+    box: { x: 0, y: 200, width: 320, height: 500 },
+    padding: 0,
+    width: 720,
+    viewport,
+  });
+  assert.equal(clip.width, 720);
+  assert.equal(clip.height, Math.round(720 / ASPECT_RATIO));
+});
+
+test("a union covers every box", () => {
+  assert.deepEqual(
+    unionBox([
+      { x: 10, y: 20, width: 30, height: 40 },
+      { x: 5, y: 50, width: 10, height: 10 },
+    ]),
+    { x: 5, y: 20, width: 35, height: 40 },
+  );
+});

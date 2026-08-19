@@ -12,6 +12,11 @@ Adds keyboard shortcuts that BB does not currently provide:
 |      ⇧⌘L | Activate a side chat, or close it when focused       |
 |       ⌃` | Activate a thread terminal, or close it when focused |
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/screenshot-dark.png">
+  <img src="assets/screenshot-light.png" alt="A bb side chat opened with the ⇧⌘L shortcut">
+</picture>
+
 All shortcuts work while an input, editor, or composer has focus. They use
 exact modifier matching, ignore held-key repeats, and stop matched key events
 from propagating to downstream BB or editor handlers. The side chat and
