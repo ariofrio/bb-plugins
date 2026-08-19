@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { satisfies } from "semver";
 
 import { derivePluginId } from "./plugin-id.mjs";
+import { headingIcons, padViewBox } from "./heading-icons.mjs";
 
 const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 
@@ -121,6 +123,17 @@ test("packages every plugin the same way and paints its icon in bb's muted foreg
       icon,
       /@media \(prefers-color-scheme: dark\) \{ svg \{ color: #b7b7b7; \} \}/,
       `${id} icon must carry bb's muted foreground for dark mode`,
+    );
+  }
+});
+
+test("derives every heading icon from the plugin icon it stands for", async () => {
+  const repositoryRoot = new URL("..", import.meta.url);
+  for (const icon of headingIcons(fileURLToPath(repositoryRoot))) {
+    assert.equal(
+      await readFile(icon.output, "utf8"),
+      padViewBox(await readFile(icon.source, "utf8")),
+      `${icon.id} heading icon is stale; run npm run build:heading-icons`,
     );
   }
 });
