@@ -65,10 +65,10 @@ export function ThreadFilter({
       ? sections.find((section) => section.id === value.id)
       : undefined;
   const activeLabel = activeProject?.name ?? activeSection?.name ?? null;
-  const filterLabel =
-    projects.length > 0 && sections.length === 0
-      ? "Projects"
-      : "Projects and sections";
+  const scopeLabel =
+    sections.length === 0 ? "Projects" : "Projects and sections";
+  const allLabel =
+    sections.length === 0 ? "All projects" : "All projects and sections";
 
   return (
     <div className="group/thread-filter sticky top-[var(--bb-sidebar-sticky-stack-padding-top)] z-[70] mb-4 flex min-w-0 items-center gap-1 rounded-md bg-sidebar outline-none ring-sidebar-ring has-[.thread-filter-trigger:focus-visible]:ring-2 before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-sidebar before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-sidebar after:content-['']">
@@ -79,13 +79,19 @@ export function ThreadFilter({
             data-thread-filter-trigger=""
             aria-label={
               activeLabel === null
-                ? filterLabel
-                : `${filterLabel}: ${activeLabel}`
+                ? allLabel
+                : `${scopeLabel}: ${activeLabel}`
             }
             className="thread-filter-trigger flex h-7 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-sidebar-foreground/85 outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-state-active data-[state=open]:text-sidebar-foreground max-md:pointer-coarse:h-9 dark:text-sidebar-foreground"
           >
-            <Icon name="FilterMail" className="size-4 shrink-0" aria-hidden />
-            <span className="truncate">{activeLabel ?? filterLabel}</span>
+            {activeProject ? (
+              <ProjectFilterIcon icon={projectIcons.get(activeProject.id)} />
+            ) : activeSection ? (
+              <Icon name="ListView" className="size-4 shrink-0" aria-hidden />
+            ) : (
+              <Icon name="Folders" className="size-4 shrink-0" aria-hidden />
+            )}
+            <span className="truncate">{activeLabel ?? allLabel}</span>
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
@@ -108,8 +114,8 @@ export function ThreadFilter({
                 }
               }}
             >
-              <ThreadFilterItem label="Show all threads" value="">
-                <Icon name="FilterMail" className="size-4 shrink-0" aria-hidden />
+              <ThreadFilterItem label={allLabel} value="">
+                <Icon name="Folders" className="size-4 shrink-0" aria-hidden />
               </ThreadFilterItem>
               {projects.length > 0 ? (
                 <>
@@ -118,31 +124,15 @@ export function ThreadFilter({
                   </DropdownMenu.Label>
                   <DropdownMenu.Group>
                     {projects.map((project) => {
-                      const icon = projectIcons.get(project.id);
                       return (
                         <ThreadFilterItem
                           key={project.id}
                           label={project.name}
                           value={`project:${project.id}`}
                         >
-                          {icon ? (
-                            <HugeiconsIcon
-                              icon={icon.glyph}
-                              className="size-4 shrink-0"
-                              style={
-                                icon.color === null
-                                  ? undefined
-                                  : { color: icon.color }
-                              }
-                              aria-hidden
-                            />
-                          ) : (
-                            <Icon
-                              name="Folder"
-                              className="size-4 shrink-0"
-                              aria-hidden
-                            />
-                          )}
+                          <ProjectFilterIcon
+                            icon={projectIcons.get(project.id)}
+                          />
                         </ThreadFilterItem>
                       );
                     })}
@@ -194,6 +184,21 @@ export function ThreadFilter({
         </span>
       </TooltipProvider>
     </div>
+  );
+}
+
+function ProjectFilterIcon({ icon }: { icon?: ProjectIconView }) {
+  if (!icon) {
+    return <Icon name="Folder" className="size-4 shrink-0" aria-hidden />;
+  }
+
+  return (
+    <HugeiconsIcon
+      icon={icon.glyph}
+      className="size-4 shrink-0"
+      style={icon.color === null ? undefined : { color: icon.color }}
+      aria-hidden
+    />
   );
 }
 

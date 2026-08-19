@@ -18,6 +18,22 @@ agent-browser --session "$qa_session" open "$qa_server_url" >/dev/null
 agent-browser --session "$qa_session" wait 2000 >/dev/null
 agent-browser --session "$qa_session" set viewport 900 700 >/dev/null
 agent-browser --session "$qa_session" wait 300 >/dev/null
+agent-browser --session "$qa_session" eval '(() => {
+  const control = document.querySelector("[data-thread-filter-trigger]");
+  const icon = control?.querySelector("svg");
+  const label = control?.querySelector("span")?.textContent?.trim();
+  if (
+    !(control instanceof HTMLButtonElement) ||
+    !(icon instanceof SVGElement) ||
+    (label !== "All projects" && label !== "All projects and sections") ||
+    icon.getAttribute("data-icon") !== "Folders"
+  ) {
+    throw new Error(
+      `Unexpected unfiltered control: ${JSON.stringify({ label, icon: icon?.getAttribute("data-icon") })}.`,
+    );
+  }
+  return JSON.stringify({ unfilteredControl: { label, icon: "Folders" } });
+})()'
 agent-browser --session "$qa_session" hover \
   '[data-sidebar-sticky-tier="label"]' >/dev/null
 agent-browser --session "$qa_session" wait 100 >/dev/null
@@ -190,7 +206,7 @@ agent-browser --session "$qa_session" eval '(() => {
   const controlToFirstStage = stageRect.top - controlRect.bottom;
   if (Math.abs(controlRect.height - builtInRect.height) > 0.25) {
     throw new Error(
-      `Projects and sections is ${controlRect.height}px tall; the final built-in row is ${builtInRect.height}px.`,
+      `Thread filter is ${controlRect.height}px tall; the final built-in row is ${builtInRect.height}px.`,
     );
   }
   const builtInRhythm =
@@ -440,6 +456,24 @@ agent-browser --session "$qa_session" find role menuitemradio click \
   --name "$qa_empty_project_name" >/dev/null
 agent-browser --session "$qa_session" wait --text \
   "No threads in this project" >/dev/null
+agent-browser --session "$qa_session" eval '(() => {
+  const control = document.querySelector("[data-thread-filter-trigger]");
+  const icon = control?.querySelector("svg");
+  const label = control?.querySelector("span")?.textContent?.trim();
+  const iconName = icon?.getAttribute("data-icon");
+  if (
+    !(control instanceof HTMLButtonElement) ||
+    !(icon instanceof SVGElement) ||
+    label === "All projects" ||
+    label === "All projects and sections" ||
+    (iconName !== null && iconName !== "Folder")
+  ) {
+    throw new Error(
+      `Unexpected selected-project control: ${JSON.stringify({ label, icon: iconName })}.`,
+    );
+  }
+  return JSON.stringify({ selectedProjectControl: { label, icon: iconName ?? "Project icons glyph" } });
+})()'
 agent-browser --session "$qa_session" eval '(() => {
   const expected = window.__threadStagesExpectedFilterInsets;
   const control = document.querySelector("[data-thread-filter-trigger]");

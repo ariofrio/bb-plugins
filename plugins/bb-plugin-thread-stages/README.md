@@ -19,13 +19,16 @@ Each row shows its project's icon when the
 list still tells you what a thread belongs to. Without that
 plugin the rows look as they always have.
 
-Use **Projects and sections** above the stages to focus the whole
-sidebar—including pinned and search results—on one project or one native
-thread section. The selection is stored only in the current browser and does
-not change stage assignments or synchronization. The adjacent actions create a
-project through bb's native host folder picker or open the New section dialog.
-Stage counts show the number of filtered root threads in each unpinned stage;
-they are enabled by default and can be hidden in the plugin's settings.
+Use **All projects** (or **All projects and sections** when sections exist)
+above the stages to focus the whole sidebar—including pinned and search
+results—on one project or one native thread section. The control shows the
+selected project's Project icons glyph, a folder when that plugin is absent,
+or the section glyph for a selected section. The selection is stored only in
+the current browser and does not change stage assignments or synchronization.
+The adjacent actions create a project through bb's native host folder picker
+or open the New section dialog. Stage counts show the number of filtered root
+threads in each unpinned stage; they are enabled by default and can be hidden
+in the plugin's settings.
 
 Drag root threads to reorder or change their stage. Ordering uses
 fractional keys, so a move updates only the moved thread. Root threads enter
