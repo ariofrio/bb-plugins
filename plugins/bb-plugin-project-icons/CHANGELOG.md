@@ -1,5 +1,15 @@
 # bb-plugin-project-icons
 
+## 0.2.0
+
+### Minor Changes
+
+- e9ead62: Ship each plugin's own Hugeicons branding icon: Shapes01 for Project icons, Command for Missing keyboard shortcuts, ChatGPT for ChatGPT theme, and a folder holding ArrowRight01 for Project breadcrumbs.
+
+### Patch Changes
+
+- a0bae2c: Follow the Project breadcrumbs rename when locating the breadcrumb root in the thread header.
+
 ## 0.1.2
 
 ### Patch Changes
