@@ -26,7 +26,7 @@
     "name": "Thread tasks",
     "description": "Treat root sidebar threads as manually ordered tasks grouped by task status.",
     "branding": {
-      "icon": "List"
+      "icon": "ListTodo"
     },
     "server": "./server.ts",
     "app": "./app.tsx",
