@@ -22,19 +22,19 @@
     <tr>
       <td valign="top" align="center">
         <p></p>
-        <p><a href="plugins/bb-plugin-thread-stages#readme"><img src="assets/plugin-icons/list-todo.svg" alt="" width="40" height="40"><br><strong>Thread stages</strong></a></p>
+        <p><a href="plugins/bb-plugin-thread-stages#readme"><img src="plugins/bb-plugin-thread-stages/assets/icon.svg" alt="" width="40" height="40"><br><strong>Thread stages</strong></a></p>
         <p>Groups sidebar threads into drag-ordered stages that update as they run</p>
         <p></p>
       </td>
       <td valign="top" align="center">
         <p></p>
-        <p><a href="plugins/bb-plugin-project-breadcrumbs#readme"><img src="assets/plugin-icons/folder-arrow-right.svg" alt="" width="40" height="40"><br><strong>Project breadcrumbs</strong></a></p>
+        <p><a href="plugins/bb-plugin-project-breadcrumbs#readme"><img src="plugins/bb-plugin-project-breadcrumbs/assets/icon.svg" alt="" width="40" height="40"><br><strong>Project breadcrumbs</strong></a></p>
         <p>Adds the current project and its actions menu before each thread title</p>
         <p></p>
       </td>
       <td valign="top" align="center">
         <p></p>
-        <p><a href="plugins/bb-plugin-chatgpt-theme#readme"><img src="assets/plugin-icons/chatgpt.svg" alt="" width="40" height="40"><br><strong>ChatGPT theme</strong></a></p>
+        <p><a href="plugins/bb-plugin-chatgpt-theme#readme"><img src="plugins/bb-plugin-chatgpt-theme/assets/icon.svg" alt="" width="40" height="40"><br><strong>ChatGPT theme</strong></a></p>
         <p>Matches bb's palette to the OpenAI ChatGPT (née Codex) desktop app, light and dark</p>
         <p></p>
       </td>
@@ -42,13 +42,13 @@
     <tr>
       <td valign="top" align="center">
         <p></p>
-        <p><a href="plugins/bb-plugin-project-icons#readme"><img src="assets/plugin-icons/shapes-01.svg" alt="" width="40" height="40"><br><strong>Project icons</strong></a></p>
+        <p><a href="plugins/bb-plugin-project-icons#readme"><img src="plugins/bb-plugin-project-icons/assets/icon.svg" alt="" width="40" height="40"><br><strong>Project icons</strong></a></p>
         <p>Gives each project an icon and optional color, in the thread header and sidebar</p>
         <p></p>
       </td>
       <td valign="top" align="center">
         <p></p>
-        <p><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><img src="assets/plugin-icons/command.svg" alt="" width="40" height="40"><br><strong>Missing keyboard shortcuts</strong></a></p>
+        <p><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><img src="plugins/bb-plugin-missing-keyboard-shortcuts/assets/icon.svg" alt="" width="40" height="40"><br><strong>Missing keyboard shortcuts</strong></a></p>
         <p>Adds shortcuts for threads, history, the composer, side chats, and terminals</p>
         <p></p>
       </td>
