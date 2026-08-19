@@ -1,7 +1,7 @@
 {
   "name": "bb-plugin-project-icons",
   "version": "0.2.1",
-  "description": "Give each bb project an icon and optional color.",
+  "description": "Give each project an icon and color.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -37,7 +37,7 @@
   },
   "bb": {
     "name": "Project icons",
-    "description": "Give each project an icon and color, shown in the thread header and the task sidebar.",
+    "description": "Give each project an icon and color.",
     "branding": {
       "icon": "./assets/icon.svg"
     },

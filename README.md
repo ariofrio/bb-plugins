@@ -23,19 +23,19 @@
       <td valign="top" align="center">
         <p></p>
         <p><a href="plugins/bb-plugin-thread-stages#readme"><img src="plugins/bb-plugin-thread-stages/assets/icon.svg" alt="" width="40" height="40"><br><strong>Thread stages</strong></a></p>
-        <p>Groups sidebar threads into drag-ordered stages that update as they run</p>
+        <p>Group threads in the sidebar into stages from Backlog to Done, updating as they run.</p>
         <p></p>
       </td>
       <td valign="top" align="center">
         <p></p>
         <p><a href="plugins/bb-plugin-project-breadcrumbs#readme"><img src="plugins/bb-plugin-project-breadcrumbs/assets/icon.svg" alt="" width="40" height="40"><br><strong>Project breadcrumbs</strong></a></p>
-        <p>Adds the current project and its actions menu before each thread title</p>
+        <p>Show and manage a thread's project from its header.</p>
         <p></p>
       </td>
       <td valign="top" align="center">
         <p></p>
         <p><a href="plugins/bb-plugin-chatgpt-theme#readme"><img src="plugins/bb-plugin-chatgpt-theme/assets/icon.svg" alt="" width="40" height="40"><br><strong>ChatGPT theme</strong></a></p>
-        <p>Matches bb's palette to the OpenAI ChatGPT (née Codex) desktop app, light and dark</p>
+        <p>Restyle bb to match the OpenAI ChatGPT (Codex) desktop app, in both light and dark modes.</p>
         <p></p>
       </td>
     </tr>
@@ -43,13 +43,13 @@
       <td valign="top" align="center">
         <p></p>
         <p><a href="plugins/bb-plugin-project-icons#readme"><img src="plugins/bb-plugin-project-icons/assets/icon.svg" alt="" width="40" height="40"><br><strong>Project icons</strong></a></p>
-        <p>Gives each project an icon and optional color, in the thread header and sidebar</p>
+        <p>Give each project an icon and color.</p>
         <p></p>
       </td>
       <td valign="top" align="center">
         <p></p>
         <p><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><img src="plugins/bb-plugin-missing-keyboard-shortcuts/assets/icon.svg" alt="" width="40" height="40"><br><strong>Missing keyboard shortcuts</strong></a></p>
-        <p>Adds shortcuts for threads, history, the composer, side chats, and terminals</p>
+        <p>Add shortcuts to start threads with or without a project, navigate history, and reach the terminal, side chat, or composer.</p>
         <p></p>
       </td>
       <td></td>

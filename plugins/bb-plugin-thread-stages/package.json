@@ -1,7 +1,7 @@
 {
   "name": "bb-plugin-thread-stages",
   "version": "0.6.1",
-  "description": "Organize bb root threads into manually ordered stages.",
+  "description": "Group threads in the sidebar into stages from Backlog to Done, updating as they run.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -39,7 +39,7 @@
   },
   "bb": {
     "name": "Thread stages",
-    "description": "Organize root sidebar threads into ordered stages.",
+    "description": "Group threads in the sidebar into stages from Backlog to Done, updating as they run.",
     "branding": {
       "icon": "./assets/icon.svg"
     },

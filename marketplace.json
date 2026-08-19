@@ -8,7 +8,7 @@
     {
       "id": "chatgpt-theme",
       "displayName": "ChatGPT theme",
-      "description": "Adds a light-and-dark bb theme based on the OpenAI ChatGPT desktop palette.",
+      "description": "Restyle bb to match the OpenAI ChatGPT (Codex) desktop app, in both light and dark modes.",
       "icon": {
         "url": "./plugins/bb-plugin-chatgpt-theme/assets/icon.svg"
       },
@@ -37,7 +37,7 @@
     {
       "id": "missing-keyboard-shortcuts",
       "displayName": "Missing keyboard shortcuts",
-      "description": "Adds keyboard shortcuts for common bb navigation, thread creation, composers, side chats, and terminals.",
+      "description": "Add shortcuts to start threads with or without a project, navigate history, and reach the terminal, side chat, or composer.",
       "icon": {
         "url": "./plugins/bb-plugin-missing-keyboard-shortcuts/assets/icon.svg"
       },
@@ -65,7 +65,7 @@
     {
       "id": "project-breadcrumbs",
       "displayName": "Project breadcrumbs",
-      "description": "Adds the current project and its settings, rename, and removal actions to each standard thread header.",
+      "description": "Show and manage a thread's project from its header.",
       "icon": {
         "url": "./plugins/bb-plugin-project-breadcrumbs/assets/icon.svg"
       },
@@ -92,7 +92,7 @@
     {
       "id": "project-icons",
       "displayName": "Project icons",
-      "description": "Gives each bb project a searchable icon and optional color in thread headers and the Thread stages sidebar.",
+      "description": "Give each project an icon and color.",
       "icon": {
         "url": "./plugins/bb-plugin-project-icons/assets/icon.svg"
       },
@@ -120,7 +120,7 @@
     {
       "id": "thread-stages",
       "displayName": "Thread stages",
-      "description": "Organizes root threads into manually ordered stages, with automatic transitions, keyboard shortcuts, and a CLI.",
+      "description": "Group threads in the sidebar into stages from Backlog to Done, updating as they run.",
       "icon": {
         "url": "./plugins/bb-plugin-thread-stages/assets/icon.svg"
       },

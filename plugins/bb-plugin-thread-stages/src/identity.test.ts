@@ -13,7 +13,7 @@ describe("plugin identity", () => {
     expect(manifest.name).toBe("bb-plugin-thread-stages");
     expect(manifest.bb.name).toBe("Thread stages");
     expect(manifest.bb.description).toBe(
-      "Organize root sidebar threads into ordered stages.",
+      "Group threads in the sidebar into stages from Backlog to Done, updating as they run.",
     );
     expect(manifest.repository.directory).toBe(
       "plugins/bb-plugin-thread-stages",

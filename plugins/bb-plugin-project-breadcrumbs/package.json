@@ -1,7 +1,7 @@
 {
   "name": "bb-plugin-project-breadcrumbs",
   "version": "0.2.1",
-  "description": "Add the current project and its actions menu to bb thread headers.",
+  "description": "Show and manage a thread's project from its header.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -26,7 +26,7 @@
   },
   "bb": {
     "name": "Project breadcrumbs",
-    "description": "Adds the current project and its actions menu to thread headers.",
+    "description": "Show and manage a thread's project from its header.",
     "branding": {
       "icon": "./assets/icon.svg"
     },
