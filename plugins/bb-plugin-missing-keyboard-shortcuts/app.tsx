@@ -3,7 +3,7 @@ import {
   useBbContext,
   useComposer,
   useComposerView,
-} from "@bb/plugin-sdk/app";
+} from "@get-bb/plugin-sdk/app";
 import { createElement, useEffect, useLayoutEffect, useRef } from "react";
 import { toast } from "sonner";
 import {

@@ -4,6 +4,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "jsx": "react-jsx",
     "lib": [
       "ES2022",
       "DOM"
@@ -12,12 +13,6 @@
       "node"
     ],
     "paths": {
-      "@bb/plugin-sdk": [
-        "./types/bb-plugin-sdk.d.ts"
-      ],
-      "@bb/plugin-sdk/app": [
-        "./types/bb-plugin-sdk-app.d.ts"
-      ],
       "@/*": [
         "./*"
       ]
@@ -29,7 +24,6 @@
     "*.ts",
     "*.tsx",
     "server.ts",
-    "app.tsx",
-    "types"
+    "app.tsx"
   ]
 }
