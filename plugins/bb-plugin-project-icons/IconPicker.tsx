@@ -84,16 +84,16 @@ export function IconPicker({
     [catalog, query],
   );
   const searching = query.trim().length > 0;
-  const visibleGroups = searching ? groupCatalog(results) : groups;
+  const visibleGroups = useMemo(
+    () => (searching ? groupCatalog(results) : groups),
+    [groups, results, searching],
+  );
 
   useEffect(() => {
-    if (
-      groups.length > 0 &&
-      !groups.some(({ name }) => name === activeCategory)
-    ) {
-      setActiveCategory(groups[0]?.name ?? null);
+    if (!visibleGroups.some(({ name }) => name === activeCategory)) {
+      setActiveCategory(visibleGroups[0]?.name ?? null);
     }
-  }, [activeCategory, groups]);
+  }, [activeCategory, visibleGroups]);
 
   useEffect(() => {
     if (activeCategory === null) return;
@@ -118,7 +118,7 @@ export function IconPicker({
     updateCategoryOverflow();
     window.addEventListener("resize", updateCategoryOverflow);
     return () => window.removeEventListener("resize", updateCategoryOverflow);
-  }, [groups]);
+  }, [visibleGroups]);
 
   const updateCatalogOverflow = (scroller = catalogScroller) => {
     if (scroller === null) return;
@@ -173,8 +173,8 @@ export function IconPicker({
 
   const trackVisibleCategory = (scrollingElement: HTMLDivElement) => {
     const threshold = scrollingElement.getBoundingClientRect().top + 8;
-    let next = groups[0]?.name ?? null;
-    for (const { name } of groups) {
+    let next = visibleGroups[0]?.name ?? null;
+    for (const { name } of visibleGroups) {
       const section = sectionRefs.current.get(name);
       if (
         section !== undefined &&
@@ -271,7 +271,7 @@ export function IconPicker({
             ) : null}
           </div>
 
-          {!searching && groups.length > 0 ? (
+          {visibleGroups.length > 0 ? (
             <nav
               aria-label="Icon categories"
               className="flex min-w-0 items-center gap-1"
@@ -290,7 +290,7 @@ export function IconPicker({
                 onScroll={updateCategoryOverflow}
                 className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
-                {groups.map(({ name }) => (
+                {visibleGroups.map(({ name }) => (
                   <CategoryChip
                     key={name}
                     active={activeCategory === name}
@@ -323,7 +323,7 @@ export function IconPicker({
               className="h-full overflow-y-auto pr-1"
               onScroll={(event) => {
                 updateCatalogOverflow(event.currentTarget);
-                if (!searching) trackVisibleCategory(event.currentTarget);
+                trackVisibleCategory(event.currentTarget);
               }}
             >
               <div ref={catalogContentRef}>

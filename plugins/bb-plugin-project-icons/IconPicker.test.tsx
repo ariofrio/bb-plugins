@@ -115,7 +115,7 @@ describe("IconPicker", () => {
     expect(onPickColor).toHaveBeenCalledWith(null);
   });
 
-  it("keeps matching icons grouped by category while searching", () => {
+  it("keeps search results grouped and filters the category pills", () => {
     const scrollIntoView = vi.fn();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
@@ -149,20 +149,32 @@ describe("IconPicker", () => {
     expect(scrollIntoView).toHaveBeenCalled();
 
     fireEvent.change(screen.getByRole("searchbox", { name: "Search icons" }), {
-      target: { value: "l" },
+      target: { value: "circ" },
+    });
+    const filteredCategories = screen.getByRole("navigation", {
+      name: "Icon categories",
     });
     expect(
-      screen.queryByRole("navigation", { name: "Icon categories" }),
+      within(filteredCategories).queryByRole("button", { name: "AI" }),
+    ).toBeNull();
+    const shapesCategory = within(filteredCategories).getByRole("button", {
+      name: "Shapes",
+    });
+    expect(shapesCategory.getAttribute("aria-current")).toBe("true");
+    expect(
+      within(filteredCategories).queryByRole("button", { name: "Space" }),
     ).toBeNull();
     const searchResults = screen.getByRole("region", {
       name: "Icon search results",
     });
-    within(searchResults).getByRole("heading", { name: "AI" });
+    expect(
+      within(searchResults).queryByRole("heading", { name: "AI" }),
+    ).toBeNull();
     within(searchResults).getByRole("heading", { name: "Shapes" });
-    within(searchResults).getByRole("heading", { name: "Space" });
-    within(searchResults).getByRole("button", { name: "sparkles" });
+    expect(
+      within(searchResults).queryByRole("heading", { name: "Space" }),
+    ).toBeNull();
     within(searchResults).getByRole("button", { name: "circle" });
-    within(searchResults).getByRole("button", { name: "rocket" });
     expect(screen.queryByText(/Showing \d+ of \d+/)).toBeNull();
   });
 
