@@ -18,4 +18,16 @@ describe("parseStoredStringSet", () => {
       ),
     ]).toEqual(["Done"]);
   });
+
+  it("uses defaults only when no value has been stored", () => {
+    const allowedValues = new Set(["Backlog", "To do", "Done"]);
+    const defaultValues = new Set(["Backlog", "Done"]);
+
+    expect([
+      ...parseStoredStringSet(null, allowedValues, defaultValues),
+    ]).toEqual(["Backlog", "Done"]);
+    expect([
+      ...parseStoredStringSet("[]", allowedValues, defaultValues),
+    ]).toEqual([]);
+  });
 });

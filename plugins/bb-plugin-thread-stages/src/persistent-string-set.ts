@@ -9,8 +9,15 @@ import {
 export function parseStoredStringSet(
   raw: string | null,
   allowedValues?: ReadonlySet<string>,
+  defaultValues?: ReadonlySet<string>,
 ): Set<string> {
-  if (raw === null) return new Set();
+  if (raw === null) {
+    return new Set(
+      [...(defaultValues ?? [])].filter(
+        (value) => allowedValues === undefined || allowedValues.has(value),
+      ),
+    );
+  }
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return new Set();
@@ -29,31 +36,39 @@ export function parseStoredStringSet(
 function readStoredStringSet(
   key: string,
   allowedValues?: ReadonlySet<string>,
+  defaultValues?: ReadonlySet<string>,
 ): Set<string> {
   try {
-    return parseStoredStringSet(window.localStorage.getItem(key), allowedValues);
+    return parseStoredStringSet(
+      window.localStorage.getItem(key),
+      allowedValues,
+      defaultValues,
+    );
   } catch {
-    return new Set();
+    return new Set(defaultValues);
   }
 }
 
 export function usePersistentStringSet(
   key: string,
   allowedValues?: ReadonlySet<string>,
+  defaultValues?: ReadonlySet<string>,
 ): [Set<string>, Dispatch<SetStateAction<Set<string>>>] {
   const [values, setValues] = useState(() =>
-    readStoredStringSet(key, allowedValues),
+    readStoredStringSet(key, allowedValues, defaultValues),
   );
 
   useEffect(() => {
     function onStorage(event: StorageEvent): void {
       if (event.key === key) {
-        setValues(parseStoredStringSet(event.newValue, allowedValues));
+        setValues(
+          parseStoredStringSet(event.newValue, allowedValues, defaultValues),
+        );
       }
     }
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, [allowedValues, key]);
+  }, [allowedValues, defaultValues, key]);
 
   const setPersistentValues = useCallback<
     Dispatch<SetStateAction<Set<string>>>

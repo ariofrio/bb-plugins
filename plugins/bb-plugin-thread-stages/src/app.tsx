@@ -92,6 +92,11 @@ const COLLAPSIBLE_SECTION_SET: ReadonlySet<string> = new Set([
   PINNED_SECTION,
   ...WORKFLOW_STAGES,
 ]);
+const DEFAULT_COLLAPSED_STAGES: ReadonlySet<string> = new Set([
+  "Backlog",
+  "Done",
+  "Canceled",
+]);
 
 interface OrganizationState {
   assignments: ThreadAssignment[];
@@ -651,6 +656,7 @@ function WorkflowStageList({
   const [collapsedSections, setCollapsedSections] = usePersistentStringSet(
     COLLAPSED_STATUSES_STORAGE_KEY,
     COLLAPSIBLE_SECTION_SET,
+    DEFAULT_COLLAPSED_STAGES,
   );
   const [collapsedThreads, setCollapsedThreads] = usePersistentStringSet(
     COLLAPSED_THREADS_STORAGE_KEY,
