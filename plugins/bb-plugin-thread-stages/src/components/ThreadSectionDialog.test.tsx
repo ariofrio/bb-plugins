@@ -3,9 +3,32 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ThreadSectionDialog } from "./ThreadSectionDialog";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  document
+    .querySelectorAll("[data-app-browser]")
+    .forEach((element) => element.remove());
+});
 
 describe("ThreadSectionDialog", () => {
+  it("centers inside the DOM area not covered by the in-app browser", () => {
+    const browserPanel = document.createElement("div");
+    browserPanel.setAttribute("data-app-browser", "");
+    browserPanel.getBoundingClientRect = () =>
+      ({ left: 600, width: 400, height: 800 }) as DOMRect;
+    document.body.append(browserPanel);
+
+    render(
+      <ThreadSectionDialog
+        open
+        onCreate={async () => {}}
+        onOpenChange={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole("dialog").style.left).toBe("300px");
+  });
+
   it("creates a trimmed section and closes", async () => {
     const onCreate = vi.fn(async () => {});
     const onOpenChange = vi.fn();

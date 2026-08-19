@@ -1,5 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useDialogCenterX } from "../lib/dialog-position";
 import { portalScopeProps } from "../lib/portal-scope";
 import { Icon } from "./Icon";
 
@@ -16,6 +17,7 @@ export function ThreadSectionDialog({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const dialogCenterX = useDialogCenterX(open);
 
   useEffect(() => {
     if (!open) return;
@@ -64,6 +66,7 @@ export function ThreadSectionDialog({
         <Dialog.Content
           {...portalScopeProps()}
           className="fixed left-1/2 top-1/2 z-50 w-full max-w-[32rem] -translate-x-1/2 -translate-y-1/2 border bg-background shadow-sm sm:rounded-lg max-md:w-[calc(100%_-_2rem)]"
+          style={{ left: dialogCenterX }}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             inputRef.current?.focus();

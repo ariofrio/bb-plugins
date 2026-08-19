@@ -1,5 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useDialogCenterX } from "../lib/dialog-position";
 import { portalScopeProps } from "../lib/portal-scope";
 import { Icon } from "./Icon";
 
@@ -30,6 +31,7 @@ export function FilterEntityRenameDialog({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const dialogCenterX = useDialogCenterX(target !== null);
 
   useEffect(() => {
     if (!target) return;
@@ -76,6 +78,7 @@ export function FilterEntityRenameDialog({
           <Dialog.Content
             {...portalScopeProps()}
             className={CONTENT_CLASS}
+            style={{ left: dialogCenterX }}
             onOpenAutoFocus={(event) => {
               event.preventDefault();
               inputRef.current?.focus();
@@ -133,6 +136,7 @@ export function FilterEntityRemoveDialog({
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dialogCenterX = useDialogCenterX(target !== null);
 
   useEffect(() => setError(null), [target]);
 
@@ -164,7 +168,11 @@ export function FilterEntityRemoveDialog({
       <Dialog.Portal>
         <Dialog.Overlay {...portalScopeProps()} className={OVERLAY_CLASS} />
         {target ? (
-          <Dialog.Content {...portalScopeProps()} className={CONTENT_CLASS}>
+          <Dialog.Content
+            {...portalScopeProps()}
+            className={CONTENT_CLASS}
+            style={{ left: dialogCenterX }}
+          >
             <Dialog.Title className="text-base font-semibold leading-none tracking-tight">
               Remove {target.kind}?
             </Dialog.Title>
