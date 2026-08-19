@@ -46,6 +46,11 @@ import {
 } from "./components/ThreadIndicator";
 import { SplitPaneMiniMap } from "./components/SplitPaneMiniMap";
 import { ThreadFilter } from "./components/ThreadFilter";
+import {
+  FilterEntityRemoveDialog,
+  FilterEntityRenameDialog,
+  type FilterEntityTarget,
+} from "./components/FilterEntityDialogs";
 import { ThreadRenameDialog } from "./components/ThreadRenameDialog";
 import { ThreadSectionDialog } from "./components/ThreadSectionDialog";
 import { createNativeCommandDelegate } from "./native-command-delegation";
@@ -673,6 +678,10 @@ function WorkflowStageList({
           window.localStorage.getItem(LEGACY_PROJECT_FILTER_STORAGE_KEY)),
   );
   const [newSectionOpen, setNewSectionOpen] = useState(false);
+  const [renameTarget, setRenameTarget] =
+    useState<FilterEntityTarget | null>(null);
+  const [removeTarget, setRemoveTarget] =
+    useState<FilterEntityTarget | null>(null);
   const [projectCreatePending, setProjectCreatePending] = useState(false);
   const wasConnected = useRef(false);
   const syncInFlight = useRef(false);
@@ -799,6 +808,9 @@ function WorkflowStageList({
   const [projectIcons, setProjectIcons] = useState<
     ReadonlyMap<string, ProjectIconView>
   >(new Map());
+  const [projectActionStates, setProjectActionStates] = useState<
+    ReadonlyMap<string, { canAddLocalPath: boolean }>
+  >(new Map());
   useEffect(() => {
     let canceled = false;
     const load = () => {
@@ -815,6 +827,24 @@ function WorkflowStageList({
       unsubscribe();
     };
   }, [projectIds]);
+  const refreshProjectActionStates = useCallback(async () => {
+    try {
+      const result = await rpc.call("listProjectActionStates", null);
+      setProjectActionStates(
+        new Map(
+          result.projects.map(({ id, canAddLocalPath }) => [
+            id,
+            { canAddLocalPath },
+          ]),
+        ),
+      );
+    } catch {
+      setProjectActionStates(new Map());
+    }
+  }, [rpc]);
+  useEffect(() => {
+    void refreshProjectActionStates();
+  }, [projectIds, refreshProjectActionStates]);
   const explicitPinnedThreadIds = useMemo(
     () =>
       rootThreads
@@ -1119,24 +1149,113 @@ function WorkflowStageList({
     }
   }, [projectCreatePending, rpc]);
 
+  const addProjectLocalPath = useCallback(
+    async (projectId: string) => {
+      try {
+        const { added } = await rpc.call("addProjectLocalPath", { projectId });
+        if (added) {
+          toast.success("Added local path");
+          await refreshProjectActionStates();
+        }
+      } catch (cause) {
+        toast.error(
+          cause instanceof Error
+            ? cause.message
+            : "Could not add the local path.",
+        );
+      }
+    },
+    [refreshProjectActionStates, rpc],
+  );
+
+  const renameFilterEntity = useCallback(
+    async (target: FilterEntityTarget, name: string) => {
+      if (target.kind === "project") {
+        await rpc.call("renameProject", { projectId: target.id, name });
+        return;
+      }
+      await rpc.call("renameSection", { sectionId: target.id, name });
+      setSections((current) =>
+        current.map((section) =>
+          section.id === target.id ? { ...section, name } : section,
+        ),
+      );
+    },
+    [rpc],
+  );
+
+  const removeFilterEntity = useCallback(
+    async (target: FilterEntityTarget) => {
+      if (target.kind === "project") {
+        await rpc.call("deleteProject", { projectId: target.id });
+      } else {
+        await rpc.call("deleteSection", { sectionId: target.id });
+        setSections((current) =>
+          current.filter((section) => section.id !== target.id),
+        );
+      }
+      if (threadFilter?.kind === target.kind && threadFilter.id === target.id) {
+        changeThreadFilter(null);
+      }
+    },
+    [changeThreadFilter, rpc, threadFilter],
+  );
+
   const filterControl = (
     <ThreadFilter
       newProjectDisabled={projectCreatePending}
       projectIcons={projectIcons}
+      projectActionStates={projectActionStates}
       projects={sidebar.projects}
       sections={sections}
       value={threadFilter}
       onChange={changeThreadFilter}
       onNewProject={() => void createProject()}
       onNewSection={() => setNewSectionOpen(true)}
+      onAddProjectLocalPath={(project) =>
+        void addProjectLocalPath(project.id)
+      }
+      onOpenProjectSettings={(project) => {
+        window.location.assign(
+          `/projects/${encodeURIComponent(project.id)}/settings`,
+        );
+      }}
+      onRemoveProject={(project) =>
+        setRemoveTarget({ kind: "project", ...project })
+      }
+      onRemoveSection={(section) =>
+        setRemoveTarget({ kind: "section", ...section })
+      }
+      onRenameProject={(project) =>
+        setRenameTarget({ kind: "project", ...project })
+      }
+      onRenameSection={(section) =>
+        setRenameTarget({ kind: "section", ...section })
+      }
     />
   );
-  const newSectionDialog = (
-    <ThreadSectionDialog
-      open={newSectionOpen}
-      onCreate={createSection}
-      onOpenChange={setNewSectionOpen}
-    />
+  const filterDialogs = (
+    <>
+      <ThreadSectionDialog
+        open={newSectionOpen}
+        onCreate={createSection}
+        onOpenChange={setNewSectionOpen}
+      />
+      <FilterEntityRenameDialog
+        target={renameTarget}
+        onOpenChange={(open) => {
+          if (!open) setRenameTarget(null);
+        }}
+        onRename={renameFilterEntity}
+      />
+      <FilterEntityRemoveDialog
+        target={removeTarget}
+        onOpenChange={(open) => {
+          if (!open) setRemoveTarget(null);
+        }}
+        onRemove={removeFilterEntity}
+      />
+    </>
   );
 
   function toggleCollapsed(group: SidebarGroup): void {
@@ -1201,7 +1320,7 @@ function WorkflowStageList({
   if (displayThreads.length === 0) {
     return (
       <SidebarStageLayout
-        dialog={newSectionDialog}
+        dialog={filterDialogs}
         error={error}
         filterControl={filterControl}
         onDragEnd={clearDrag}
@@ -1220,7 +1339,7 @@ function WorkflowStageList({
   }
   return (
     <SidebarStageLayout
-      dialog={newSectionDialog}
+      dialog={filterDialogs}
       error={error}
       filterControl={filterControl}
       onDragEnd={clearDrag}

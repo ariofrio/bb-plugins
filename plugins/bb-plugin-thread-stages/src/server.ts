@@ -92,6 +92,10 @@ export const rpcContract = defineRpcContract({
     input: z.null(),
     output: z.object({ project: projectSummarySchema.nullable() }).strict(),
   },
+  addProjectLocalPath: {
+    input: z.object({ projectId: z.string().min(1).max(256) }).strict(),
+    output: z.object({ added: z.boolean() }).strict(),
+  },
   createSection: {
     input: z.object({ name: z.string().trim().min(1).max(256) }).strict(),
     output: z.object({ section: sectionSchema }).strict(),
@@ -104,6 +108,29 @@ export const rpcContract = defineRpcContract({
       })
       .strict(),
     output: z.object({ section: sectionSchema }).strict(),
+  },
+  deleteProject: {
+    input: z.object({ projectId: z.string().min(1).max(256) }).strict(),
+    output: z.object({ ok: z.literal(true) }).strict(),
+  },
+  deleteSection: {
+    input: z.object({ sectionId: z.string().min(1).max(256) }).strict(),
+    output: z.object({ ok: z.literal(true) }).strict(),
+  },
+  listProjectActionStates: {
+    input: z.null(),
+    output: z
+      .object({
+        projects: z.array(
+          z
+            .object({
+              id: z.string(),
+              canAddLocalPath: z.boolean(),
+            })
+            .strict(),
+        ),
+      })
+      .strict(),
   },
   listSections: {
     input: z.null(),
@@ -187,6 +214,24 @@ export const rpcContract = defineRpcContract({
       .strict(),
     output: stateSchema,
   },
+  renameProject: {
+    input: z
+      .object({
+        projectId: z.string().min(1).max(256),
+        name: z.string().trim().min(1).max(256),
+      })
+      .strict(),
+    output: z.object({ ok: z.literal(true) }).strict(),
+  },
+  renameSection: {
+    input: z
+      .object({
+        sectionId: z.string().min(1).max(256),
+        name: z.string().trim().min(1).max(256),
+      })
+      .strict(),
+    output: z.object({ ok: z.literal(true) }).strict(),
+  },
 });
 
 export default function plugin(bb: BbPluginApi) {
@@ -237,6 +282,32 @@ export default function plugin(bb: BbPluginApi) {
       });
       return { project: { id: project.id, name: project.name } };
     },
+    async addProjectLocalPath({ projectId }) {
+      const { primaryHostId } = await bb.sdk.system.config();
+      if (!primaryHostId) throw new Error("No primary host is available.");
+      const project = await bb.sdk.projects.get({ projectId });
+      if (
+        project.kind === "personal" ||
+        project.sources.some(
+          (source) =>
+            source.type === "local_path" && source.hostId === primaryHostId,
+        )
+      ) {
+        return { added: false };
+      }
+      const { path } = await bb.sdk.hosts.pickFolder({
+        hostId: primaryHostId,
+        clientHostId: primaryHostId,
+      });
+      if (path === null) return { added: false };
+      await bb.sdk.projects.sources.add({
+        projectId,
+        type: "local_path",
+        hostId: primaryHostId,
+        path,
+      });
+      return { added: true };
+    },
     async createSection({ name }) {
       const section = await bb.sdk.threadSections.create({ name });
       return { section: { id: section.id, name: section.name } };
@@ -245,6 +316,34 @@ export default function plugin(bb: BbPluginApi) {
       const section = await bb.sdk.threadSections.create({ name });
       await bb.sdk.threads.update({ threadId, sectionId: section.id });
       return { section: { id: section.id, name: section.name } };
+    },
+    async deleteProject({ projectId }) {
+      await bb.sdk.projects.delete({ projectId });
+      return { ok: true as const };
+    },
+    async deleteSection({ sectionId }) {
+      await bb.sdk.threadSections.delete({ id: sectionId });
+      return { ok: true as const };
+    },
+    async listProjectActionStates() {
+      const [{ primaryHostId }, projects] = await Promise.all([
+        bb.sdk.system.config(),
+        bb.sdk.projects.list(),
+      ]);
+      return {
+        projects: projects
+          .filter((project) => project.kind === "standard")
+          .map((project) => ({
+            id: project.id,
+            canAddLocalPath:
+              primaryHostId !== null &&
+              !project.sources.some(
+                (source) =>
+                  source.type === "local_path" &&
+                  source.hostId === primaryHostId,
+              ),
+          })),
+      };
     },
     async listSections() {
       const sections = await bb.sdk.threadSections.list();
@@ -369,6 +468,14 @@ export default function plugin(bb: BbPluginApi) {
             });
       bb.realtime.publish("state-changed", { threadId });
       return state;
+    },
+    async renameProject({ projectId, name }) {
+      await bb.sdk.projects.update({ projectId, name });
+      return { ok: true as const };
+    },
+    async renameSection({ sectionId, name }) {
+      await bb.sdk.threadSections.update({ id: sectionId, name });
+      return { ok: true as const };
     },
   });
 

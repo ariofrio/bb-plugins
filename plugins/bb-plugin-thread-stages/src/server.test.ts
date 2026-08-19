@@ -29,8 +29,12 @@ describe("thread stages plugin API", () => {
     });
     expect(harness.inspection.registrations.rpcMethods).toEqual([
       "createProjectFromFolder",
+      "addProjectLocalPath",
       "createSection",
       "createSectionForThread",
+      "deleteProject",
+      "deleteSection",
+      "listProjectActionStates",
       "listSections",
       "listState",
       "listPreviews",
@@ -42,6 +46,8 @@ describe("thread stages plugin API", () => {
       "moveThread",
       "setWorkflowStage",
       "reorderThread",
+      "renameProject",
+      "renameSection",
     ]);
     expect(
       harness.inspection.registrations.services.map(({ name }) => name),
@@ -216,6 +222,118 @@ describe("thread stages plugin API", () => {
       host.harness.behavior.callRpc("createProjectFromFolder", null),
     ).resolves.toEqual({ project: null });
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it("reports whether each standard project can add a path on the primary host", async () => {
+    const list = vi.fn(async () => [
+      {
+        id: "proj_alpha",
+        name: "Alpha",
+        kind: "standard",
+        sources: [{ type: "local_path", hostId: "host_primary" }],
+      },
+      {
+        id: "proj_beta",
+        name: "Beta",
+        kind: "standard",
+        sources: [{ type: "local_path", hostId: "host_other" }],
+      },
+      { id: "proj_personal", name: "Personal", kind: "personal", sources: [] },
+    ]);
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: {
+        projects: { list },
+        system: {
+          config: vi.fn(async () => ({ primaryHostId: "host_primary" })),
+        },
+      },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("listProjectActionStates", null),
+    ).resolves.toEqual({
+      projects: [
+        { id: "proj_alpha", canAddLocalPath: false },
+        { id: "proj_beta", canAddLocalPath: true },
+      ],
+    });
+  });
+
+  it("renames and removes projects and sections through the bb SDK", async () => {
+    const projectUpdate = vi.fn(async () => ({}));
+    const projectDelete = vi.fn(async () => ({ ok: true as const }));
+    const sectionUpdate = vi.fn(async () => ({}));
+    const sectionDelete = vi.fn(async () => ({ ok: true as const }));
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: {
+        projects: { update: projectUpdate, delete: projectDelete },
+        threadSections: { update: sectionUpdate, delete: sectionDelete },
+      },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await host.harness.behavior.callRpc("renameProject", {
+      projectId: "proj_alpha",
+      name: "  Alpha two  ",
+    });
+    await host.harness.behavior.callRpc("renameSection", {
+      sectionId: "section_1",
+      name: "  Later  ",
+    });
+    await host.harness.behavior.callRpc("deleteProject", {
+      projectId: "proj_alpha",
+    });
+    await host.harness.behavior.callRpc("deleteSection", {
+      sectionId: "section_1",
+    });
+
+    expect(projectUpdate).toHaveBeenCalledWith({
+      projectId: "proj_alpha",
+      name: "Alpha two",
+    });
+    expect(sectionUpdate).toHaveBeenCalledWith({
+      id: "section_1",
+      name: "Later",
+    });
+    expect(projectDelete).toHaveBeenCalledWith({ projectId: "proj_alpha" });
+    expect(sectionDelete).toHaveBeenCalledWith({ id: "section_1" });
+  });
+
+  it("adds a picked local path to an existing project", async () => {
+    const add = vi.fn(async () => ({}));
+    const pickFolder = vi.fn(async () => ({ path: "/work/Alpha" }));
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: {
+        hosts: { pickFolder },
+        projects: {
+          get: vi.fn(async () => ({ id: "proj_alpha", sources: [] })),
+          sources: { add },
+        },
+        system: {
+          config: vi.fn(async () => ({ primaryHostId: "host_primary" })),
+        },
+      },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("addProjectLocalPath", {
+        projectId: "proj_alpha",
+      }),
+    ).resolves.toEqual({ added: true });
+    expect(add).toHaveBeenCalledWith({
+      projectId: "proj_alpha",
+      type: "local_path",
+      hostId: "host_primary",
+      path: "/work/Alpha",
+    });
   });
 
   it("serves persisted state through the schema-validated RPC boundary", async () => {

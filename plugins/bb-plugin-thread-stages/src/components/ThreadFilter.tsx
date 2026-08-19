@@ -1,6 +1,11 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { HugeiconsIcon } from "@hugeicons/react";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import {
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { portalScopeProps } from "../lib/portal-scope";
 import type { ProjectIconView } from "../icons";
 import {
@@ -17,6 +22,7 @@ import {
 
 interface ThreadFilterProject {
   id: string;
+  isPersonal?: boolean;
   name: string;
 }
 
@@ -30,6 +36,13 @@ interface ThreadFilterProps {
   onChange: (filter: ThreadFilterValue) => void;
   onNewProject: () => void;
   onNewSection: () => void;
+  onAddProjectLocalPath?: (project: ThreadFilterProject) => void;
+  onOpenProjectSettings?: (project: ThreadFilterProject) => void;
+  onRemoveProject?: (project: ThreadFilterProject) => void;
+  onRemoveSection?: (section: ThreadFilterSection) => void;
+  onRenameProject?: (project: ThreadFilterProject) => void;
+  onRenameSection?: (section: ThreadFilterSection) => void;
+  projectActionStates?: ReadonlyMap<string, { canAddLocalPath: boolean }>;
   projectIcons?: ReadonlyMap<string, ProjectIconView>;
   projects: readonly ThreadFilterProject[];
   sections: readonly ThreadFilterSection[];
@@ -45,17 +58,26 @@ const ACTION_CLASS =
 const ACTION_TOOLTIP_DELAY_MS = 350;
 const LABEL_CLASS =
   "px-2 py-1.5 text-[11px] font-medium text-muted-foreground";
+const SUB_CONTENT_CLASS = `${CONTENT_CLASS} z-[80]`;
 
 export function ThreadFilter({
   newProjectDisabled = false,
   onChange,
   onNewProject,
   onNewSection,
+  onAddProjectLocalPath = () => {},
+  onOpenProjectSettings = () => {},
+  onRemoveProject = () => {},
+  onRemoveSection = () => {},
+  onRenameProject = () => {},
+  onRenameSection = () => {},
+  projectActionStates = new Map(),
   projectIcons = new Map(),
   projects,
   sections,
   value,
 }: ThreadFilterProps) {
+  const [open, setOpen] = useState(false);
   const activeProject =
     value?.kind === "project"
       ? projects.find((project) => project.id === value.id)
@@ -72,7 +94,7 @@ export function ThreadFilter({
 
   return (
     <div className="group/thread-filter sticky top-[var(--bb-sidebar-sticky-stack-padding-top)] z-[70] mb-4 flex min-w-0 items-center gap-1 rounded-md bg-sidebar outline-none ring-sidebar-ring has-[.thread-filter-trigger:focus-visible]:ring-2 before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-sidebar before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-sidebar after:content-['']">
-      <DropdownMenu.Root>
+      <DropdownMenu.Root open={open} onOpenChange={setOpen}>
         <DropdownMenu.Trigger asChild>
           <button
             type="button"
@@ -132,7 +154,7 @@ export function ThreadFilter({
                   </DropdownMenu.Label>
                   <DropdownMenu.Group>
                     {projects.map((project) => {
-                      return (
+                      return project.isPersonal ? (
                         <ThreadFilterItem
                           key={project.id}
                           label={project.name}
@@ -142,6 +164,36 @@ export function ThreadFilter({
                             icon={projectIcons.get(project.id)}
                           />
                         </ThreadFilterItem>
+                      ) : (
+                        <ActionableThreadFilterItem
+                          key={project.id}
+                          label={project.name}
+                          selected={
+                            value?.kind === "project" && value.id === project.id
+                          }
+                          onSelect={() => {
+                            onChange({ kind: "project", id: project.id });
+                            setOpen(false);
+                          }}
+                        >
+                          <ProjectFilterIcon
+                            icon={projectIcons.get(project.id)}
+                          />
+                          <ProjectActions
+                            canAddLocalPath={
+                              projectActionStates.get(project.id)
+                                ?.canAddLocalPath ?? false
+                            }
+                            onAddLocalPath={() =>
+                              onAddProjectLocalPath(project)
+                            }
+                            onOpenSettings={() =>
+                              onOpenProjectSettings(project)
+                            }
+                            onRemove={() => onRemoveProject(project)}
+                            onRename={() => onRenameProject(project)}
+                          />
+                        </ActionableThreadFilterItem>
                       );
                     })}
                   </DropdownMenu.Group>
@@ -154,17 +206,27 @@ export function ThreadFilter({
                   </DropdownMenu.Label>
                   <DropdownMenu.Group>
                     {sections.map((section) => (
-                      <ThreadFilterItem
+                      <ActionableThreadFilterItem
                         key={section.id}
                         label={section.name}
-                        value={`section:${section.id}`}
+                        selected={
+                          value?.kind === "section" && value.id === section.id
+                        }
+                        onSelect={() => {
+                          onChange({ kind: "section", id: section.id });
+                          setOpen(false);
+                        }}
                       >
                         <Icon
                           name="ListView"
                           className="size-4 shrink-0"
                           aria-hidden
                         />
-                      </ThreadFilterItem>
+                        <SectionActions
+                          onRemove={() => onRemoveSection(section)}
+                          onRename={() => onRenameSection(section)}
+                        />
+                      </ActionableThreadFilterItem>
                     ))}
                   </DropdownMenu.Group>
                 </>
@@ -192,6 +254,179 @@ export function ThreadFilter({
         </span>
       </TooltipProvider>
     </div>
+  );
+}
+
+function ActionableThreadFilterItem({
+  children,
+  label,
+  onSelect,
+  selected,
+}: {
+  children: React.ReactNode;
+  label: string;
+  onSelect: () => void;
+  selected: boolean;
+}) {
+  const [submenuOpen, setSubmenuOpen] = useState(false);
+  const suppressSyntheticClick = useRef(false);
+
+  function handleClick(event: ReactMouseEvent<HTMLDivElement>): void {
+    if (suppressSyntheticClick.current) {
+      suppressSyntheticClick.current = false;
+      event.preventDefault();
+      return;
+    }
+    if (
+      event.target instanceof Element &&
+      event.target.closest("[data-thread-filter-submenu-chevron]")
+    ) {
+      return;
+    }
+    event.preventDefault();
+    onSelect();
+  }
+
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>): void {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect();
+      return;
+    }
+    if (event.key === "ArrowRight") {
+      suppressSyntheticClick.current = true;
+      queueMicrotask(() => {
+        suppressSyntheticClick.current = false;
+      });
+      return;
+    }
+    if (event.key === "F10" && event.shiftKey) {
+      event.preventDefault();
+      setSubmenuOpen(true);
+    }
+  }
+
+  return (
+    <DropdownMenu.Sub open={submenuOpen} onOpenChange={setSubmenuOpen}>
+      <DropdownMenu.SubTrigger
+        role="menuitemradio"
+        aria-checked={selected}
+        className={ITEM_CLASS}
+        onClick={handleClick}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          setSubmenuOpen(true);
+        }}
+        onKeyDown={handleKeyDown}
+      >
+        {selected ? (
+          <span className="absolute left-2 inline-flex size-3.5 items-center justify-center">
+            <Icon name="Check" className="size-3.5" aria-hidden />
+          </span>
+        ) : null}
+        {children}
+        <span className="truncate">{label}</span>
+        <span
+          data-thread-filter-submenu-chevron=""
+          className="ml-auto inline-flex size-4 shrink-0 items-center justify-center"
+        >
+          <Icon name="ChevronRight" className="size-3.5" aria-hidden />
+        </span>
+      </DropdownMenu.SubTrigger>
+    </DropdownMenu.Sub>
+  );
+}
+
+function ProjectActions({
+  canAddLocalPath,
+  onAddLocalPath,
+  onOpenSettings,
+  onRemove,
+  onRename,
+}: {
+  canAddLocalPath: boolean;
+  onAddLocalPath: () => void;
+  onOpenSettings: () => void;
+  onRemove: () => void;
+  onRename: () => void;
+}) {
+  return (
+    <DropdownMenu.Portal>
+      <DropdownMenu.SubContent
+        {...portalScopeProps()}
+        sideOffset={2}
+        className={SUB_CONTENT_CLASS}
+      >
+        <FilterActionItem
+          icon="Settings"
+          label="Project settings"
+          onSelect={onOpenSettings}
+        />
+        <DropdownMenu.Separator className="-mx-1 my-1 h-px bg-border" />
+        <FilterActionItem icon="Edit" label="Rename" onSelect={onRename} />
+        {canAddLocalPath ? (
+          <FilterActionItem
+            icon="FolderPlus"
+            label="Add local path"
+            onSelect={onAddLocalPath}
+          />
+        ) : null}
+        <FilterActionItem
+          destructive
+          icon="Trash"
+          label="Remove"
+          onSelect={onRemove}
+        />
+      </DropdownMenu.SubContent>
+    </DropdownMenu.Portal>
+  );
+}
+
+function SectionActions({
+  onRemove,
+  onRename,
+}: {
+  onRemove: () => void;
+  onRename: () => void;
+}) {
+  return (
+    <DropdownMenu.Portal>
+      <DropdownMenu.SubContent
+        {...portalScopeProps()}
+        sideOffset={2}
+        className={SUB_CONTENT_CLASS}
+      >
+        <FilterActionItem icon="Edit" label="Rename" onSelect={onRename} />
+        <FilterActionItem
+          destructive
+          icon="Trash"
+          label="Remove"
+          onSelect={onRemove}
+        />
+      </DropdownMenu.SubContent>
+    </DropdownMenu.Portal>
+  );
+}
+
+function FilterActionItem({
+  destructive = false,
+  icon,
+  label,
+  onSelect,
+}: {
+  destructive?: boolean;
+  icon: "Edit" | "FolderPlus" | "Settings" | "Trash";
+  label: string;
+  onSelect: () => void;
+}) {
+  return (
+    <DropdownMenu.Item
+      className={`${ITEM_CLASS} pl-2 ${destructive ? "text-destructive focus:text-destructive" : ""}`}
+      onSelect={onSelect}
+    >
+      <Icon name={icon} className="size-4 shrink-0" aria-hidden />
+      <span>{label}</span>
+    </DropdownMenu.Item>
   );
 }
 

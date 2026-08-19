@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import {
   cleanup,
+  act,
   fireEvent,
   render,
   screen,
@@ -19,6 +20,14 @@ describe("ThreadFilter", () => {
     { id: "proj_personal", name: "Personal", isPersonal: true },
   ] as const;
   const sections = [{ id: "section_waiting", name: "Waiting" }] as const;
+  const actions = {
+    onAddProjectLocalPath: vi.fn(),
+    onOpenProjectSettings: vi.fn(),
+    onRemoveProject: vi.fn(),
+    onRemoveSection: vi.fn(),
+    onRenameProject: vi.fn(),
+    onRenameSection: vi.fn(),
+  };
 
   it("uses a scoped sidebar label while keeping All in the menu option", () => {
     render(
@@ -133,7 +142,9 @@ describe("ThreadFilter", () => {
       name: "Projects and sections: Alpha",
     });
     fireEvent.keyDown(trigger, { key: "Enter" });
-    fireEvent.click(screen.getByRole("menuitemradio", { name: "Waiting" }));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "Waiting" }), {
+      detail: 1,
+    });
 
     fireEvent.keyDown(trigger, { key: "Enter" });
     fireEvent.click(
@@ -263,5 +274,107 @@ describe("ThreadFilter", () => {
     expect(
       screen.queryByRole("menuitemcheckbox", { name: "Show stage counts" }),
     ).toBeNull();
+  });
+
+  it("opens the built-in project actions as a submenu without losing direct selection", () => {
+    const onChange = vi.fn();
+    render(
+      <ThreadFilter
+        {...actions}
+        projectActionStates={
+          new Map([["proj_alpha", { canAddLocalPath: true }]])
+        }
+        projects={projects}
+        sections={sections}
+        value={null}
+        onChange={onChange}
+        onNewProject={() => {}}
+        onNewSection={() => {}}
+      />,
+    );
+
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Projects and sections" }),
+      { key: "Enter" },
+    );
+    const alpha = screen.getByRole("menuitemradio", { name: "Alpha" });
+    fireEvent.keyDown(alpha, { key: "ArrowRight" });
+
+    const submenu = screen.getAllByRole("menu")[1];
+    expect(
+      within(submenu).getAllByRole("menuitem").map((item) => item.textContent),
+    ).toEqual(["Project settings", "Rename", "Add local path", "Remove"]);
+    fireEvent.click(within(submenu).getByRole("menuitem", { name: "Rename" }));
+    expect(actions.onRenameProject).toHaveBeenCalledWith(projects[0]);
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Projects and sections" }),
+      { key: "Enter" },
+    );
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "Alpha" }), {
+      detail: 1,
+    });
+    expect(onChange).toHaveBeenCalledWith({ kind: "project", id: "proj_alpha" });
+  });
+
+  it("opens project actions after the regular submenu hover delay", async () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <ThreadFilter
+          {...actions}
+          projects={projects}
+          sections={sections}
+          value={null}
+          onChange={() => {}}
+          onNewProject={() => {}}
+          onNewSection={() => {}}
+        />,
+      );
+      fireEvent.keyDown(
+        screen.getByRole("button", { name: "Projects and sections" }),
+        { key: "Enter" },
+      );
+      fireEvent.pointerMove(
+        screen.getByRole("menuitemradio", { name: "Alpha" }),
+        { pointerType: "mouse" },
+      );
+      await act(() => vi.advanceTimersByTimeAsync(110));
+
+      expect(screen.getByRole("menuitem", { name: "Project settings" })).toBeDefined();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("opens section actions on right click and does not give Personal a submenu", () => {
+    render(
+      <ThreadFilter
+        {...actions}
+        projects={projects}
+        sections={sections}
+        value={null}
+        onChange={() => {}}
+        onNewProject={() => {}}
+        onNewSection={() => {}}
+      />,
+    );
+
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Projects and sections" }),
+      { key: "Enter" },
+    );
+    expect(
+      screen
+        .getByRole("menuitemradio", { name: "Personal" })
+        .querySelector('[data-icon="ChevronRight"]'),
+    ).toBeNull();
+    const waiting = screen.getByRole("menuitemradio", { name: "Waiting" });
+    fireEvent.contextMenu(waiting);
+    const submenu = screen.getAllByRole("menu")[1];
+    expect(
+      within(submenu).getAllByRole("menuitem").map((item) => item.textContent),
+    ).toEqual(["Rename", "Remove"]);
   });
 });
