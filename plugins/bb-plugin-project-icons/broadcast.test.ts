@@ -15,7 +15,7 @@ describe("announceProjectIconsChanged", () => {
   });
 
   it("uses the channel name Thread workflow listens on", () => {
-    // Mirrored in bb-thread-workflow/project-icons.ts.
+    // Mirrored in bb-plugin-thread-workflow/project-icons.ts.
     expect(PROJECT_ICONS_CHANNEL).toBe("bb.project-icons");
   });
 });

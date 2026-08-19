@@ -14,7 +14,7 @@ Personal plugins for [bb](https://getbb.app).
   title.
 - [Project icons](plugins/bb-plugin-project-icons#readme) — gives each project
   an icon and optional color, shown next to its name in the thread header.
-- [Thread workflow](plugins/bb-thread-workflow#readme) — organizes sidebar
+- [Thread workflow](plugins/bb-plugin-thread-workflow#readme) — organizes sidebar
   threads into manually ordered Backlog, To do, Working, Blocked, Done, and
   Canceled workflow stages.
 

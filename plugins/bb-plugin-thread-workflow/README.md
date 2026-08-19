@@ -25,7 +25,7 @@ approval counts as **To do** while it waits, because the next move is yours.
 Install it from this repository's plugin collection:
 
 ```sh
-bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin bb-thread-workflow
+bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin thread-workflow
 ```
 
 Then select **Thread workflow** in **Settings → Appearance → Sidebar**.
@@ -33,7 +33,7 @@ Then select **Thread workflow** in **Settings → Appearance → Sidebar**.
 Update an installed copy with:
 
 ```sh
-bb plugin update bb-thread-workflow
+bb plugin update thread-workflow
 ```
 
 ## Keyboard shortcuts
@@ -102,7 +102,7 @@ thread.
 
 ```sh
 npm run release:check
-bb plugin reload bb-thread-workflow
+bb plugin reload thread-workflow
 ```
 
 `release:check` runs the tests and typecheck, checks the committed SDK

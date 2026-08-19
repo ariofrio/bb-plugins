@@ -20,8 +20,8 @@
       "source": "./plugins/bb-plugin-project-icons"
     },
     {
-      "name": "bb-thread-workflow",
-      "source": "./plugins/bb-thread-workflow"
+      "name": "thread-workflow",
+      "source": "./plugins/bb-plugin-thread-workflow"
     }
   ]
 }

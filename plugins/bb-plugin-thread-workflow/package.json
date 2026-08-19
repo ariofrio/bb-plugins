@@ -1,14 +1,14 @@
 {
-  "name": "bb-thread-workflow",
+  "name": "bb-plugin-thread-workflow",
   "version": "0.5.0",
   "description": "Organize bb root threads into manually ordered workflow stages.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ariofrio/bb-plugins.git",
-    "directory": "plugins/bb-thread-workflow"
+    "directory": "plugins/bb-plugin-thread-workflow"
   },
-  "homepage": "https://github.com/ariofrio/bb-plugins/tree/main/plugins/bb-thread-workflow#readme",
+  "homepage": "https://github.com/ariofrio/bb-plugins/tree/main/plugins/bb-plugin-thread-workflow#readme",
   "bugs": {
     "url": "https://github.com/ariofrio/bb-plugins/issues"
   },
