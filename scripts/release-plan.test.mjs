@@ -56,16 +56,16 @@ test("sorts independent plugin releases by id", () => {
       after: plugin("bb-plugin-thread-stages", "0.6.0", "Thread stages"),
     },
     {
-      directory: "plugins/bb-plugin-codex-theme",
-      before: plugin("bb-plugin-codex-theme", "0.1.0", "Codex theme"),
-      after: plugin("bb-plugin-codex-theme", "1.0.0", "Codex theme"),
+      directory: "plugins/bb-plugin-chatgpt-theme",
+      before: plugin("bb-plugin-chatgpt-theme", "0.1.0", "ChatGPT theme"),
+      after: plugin("bb-plugin-chatgpt-theme", "1.0.0", "ChatGPT theme"),
     },
   ]);
 
   assert.deepEqual(
     plan.map(({ id, tag }) => ({ id, tag })),
     [
-      { id: "codex-theme", tag: "codex-theme/v1.0.0" },
+      { id: "chatgpt-theme", tag: "chatgpt-theme/v1.0.0" },
       { id: "thread-stages", tag: "thread-stages/v0.6.0" },
     ],
   );
