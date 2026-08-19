@@ -42,7 +42,7 @@ export function ProjectFilter({
           <button
             type="button"
             aria-label={`Filter by project: ${label}`}
-            className="flex h-7 w-full min-w-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-subtle-foreground outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 data-[state=open]:bg-state-active data-[state=open]:text-sidebar-foreground"
+            className="flex h-7 w-full min-w-0 cursor-pointer items-center gap-1.5 rounded-md px-2 text-xs font-medium text-subtle-foreground outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 data-[state=open]:bg-state-active data-[state=open]:text-sidebar-foreground"
           >
             {activeIcon ? (
               <HugeiconsIcon
