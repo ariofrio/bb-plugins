@@ -10,52 +10,62 @@
 
 <br>
 
-<table>
-  <thead>
-    <tr>
-      <th align="center" width="33%">Organization</th>
-      <th align="center" width="33%">Navigation</th>
-      <th align="center" width="33%">Themes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-thread-stages#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-thread-stages/assets/card-dark.png"><img src="plugins/bb-plugin-thread-stages/assets/card-light.png" alt="Thread stages grouping the bb sidebar into Backlog, To do, Working, Blocked, and Done" width="100%"></picture></a></p>
-        <p><a href="plugins/bb-plugin-thread-stages#readme"><img src="plugins/bb-plugin-thread-stages/assets/icon.svg" alt="" width="40" height="40"><br><strong>Thread stages</strong></a></p>
-        <p>Group threads in the sidebar into stages from Backlog to Done, updating as they run.</p>
-        <p></p>
-      </td>
-      <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-project-breadcrumbs#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/card-dark.png"><img src="plugins/bb-plugin-project-breadcrumbs/assets/card-light.png" alt="The Storefront project and its actions menu in a bb thread header" width="100%"></picture></a></p>
-        <p><a href="plugins/bb-plugin-project-breadcrumbs#readme"><img src="plugins/bb-plugin-project-breadcrumbs/assets/icon.svg" alt="" width="40" height="40"><br><strong>Project breadcrumbs</strong></a></p>
-        <p>Show and manage a thread's project from its header.</p>
-        <p></p>
-      </td>
-      <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-chatgpt-theme#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-dark.png"><img src="plugins/bb-plugin-chatgpt-theme/assets/card-light.png" alt="bb wearing the ChatGPT palette, its light and dark halves meeting along the diagonal" width="100%"></picture></a></p>
-        <p><a href="plugins/bb-plugin-chatgpt-theme#readme"><img src="plugins/bb-plugin-chatgpt-theme/assets/icon.svg" alt="" width="40" height="40"><br><strong>ChatGPT theme</strong></a></p>
-        <p>Restyle bb to match the OpenAI ChatGPT (Codex) desktop app.</p>
-        <p></p>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-project-icons#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-icons/assets/card-dark.png"><img src="plugins/bb-plugin-project-icons/assets/card-light.png" alt="The icon picker open on the Storefront project's icon in a bb thread header" width="100%"></picture></a></p>
-        <p><a href="plugins/bb-plugin-project-icons#readme"><img src="plugins/bb-plugin-project-icons/assets/icon.svg" alt="" width="40" height="40"><br><strong>Project icons</strong></a></p>
-        <p>Give each project an icon and color.</p>
-        <p></p>
-      </td>
-      <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-dark.png"><img src="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-light.png" alt="A bb side chat opened with the ⇧⌘L shortcut" width="100%"></picture></a></p>
-        <p><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><img src="plugins/bb-plugin-missing-keyboard-shortcuts/assets/icon.svg" alt="" width="40" height="40"><br><strong>Missing keyboard shortcuts</strong></a></p>
-        <p>Add shortcuts to start personal or project threads, navigate history, and reach the composer or panel tabs.</p>
-        <p></p>
-      </td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
+<p align="center">
+  <a href="#thread-stages">Thread stages</a>
+  ·
+  <a href="#project-icons">Project icons</a>
+  ·
+  <a href="#project-breadcrumbs">Project breadcrumbs</a>
+  ·
+  <a href="#missing-keyboard-shortcuts">Missing keyboard shortcuts</a>
+  ·
+  <a href="#chatgpt-theme">ChatGPT theme</a>
+</p>
+
+
+## Thread stages
+
+Group threads in the sidebar into stages from Backlog to Done, updating as they run.
+
+<a href="plugins/bb-plugin-thread-stages#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-thread-stages/assets/screenshot-dark.png"><img src="plugins/bb-plugin-thread-stages/assets/screenshot-light.png" alt="Thread stages grouping the bb sidebar into Backlog, To do, Working, Blocked, and Done"></picture></a>
+
+<a href="plugins/bb-plugin-thread-stages#readme">Read more</a> · installs as <code>thread-stages</code>
+
+
+## Project icons
+
+Give each project an icon and color.
+
+<a href="plugins/bb-plugin-project-icons#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-icons/assets/screenshot-dark.png"><img src="plugins/bb-plugin-project-icons/assets/screenshot-light.png" alt="The icon picker open on the Storefront project's icon in a bb thread header"></picture></a>
+
+<a href="plugins/bb-plugin-project-icons#readme">Read more</a> · installs as <code>project-icons</code>
+
+
+## Project breadcrumbs
+
+Show and manage a thread's project from its header.
+
+<a href="plugins/bb-plugin-project-breadcrumbs#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/screenshot-dark.png"><img src="plugins/bb-plugin-project-breadcrumbs/assets/screenshot-light.png" alt="The Storefront project and its actions menu in a bb thread header"></picture></a>
+
+<a href="plugins/bb-plugin-project-breadcrumbs#readme">Read more</a> · installs as <code>project-breadcrumbs</code>
+
+
+## Missing keyboard shortcuts
+
+Add shortcuts to start personal or project threads, navigate history, and reach the composer or panel tabs.
+
+<a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/screenshot-dark.png"><img src="plugins/bb-plugin-missing-keyboard-shortcuts/assets/screenshot-light.png" alt="A bb side chat opened with the ⇧⌘L shortcut"></picture></a>
+
+<a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Read more</a> · installs as <code>missing-keyboard-shortcuts</code>
+
+
+## ChatGPT theme
+
+Restyle bb to match the OpenAI ChatGPT (Codex) desktop app.
+
+<a href="plugins/bb-plugin-chatgpt-theme#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-chatgpt-theme/assets/screenshot-dark.png"><img src="plugins/bb-plugin-chatgpt-theme/assets/screenshot-light.png" alt="bb wearing the ChatGPT palette, its light and dark halves meeting along the diagonal"></picture></a>
+
+<a href="plugins/bb-plugin-chatgpt-theme#readme">Read more</a> · installs as <code>chatgpt-theme</code>
 
 ## Install
 
