@@ -61,6 +61,9 @@ describe("ThreadFilter", () => {
     fireEvent.keyDown(trigger, { key: "Enter" });
 
     const menu = screen.getByRole("menu");
+    expect(menu.className).toContain(
+      "min-w-[var(--radix-dropdown-menu-trigger-width)]",
+    );
     expect(within(menu).getByText("Projects")).toBeDefined();
     expect(within(menu).getByText("Sections")).toBeDefined();
     expect(

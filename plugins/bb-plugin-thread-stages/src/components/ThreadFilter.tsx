@@ -52,7 +52,7 @@ interface ThreadFilterProps {
 }
 
 const CONTENT_CLASS =
-  "z-50 min-w-52 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
+  "z-50 min-w-[var(--radix-dropdown-menu-trigger-width)] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
 const ITEM_CLASS =
   "relative flex cursor-default select-none items-center gap-2 rounded-sm py-[0.3125rem] pl-7 pr-2 text-xs outline-none transition-colors data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground";
 const ACTION_ITEM_CLASS =
