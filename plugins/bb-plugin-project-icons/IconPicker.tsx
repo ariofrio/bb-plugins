@@ -195,6 +195,7 @@ export function IconPicker({
         collisionPadding={8}
         aria-labelledby={titleId}
         mobileTitle={null}
+        className="w-[386px] max-md:w-auto"
       >
         <div className="flex h-[calc(var(--radix-popover-content-available-height)-2rem)] max-h-[32rem] flex-col gap-3 max-md:h-[calc(85dvh-3rem)] max-md:max-h-none">
           <PopoverTitle id={titleId} className="sr-only">
@@ -457,7 +458,7 @@ function IconGrid({
   onPick: (icon: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-9 gap-0.5 max-md:grid-cols-8">
+    <div className="grid grid-cols-11 gap-1 max-md:grid-cols-[repeat(auto-fill,1.75rem)]">
       {entries.map((entry) => (
         <button
           key={entry.name}

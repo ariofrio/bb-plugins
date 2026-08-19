@@ -61,7 +61,10 @@ beforeEach(() => {
   styles.dataset.cursorTestStyles = "";
   styles.textContent = `
     .cursor-pointer { cursor: pointer; }
+    .gap-1 { column-gap: 4px; row-gap: 4px; }
+    .grid-cols-11 { grid-template-columns: repeat(11, minmax(0, 1fr)); }
     .size-7 { width: 28px; height: 28px; }
+    [class~="w-[386px]"] { width: 386px; }
   `;
   document.head.append(styles);
 });
@@ -257,6 +260,41 @@ describe("IconPicker", () => {
     const iconButtonStyle = getComputedStyle(iconButton);
     expect(iconButtonStyle.width).toBe("28px");
     expect(iconButtonStyle.height).toBe("28px");
+  });
+
+  it("fills the popover with uniformly spaced icon buttons", () => {
+    render(
+      <IconPicker
+        catalog={catalog}
+        loading={false}
+        open
+        onOpenChange={vi.fn()}
+        projectName="Example project"
+        icon="circle"
+        defaultIcon="folder"
+        color={null}
+        onPick={vi.fn()}
+        onPickColor={vi.fn()}
+        onReset={vi.fn()}
+        trigger={<button type="button">Change icon</button>}
+      />,
+    );
+
+    const popover = screen.getByRole("dialog", {
+      name: "Icon for Example project",
+    });
+    const iconButton = within(popover).getByRole("button", { name: "circle" });
+    const iconGrid = iconButton.parentElement;
+    expect(iconGrid).not.toBeNull();
+
+    const popoverStyle = getComputedStyle(popover);
+    const gridStyle = getComputedStyle(iconGrid!);
+    expect(popoverStyle.width).toBe("386px");
+    expect(gridStyle.gridTemplateColumns).toBe(
+      "repeat(11, minmax(0, 1fr))",
+    );
+    expect(gridStyle.columnGap).toBe("4px");
+    expect(gridStyle.rowGap).toBe("4px");
   });
 
   it("selects the category currently at the top of the scrolling catalog", () => {
