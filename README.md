@@ -20,7 +20,18 @@ Personal plugins for [bb](https://getbb.app).
 
 ## Install
 
-Clone the repository and install every plugin at once:
+Add this repository as a bb marketplace, then choose any of its plugins in
+Settings → Plugins:
+
+```sh
+bb marketplace add git:github.com/ariofrio/bb-plugins@main
+```
+
+The marketplace tracks each plugin's compatible Git release tags, so new
+releases appear without re-adding it. Its catalog is defined in
+[marketplace.json](marketplace.json).
+
+For local development, clone the repository and install every plugin at once:
 
 ```sh
 git clone https://github.com/ariofrio/bb-plugins.git
@@ -29,8 +40,8 @@ npm run install:plugins
 ```
 
 Run the same command after a `git pull`: it installs whatever is missing, then
-rebuilds and reloads every plugin. To install one plugin on its own, follow its
-README, or select it from the repository's plugin collection:
+rebuilds and reloads every plugin. To install one plugin directly from `main`,
+follow its README, or select it from the repository's plugin collection:
 
 ```sh
 bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin codex-theme

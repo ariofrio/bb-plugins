@@ -1,0 +1,109 @@
+{
+  "$schema": "https://getbb.app/schemas/marketplace.schema.json",
+  "schemaVersion": 1,
+  "name": "ariofrio-bb-plugins",
+  "displayName": "Andres Riofrio's bb plugins",
+  "description": "Plugins for bb maintained by Andres Riofrio.",
+  "plugins": [
+    {
+      "id": "codex-theme",
+      "displayName": "Codex theme",
+      "description": "Adds a light-and-dark bb theme based on the OpenAI ChatGPT desktop palette.",
+      "icon": "Palette",
+      "tags": ["theme", "appearance", "light", "dark", "codex"],
+      "author": {
+        "name": "Andres Riofrio",
+        "github": "ariofrio",
+        "url": "https://github.com/ariofrio"
+      },
+      "source": {
+        "git": {
+          "url": "https://github.com/ariofrio/bb-plugins.git",
+          "subdir": "plugins/bb-plugin-codex-theme",
+          "range": "^0.1.0",
+          "tagPrefix": "codex-theme/"
+        }
+      }
+    },
+    {
+      "id": "missing-keyboard-shortcuts",
+      "displayName": "Missing keyboard shortcuts",
+      "description": "Adds keyboard shortcuts for common bb navigation, thread creation, composers, side chats, and terminals.",
+      "icon": "Zap",
+      "tags": ["keyboard-shortcuts", "navigation", "threads", "interface", "productivity"],
+      "author": {
+        "name": "Andres Riofrio",
+        "github": "ariofrio",
+        "url": "https://github.com/ariofrio"
+      },
+      "source": {
+        "git": {
+          "url": "https://github.com/ariofrio/bb-plugins.git",
+          "subdir": "plugins/bb-plugin-missing-keyboard-shortcuts",
+          "range": "^0.1.0",
+          "tagPrefix": "missing-keyboard-shortcuts/"
+        }
+      }
+    },
+    {
+      "id": "project-header-breadcrumb",
+      "displayName": "Project header breadcrumb",
+      "description": "Adds the current project and its settings, rename, and removal actions to each standard thread header.",
+      "icon": "Folder",
+      "tags": ["interface", "projects", "navigation", "threads"],
+      "author": {
+        "name": "Andres Riofrio",
+        "github": "ariofrio",
+        "url": "https://github.com/ariofrio"
+      },
+      "source": {
+        "git": {
+          "url": "https://github.com/ariofrio/bb-plugins.git",
+          "subdir": "plugins/bb-plugin-project-header-breadcrumb",
+          "range": "^0.1.0",
+          "tagPrefix": "project-header-breadcrumb/"
+        }
+      }
+    },
+    {
+      "id": "project-icons",
+      "displayName": "Project icons",
+      "description": "Gives each bb project a searchable icon and optional color in thread headers and the Thread workflow sidebar.",
+      "icon": "Palette",
+      "tags": ["projects", "icons", "colors", "interface", "sidebar"],
+      "author": {
+        "name": "Andres Riofrio",
+        "github": "ariofrio",
+        "url": "https://github.com/ariofrio"
+      },
+      "source": {
+        "git": {
+          "url": "https://github.com/ariofrio/bb-plugins.git",
+          "subdir": "plugins/bb-plugin-project-icons",
+          "range": "^0.1.0",
+          "tagPrefix": "project-icons/"
+        }
+      }
+    },
+    {
+      "id": "thread-workflow",
+      "displayName": "Thread workflow",
+      "description": "Organizes root threads into manually ordered workflow stages, with automatic stage transitions, keyboard shortcuts, and a CLI.",
+      "icon": "ListTodo",
+      "tags": ["workflow", "sidebar", "threads", "productivity", "keyboard-shortcuts", "cli"],
+      "author": {
+        "name": "Andres Riofrio",
+        "github": "ariofrio",
+        "url": "https://github.com/ariofrio"
+      },
+      "source": {
+        "git": {
+          "url": "https://github.com/ariofrio/bb-plugins.git",
+          "subdir": "plugins/bb-plugin-thread-workflow",
+          "range": "^0.5.0",
+          "tagPrefix": "thread-workflow/"
+        }
+      }
+    }
+  ]
+}
