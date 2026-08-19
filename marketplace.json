@@ -121,7 +121,9 @@
       "id": "thread-stages",
       "displayName": "Thread stages",
       "description": "Organizes root threads into manually ordered stages, with automatic transitions, keyboard shortcuts, and a CLI.",
-      "icon": "ListTodo",
+      "icon": {
+        "url": "./plugins/bb-plugin-thread-stages/assets/icon.svg"
+      },
       "tags": [
         "stages",
         "sidebar",

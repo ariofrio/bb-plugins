@@ -13,6 +13,7 @@
     "url": "https://github.com/ariofrio/bb-plugins/issues"
   },
   "files": [
+    "assets",
     "app.tsx",
     "dist",
     "scripts",
@@ -38,7 +39,7 @@
     "name": "Thread stages",
     "description": "Organize root sidebar threads into ordered stages.",
     "branding": {
-      "icon": "ListTodo"
+      "icon": "./assets/icon.svg"
     },
     "server": "./server.ts",
     "app": "./app.tsx",
