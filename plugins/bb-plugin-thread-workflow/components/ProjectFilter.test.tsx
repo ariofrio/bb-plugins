@@ -11,7 +11,7 @@ describe("ProjectFilter", () => {
     { id: "proj_personal", name: "Personal", isPersonal: true },
   ] as const;
 
-  it("opens a compact menu with All projects and every available project", () => {
+  it("opens a compact menu with All threads and every available project", () => {
     render(
       <ProjectFilter
         projects={projects}
@@ -23,23 +23,24 @@ describe("ProjectFilter", () => {
     );
 
     const trigger = screen.getByRole("button", {
-      name: "Filter by project: All projects",
+      name: "Filter by project: All threads",
     });
+    expect(trigger.querySelectorAll("svg")).toHaveLength(1);
     expect(screen.queryByRole("combobox")).toBeNull();
 
     fireEvent.keyDown(trigger, { key: "Enter" });
 
     expect(
       screen.getAllByRole("menuitemradio").map((item) => item.textContent),
-    ).toEqual(["All projects", "Alpha", "Personal"]);
+    ).toEqual(["All threads", "Alpha", "Personal"]);
     expect(
-      screen.getByRole("menuitemradio", { name: "All projects" }).getAttribute(
+      screen.getByRole("menuitemradio", { name: "All threads" }).getAttribute(
         "aria-checked",
       ),
     ).toBe("true");
   });
 
-  it("reports a project selection and maps All projects to null", () => {
+  it("reports a project selection and maps All threads to null", () => {
     const onChange = vi.fn();
     render(
       <ProjectFilter
@@ -58,7 +59,9 @@ describe("ProjectFilter", () => {
     fireEvent.click(screen.getByRole("menuitemradio", { name: "Personal" }));
 
     fireEvent.keyDown(trigger, { key: "Enter" });
-    fireEvent.click(screen.getByRole("menuitemradio", { name: "All projects" }));
+    fireEvent.click(
+      screen.getByRole("menuitemradio", { name: "All threads" }),
+    );
 
     expect(onChange).toHaveBeenNthCalledWith(1, "proj_personal");
     expect(onChange).toHaveBeenNthCalledWith(2, null);
@@ -78,7 +81,7 @@ describe("ProjectFilter", () => {
 
     fireEvent.keyDown(
       screen.getByRole("button", {
-        name: "Filter by project: All projects",
+        name: "Filter by project: All threads",
       }),
       { key: "Enter" },
     );

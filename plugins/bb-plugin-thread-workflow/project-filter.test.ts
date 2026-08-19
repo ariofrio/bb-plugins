@@ -23,7 +23,7 @@ describe("filterThreadsByProject", () => {
     { id: "thr_beta", projectId: "proj_beta" },
   ] as const;
 
-  it("returns every thread for the All projects selection", () => {
+  it("returns every thread for the All threads selection", () => {
     expect(filterThreadsByProject(threads, null)).toBe(threads);
   });
 

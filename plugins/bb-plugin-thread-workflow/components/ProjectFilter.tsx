@@ -32,7 +32,7 @@ export function ProjectFilter({
   value,
 }: ProjectFilterProps) {
   const activeProject = projects.find((project) => project.id === value);
-  const label = activeProject?.name ?? "All projects";
+  const label = activeProject?.name ?? "All threads";
   const activeIcon = value === null ? null : projectIcons.get(value);
 
   return (
@@ -42,7 +42,7 @@ export function ProjectFilter({
           <button
             type="button"
             aria-label={`Filter by project: ${label}`}
-            className="flex h-7 w-full min-w-0 cursor-pointer items-center gap-1.5 rounded-md px-2 text-xs font-medium text-subtle-foreground outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 data-[state=open]:bg-state-active data-[state=open]:text-sidebar-foreground"
+            className="flex h-11 w-full min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-sidebar-foreground/85 outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-[state=open]:bg-state-active data-[state=open]:text-sidebar-foreground max-md:pointer-coarse:h-[52px] dark:text-sidebar-foreground"
           >
             {activeIcon ? (
               <HugeiconsIcon
@@ -63,11 +63,6 @@ export function ProjectFilter({
               />
             )}
             <span className="truncate">{label}</span>
-            <Icon
-              name="ArrowDown"
-              className="ml-auto size-3.5 shrink-0 text-subtle-foreground/70"
-              aria-hidden
-            />
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
@@ -83,7 +78,7 @@ export function ProjectFilter({
                 onChange(projectId || null);
               }}
             >
-              <ProjectFilterItem label="All projects" value="">
+              <ProjectFilterItem label="All threads" value="">
                 <Icon name="Filter" className="size-4 shrink-0" aria-hidden />
               </ProjectFilterItem>
               {projects.map((project) => {

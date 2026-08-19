@@ -68,6 +68,74 @@ agent-browser --session "$qa_session" eval '(() => {
   });
 })()'
 
+agent-browser --session "$qa_session" eval '(() => {
+  const stage = document.querySelector("[data-sidebar-sticky-tier=\"label\"]");
+  const section = stage?.closest("section");
+  const labelId = section?.getAttribute("aria-labelledby");
+  const label = labelId === null ? null : document.getElementById(labelId);
+  const toggle = stage?.querySelector("button[aria-label$=\" section\"]");
+  const count = stage?.querySelector(
+    "[aria-label$=\"threads\"], [aria-label$=\"thread\"]",
+  );
+  if (
+    !(stage instanceof HTMLElement) ||
+    !(label instanceof HTMLElement) ||
+    !(toggle instanceof HTMLButtonElement)
+  ) {
+    throw new Error("Could not find the first workflow stage label and collapse button.");
+  }
+
+  const labelRect = label.getBoundingClientRect();
+  const toggleRect = toggle.getBoundingClientRect();
+  const labelToToggle = toggleRect.left - labelRect.right;
+  if (Math.abs(labelToToggle - 4) > 0.25) {
+    throw new Error(
+      `Stage toggle is ${labelToToggle}px after its label; expected the built-in 4px gap.`,
+    );
+  }
+
+  const opacity = Number.parseFloat(getComputedStyle(toggle).opacity);
+  if (opacity !== 1) {
+    throw new Error(`Expanded stage toggle opacity is ${opacity}; expected 1.`);
+  }
+
+  if (
+    count instanceof HTMLElement &&
+    count.getBoundingClientRect().left <= toggleRect.right
+  ) {
+    throw new Error("Stage count is not positioned to the right of the collapse button.");
+  }
+
+  return JSON.stringify({
+    labelToToggle,
+    toggleOpacity: opacity,
+    countIsRightAligned: count instanceof HTMLElement,
+  });
+})()'
+
+agent-browser --session "$qa_session" click \
+  '[data-sidebar-sticky-tier="label"] button[aria-label^="Collapse "]' >/dev/null
+agent-browser --session "$qa_session" hover 'button[aria-label^="Filter by project"]' >/dev/null
+agent-browser --session "$qa_session" wait 100 >/dev/null
+agent-browser --session "$qa_session" eval '(() => {
+  const toggle = document.querySelector(
+    "[data-sidebar-sticky-tier=\"label\"] button[aria-label^=\"Expand \"]",
+  );
+  if (!(toggle instanceof HTMLButtonElement)) {
+    throw new Error("Stage did not collapse after a real pointer click.");
+  }
+  const opacity = Number.parseFloat(getComputedStyle(toggle).opacity);
+  if (opacity !== 1) {
+    throw new Error(
+      `Collapsed stage toggle opacity is ${opacity}; expected 1 away from hover.`,
+    );
+  }
+  return JSON.stringify({ collapsedToggleOpacity: opacity });
+})()'
+agent-browser --session "$qa_session" click \
+  '[data-sidebar-sticky-tier="label"] button[aria-label^="Expand "]' >/dev/null
+agent-browser --session "$qa_session" wait 100 >/dev/null
+
 agent-browser --session "$qa_session" eval 'document.querySelector("[data-sidebar=\"content\"]").scrollTop = 120' >/dev/null
 agent-browser --session "$qa_session" wait 200 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {

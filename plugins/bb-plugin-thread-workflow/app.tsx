@@ -451,14 +451,6 @@ function SidebarSection({
           <span id={id} className="min-w-0 truncate" title={label}>
             {label}
           </span>
-          {count === undefined || activityThread ? null : (
-            <span
-              aria-label={`${count} ${count === 1 ? "thread" : "threads"}`}
-              className="bb-sidebar-hover-actions-fade ml-auto mr-2 shrink-0 tabular-nums text-subtle-foreground/60"
-            >
-              {count}
-            </span>
-          )}
           <button
             type="button"
             aria-expanded={!collapsed}
@@ -467,7 +459,7 @@ function SidebarSection({
                 ? `Expand ${label} section`
                 : `Collapse ${label} section`
             }
-            className="bb-sidebar-hover-actions absolute right-0 z-20 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
+            className="relative z-10 inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -484,6 +476,14 @@ function SidebarSection({
             />
           </button>
         </span>
+        {count === undefined || activityThread ? null : (
+          <span
+            aria-label={`${count} ${count === 1 ? "thread" : "threads"}`}
+            className="mr-2 shrink-0 tabular-nums text-subtle-foreground/60"
+          >
+            {count}
+          </span>
+        )}
         {activityThread ? (
           <span className="pointer-events-none absolute right-2 top-1/2 z-20 inline-flex -translate-y-1/2 items-center text-subtle-foreground">
             <ThreadIndicator
@@ -1048,7 +1048,7 @@ function WorkflowStageList({
       style={
         {
           "--bb-sidebar-sticky-label-top":
-            "calc(var(--bb-sidebar-sticky-stack-padding-top) + 2.75rem)",
+            "calc(var(--bb-sidebar-sticky-stack-padding-top) + 3.75rem)",
         } as CSSProperties
       }
       onDragEnd={clearDrag}
