@@ -17,6 +17,8 @@ plugin the rows look as they always have.
 Use the project filter above the workflow to focus the whole sidebar—including
 pinned and search results—on one project. The selection is stored only in the
 current browser and does not change workflow assignments or synchronization.
+The same menu can hide the stage counts, which show the number of filtered
+root threads in each unpinned stage and are enabled by default.
 
 Drag root threads to reorder or change their workflow stage. Ordering uses
 fractional keys, so a move updates only the moved thread. Root threads enter

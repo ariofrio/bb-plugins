@@ -13,7 +13,13 @@ describe("ProjectFilter", () => {
 
   it("opens a compact menu with All projects and every available project", () => {
     render(
-      <ProjectFilter projects={projects} value={null} onChange={() => {}} />,
+      <ProjectFilter
+        projects={projects}
+        value={null}
+        showStageCounts
+        onChange={() => {}}
+        onShowStageCountsChange={() => {}}
+      />,
     );
 
     const trigger = screen.getByRole("button", {
@@ -39,7 +45,9 @@ describe("ProjectFilter", () => {
       <ProjectFilter
         projects={projects}
         value="proj_alpha"
+        showStageCounts
         onChange={onChange}
+        onShowStageCountsChange={() => {}}
       />,
     );
 
@@ -54,5 +62,32 @@ describe("ProjectFilter", () => {
 
     expect(onChange).toHaveBeenNthCalledWith(1, "proj_personal");
     expect(onChange).toHaveBeenNthCalledWith(2, null);
+  });
+
+  it("toggles stage counts from the same sidebar menu", () => {
+    const onShowStageCountsChange = vi.fn();
+    render(
+      <ProjectFilter
+        projects={projects}
+        value={null}
+        showStageCounts
+        onChange={() => {}}
+        onShowStageCountsChange={onShowStageCountsChange}
+      />,
+    );
+
+    fireEvent.keyDown(
+      screen.getByRole("button", {
+        name: "Filter by project: All projects",
+      }),
+      { key: "Enter" },
+    );
+    const counts = screen.getByRole("menuitemcheckbox", {
+      name: "Show stage counts",
+    });
+
+    expect(counts.getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(counts);
+    expect(onShowStageCountsChange).toHaveBeenCalledWith(false);
   });
 });

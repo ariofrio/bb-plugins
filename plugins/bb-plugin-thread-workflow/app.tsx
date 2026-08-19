@@ -47,6 +47,7 @@ import { ThreadRenameDialog } from "./components/ThreadRenameDialog";
 import { createNativeCommandDelegate } from "./native-command-delegation";
 import { notifyNativeShortcutHandled } from "./native-command-hints";
 import { usePersistentStringSet } from "./persistent-string-set";
+import { usePersistentBoolean } from "./persistent-boolean";
 import {
   fetchProjectIcons,
   subscribeToProjectIconChanges,
@@ -76,6 +77,8 @@ const COLLAPSED_STATUSES_STORAGE_KEY =
   "bb.plugin.workflow-stage.collapsedStatuses";
 const COLLAPSED_THREADS_STORAGE_KEY = "bb.sidebar.collapsedThreads";
 const PROJECT_FILTER_STORAGE_KEY = "bb.plugin.thread-workflow.projectFilter";
+const SHOW_STAGE_COUNTS_STORAGE_KEY =
+  "bb.plugin.thread-workflow.showStageCounts";
 const PINNED_SECTION = "Pinned" as const;
 type SidebarGroup = WorkflowStage | typeof PINNED_SECTION;
 const COLLAPSIBLE_SECTION_SET: ReadonlySet<string> = new Set([
@@ -403,6 +406,7 @@ function ThreadRow({
 interface SidebarSectionProps {
   children: React.ReactNode;
   collapsed: boolean;
+  count?: number;
   dropTarget: boolean;
   onDropAtEnd: (event: DragEvent<HTMLElement>) => void;
   onDragOverEnd: (event: DragEvent<HTMLElement>) => void;
@@ -414,6 +418,7 @@ interface SidebarSectionProps {
 function SidebarSection({
   children,
   collapsed,
+  count,
   dropTarget,
   onDropAtEnd,
   onDragOverEnd,
@@ -445,6 +450,14 @@ function SidebarSection({
           <span id={id} className="min-w-0 truncate" title={label}>
             {label}
           </span>
+          {count === undefined || activityThread ? null : (
+            <span
+              aria-label={`${count} ${count === 1 ? "thread" : "threads"}`}
+              className="bb-sidebar-hover-actions-fade ml-auto mr-2 shrink-0 tabular-nums text-subtle-foreground/60"
+            >
+              {count}
+            </span>
+          )}
           <button
             type="button"
             aria-expanded={!collapsed}
@@ -453,9 +466,7 @@ function SidebarSection({
                 ? `Expand ${label} section`
                 : `Collapse ${label} section`
             }
-            className={`relative z-20 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 ${
-              collapsed ? "" : "bb-sidebar-hover-actions"
-            }`}
+            className="bb-sidebar-hover-actions absolute right-0 z-20 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-subtle-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -567,6 +578,10 @@ function WorkflowStageList({
   );
   const [collapsedThreads, setCollapsedThreads] = usePersistentStringSet(
     COLLAPSED_THREADS_STORAGE_KEY,
+  );
+  const [showStageCounts, setShowStageCounts] = usePersistentBoolean(
+    SHOW_STAGE_COUNTS_STORAGE_KEY,
+    true,
   );
   const [mutationPending, setMutationPending] = useState(false);
   const [pinnedThreadIds, setPinnedThreadIds] = useState<readonly string[]>([]);
@@ -1004,14 +1019,14 @@ function WorkflowStageList({
   if (displayThreads.length === 0) {
     return (
       <div className="w-full min-w-0">
-        {sidebar.projects.length > 1 ? (
-          <ProjectFilter
-            projectIcons={projectIcons}
-            projects={sidebar.projects}
-            value={projectFilter}
-            onChange={changeProjectFilter}
-          />
-        ) : null}
+        <ProjectFilter
+          projectIcons={projectIcons}
+          projects={sidebar.projects}
+          value={projectFilter}
+          onChange={changeProjectFilter}
+          showStageCounts={showStageCounts}
+          onShowStageCountsChange={setShowStageCounts}
+        />
         <SidebarMessage icon="CircleQuestion">
           {normalizedSearch
             ? "No matching threads"
@@ -1036,14 +1051,14 @@ function WorkflowStageList({
           {error}
         </div>
       ) : null}
-      {sidebar.projects.length > 1 ? (
-        <ProjectFilter
-          projectIcons={projectIcons}
-          projects={sidebar.projects}
-          value={projectFilter}
-          onChange={changeProjectFilter}
-        />
-      ) : null}
+      <ProjectFilter
+        projectIcons={projectIcons}
+        projects={sidebar.projects}
+        value={projectFilter}
+        onChange={changeProjectFilter}
+        showStageCounts={showStageCounts}
+        onShowStageCountsChange={setShowStageCounts}
+      />
       <div className="space-y-4">
         {pinnedState.pinnedThreads.length > 0 ? (
           <SidebarSection
@@ -1199,6 +1214,7 @@ function WorkflowStageList({
             <SidebarSection
               key={stage}
               label={stage}
+              count={showStageCounts ? rootThreads.length : undefined}
               threads={shownThreads}
               collapsed={isCollapsed}
               dropTarget={

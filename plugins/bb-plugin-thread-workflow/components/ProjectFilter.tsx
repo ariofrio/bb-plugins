@@ -11,8 +11,10 @@ interface ProjectFilterProject {
 
 interface ProjectFilterProps {
   onChange: (projectId: string | null) => void;
+  onShowStageCountsChange: (show: boolean) => void;
   projectIcons?: ReadonlyMap<string, ProjectIconView>;
   projects: readonly ProjectFilterProject[];
+  showStageCounts: boolean;
   value: string | null;
 }
 
@@ -23,8 +25,10 @@ const ITEM_CLASS =
 
 export function ProjectFilter({
   onChange,
+  onShowStageCountsChange,
   projectIcons = new Map(),
   projects,
+  showStageCounts,
   value,
 }: ProjectFilterProps) {
   const activeProject = projects.find((project) => project.id === value);
@@ -38,7 +42,7 @@ export function ProjectFilter({
           <button
             type="button"
             aria-label={`Filter by project: ${label}`}
-            className="flex h-7 w-fit min-w-0 max-w-full items-center gap-1.5 rounded-md px-2 text-xs font-medium text-subtle-foreground outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 data-[state=open]:bg-state-active data-[state=open]:text-sidebar-foreground"
+            className="flex h-7 w-full min-w-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-subtle-foreground outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 data-[state=open]:bg-state-active data-[state=open]:text-sidebar-foreground"
           >
             {activeIcon ? (
               <HugeiconsIcon
@@ -107,6 +111,20 @@ export function ProjectFilter({
                 );
               })}
             </DropdownMenu.RadioGroup>
+            <DropdownMenu.Separator className="-mx-1 my-1 h-px bg-border" />
+            <DropdownMenu.CheckboxItem
+              checked={showStageCounts}
+              className={ITEM_CLASS}
+              onCheckedChange={(checked) => {
+                onShowStageCountsChange(checked === true);
+              }}
+              onSelect={(event) => event.preventDefault()}
+            >
+              <DropdownMenu.ItemIndicator className="absolute left-2 inline-flex size-3.5 items-center justify-center">
+                <Icon name="Check" className="size-3.5" aria-hidden />
+              </DropdownMenu.ItemIndicator>
+              <span>Show stage counts</span>
+            </DropdownMenu.CheckboxItem>
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
