@@ -8,7 +8,7 @@
 // all of them and no two colors collapse into each other, so this scores both:
 // the smallest WCAG contrast ratio anywhere, and the smallest OKLab distance
 // between any two colors anywhere.
-import { projectIconColor } from "../project-icon-colors.ts";
+import { projectIconColor } from "../src/project-icon-colors.ts";
 
 /** Canvas and ink for each built-in theme; every other surface derives from them. */
 const THEME_TOKENS = {

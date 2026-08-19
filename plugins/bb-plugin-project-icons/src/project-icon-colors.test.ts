@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COLORS, SURFACES, evaluateShipped } from "./scripts/fit-palette.mjs";
+import { COLORS, SURFACES, evaluateShipped } from "../scripts/fit-palette.mjs";
 import { projectIconColor, projectIconColorStyle } from "./project-icon-colors";
 
 describe("project icon colors", () => {

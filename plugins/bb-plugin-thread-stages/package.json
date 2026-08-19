@@ -14,10 +14,11 @@
   },
   "files": [
     "assets",
-    "app.tsx",
     "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
     "scripts",
-    "server.ts",
     "skills"
   ],
   "type": "module",
@@ -42,8 +43,8 @@
     "branding": {
       "icon": "./assets/icon.svg"
     },
-    "server": "./server.ts",
-    "app": "./app.tsx",
+    "server": "./src/server.ts",
+    "app": "./src/app.tsx",
     "skills": [
       "skills"
     ]

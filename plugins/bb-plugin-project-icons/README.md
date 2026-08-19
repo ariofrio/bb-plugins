@@ -39,8 +39,8 @@ render it without shipping the catalog themselves.
 
 ## The icon catalog
 
-`npm run build:catalog` regenerates `icon-catalog.json` and
-`icon-catalog.generated.ts` from Hugeicons' published index. It keeps the
+`npm run build:catalog` regenerates `src/icon-catalog.json` and
+`src/icon-catalog.generated.ts` from Hugeicons' published index. It keeps the
 categories that describe a project rather than interface furniture, collapses
 `-01`/`-02` name variants, and drops anything the free package does not export
 — 2,532 icons across 32 categories. The result is committed, so builds and CI

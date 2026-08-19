@@ -11,7 +11,7 @@ import {
   statSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, relative, resolve, sep } from "node:path";
+import { join, matchesGlob, relative, resolve, sep } from "node:path";
 import { derivePluginId } from "./plugin-id.mjs";
 
 const pluginDirectory = resolve(process.argv[2] ?? process.cwd());
@@ -34,12 +34,29 @@ const listFiles = (directory) =>
 const skillPaths = (manifest.bb.skills ?? []).flatMap((directory) =>
   listFiles(directory),
 );
-const allowlistedFiles = (manifest.files ?? []).flatMap((entry) => {
-  const normalized = entry.replace(/^\.\//, "");
-  return statSync(join(pluginDirectory, normalized)).isDirectory()
-    ? listFiles(normalized)
-    : [normalized];
-});
+// Mirrors npm's own allowlist semantics: entries apply in order, and an entry
+// prefixed with "!" drops the files matched so far — how a plugin ships its
+// sources without their co-located tests.
+const allowlistedFiles = [];
+for (const entry of manifest.files ?? []) {
+  const normalized = entry.replace(/^!?\.\//, (prefix) =>
+    prefix.startsWith("!") ? "!" : "",
+  );
+  if (normalized.startsWith("!")) {
+    const pattern = normalized.slice(1);
+    for (let index = allowlistedFiles.length - 1; index >= 0; index -= 1) {
+      if (matchesGlob(allowlistedFiles[index], pattern)) {
+        allowlistedFiles.splice(index, 1);
+      }
+    }
+    continue;
+  }
+  allowlistedFiles.push(
+    ...(statSync(join(pluginDirectory, normalized)).isDirectory()
+      ? listFiles(normalized)
+      : [normalized]),
+  );
+}
 const expectedFiles = [
   ...new Set([
     "LICENSE",

@@ -27,10 +27,10 @@ The plugin registers `experimental_threadHeaderAction` to receive the current
 project and read its live name from `experimental_useSidebarThreads()`. Its
 otherwise-hidden slot inserts a React portal immediately before bb's existing
 thread-title container. The frontend action dialogs call schema-validated RPC
-handlers registered by `server.ts` for project rename and removal.
+handlers registered by `src/server.ts` for project rename and removal.
 
 This deliberately relies on bb's private thread-header DOM structure because
-the plugin SDK has no title-prefix slot. `header-dom.test.ts` documents and
+the plugin SDK has no title-prefix slot. `src/header-dom.test.ts` documents and
 tests the expected structure so a future bb header change fails locally rather
 than silently changing the thread title.
 

@@ -15,7 +15,7 @@
   "files": [
     "assets",
     "dist",
-    "server.ts",
+    "src",
     "themes"
   ],
   "type": "module",
@@ -37,7 +37,7 @@
     "branding": {
       "icon": "./assets/icon.svg"
     },
-    "server": "./server.ts",
+    "server": "./src/server.ts",
     "skills": [],
     "themes": [
       {

@@ -14,22 +14,14 @@
     ],
     "paths": {
       "@/*": [
-        "./*"
+        "./src/*"
       ]
     },
     "noEmit": true,
     "skipLibCheck": false
   },
   "include": [
-    "server.ts",
-    "app.tsx",
-    "ProjectBreadcrumb.tsx",
-    "header-dom.ts",
-    "*.test.ts",
-    "*.test.tsx",
-    "vitest.config.ts",
-    "components",
-    "lib",
-    "hooks"
+    "src",
+    "vitest.config.ts"
   ]
 }
