@@ -39,9 +39,9 @@ agent-browser --session "$qa_session" eval '(() => {
   return JSON.stringify({ actionsAwayFromHover: state });
 })()'
 agent-browser --session "$qa_session" eval '(() => {
-  const previous = document.querySelector(
-    "button[aria-label=\"Tasks panel options\"]",
-  );
+  const previous = [...document.querySelectorAll(
+    "[data-testid=\"plugin-nav-sidebar-items\"] > * button[aria-label$=\" panel options\"]",
+  )].at(-1);
   if (!(previous instanceof HTMLButtonElement)) {
     throw new Error("Could not find the control before the thread filter.");
   }
@@ -50,7 +50,7 @@ agent-browser --session "$qa_session" eval '(() => {
 agent-browser --session "$qa_session" press Tab >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const control = document.querySelector(
-    "button[aria-label^=\"Projects and sections\"]",
+    "[data-thread-filter-trigger]",
   );
   const row = control?.parentElement;
   const actions = document.querySelector("[data-thread-filter-actions]");
@@ -90,7 +90,7 @@ agent-browser --session "$qa_session" eval '(() => {
     },
   });
 })()'
-agent-browser --session "$qa_session" hover 'button[aria-label^="Projects and sections"]' >/dev/null
+agent-browser --session "$qa_session" hover '[data-thread-filter-trigger]' >/dev/null
 agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const actions = document.querySelector("[data-thread-filter-actions]");
@@ -110,22 +110,41 @@ agent-browser --session "$qa_session" eval '(() => {
   return JSON.stringify({ actionsOnHover: state });
 })()'
 agent-browser --session "$qa_session" eval '(() => {
-  const control = document.querySelector("button[aria-label^=\"Projects and sections\"]");
-  const tasksLabel = [...document.querySelectorAll("button span")].find(
-    (node) => node.textContent?.trim() === "Tasks",
+  const control = document.querySelector("[data-thread-filter-trigger]");
+  const navigation = document.querySelector(
+    "[data-testid=\"plugin-nav-sidebar-items\"]",
   );
-  const tasksRow = tasksLabel?.closest("button");
+  const navigationItems = navigation === null
+    ? []
+    : [...navigation.children].filter(
+        (node) =>
+          node instanceof HTMLElement &&
+          node.querySelector("button[aria-label$=\" panel options\"]") instanceof
+            HTMLButtonElement,
+      );
+  const previousNavigationItem = navigationItems.at(-2);
+  const lastNavigationItem = navigationItems.at(-1);
+  const builtInRow = lastNavigationItem?.querySelector("button");
+  const scrollContent = control?.closest("[data-sidebar=\"content\"]");
   const firstStage = document.querySelector("[data-sidebar-sticky-tier=\"label\"]");
   if (
     !(control instanceof HTMLElement) ||
-    !(tasksRow instanceof HTMLButtonElement) ||
+    !(previousNavigationItem instanceof HTMLElement) ||
+    !(lastNavigationItem instanceof HTMLElement) ||
+    !(builtInRow instanceof HTMLButtonElement) ||
+    !(scrollContent instanceof HTMLElement) ||
     !(firstStage instanceof HTMLElement)
   ) {
-    throw new Error("Could not find the thread filter, Tasks row, and first stage.");
+    throw new Error(
+      "Could not find the thread filter, final built-in rows, and first stage.",
+    );
   }
 
   const controlRect = control.getBoundingClientRect();
-  const tasksRect = tasksRow.getBoundingClientRect();
+  const builtInRect = builtInRow.getBoundingClientRect();
+  const previousNavigationRect = previousNavigationItem.getBoundingClientRect();
+  const lastNavigationRect = lastNavigationItem.getBoundingClientRect();
+  const contentRect = scrollContent.getBoundingClientRect();
   const stageRect = firstStage.getBoundingClientRect();
   const firstSection = firstStage.closest("section");
   if (
@@ -136,10 +155,30 @@ agent-browser --session "$qa_session" eval '(() => {
   }
 
   const controlToFirstStage = stageRect.top - controlRect.bottom;
-  if (Math.abs(controlRect.height - tasksRect.height) > 0.25) {
+  if (Math.abs(controlRect.height - builtInRect.height) > 0.25) {
     throw new Error(
-      `Projects and sections is ${controlRect.height}px tall; the built-in Tasks row is ${tasksRect.height}px.`,
+      `Projects and sections is ${controlRect.height}px tall; the final built-in row is ${builtInRect.height}px.`,
     );
+  }
+  const builtInRhythm =
+    lastNavigationRect.top - previousNavigationRect.bottom;
+  const builtInToThreadFilter = controlRect.top - lastNavigationRect.bottom;
+  if (Math.abs(builtInToThreadFilter - builtInRhythm) > 0.25) {
+    throw new Error(
+      `Final built-in row to thread filter gap is ${builtInToThreadFilter}px; built-in row gap is ${builtInRhythm}px.`,
+    );
+  }
+  if (contentRect.top < lastNavigationRect.bottom - 0.25) {
+    throw new Error(
+      `Sidebar content overlaps the final built-in row by ${lastNavigationRect.bottom - contentRect.top}px.`,
+    );
+  }
+  const bottomHit = document.elementFromPoint(
+    lastNavigationRect.left + lastNavigationRect.width / 2,
+    lastNavigationRect.bottom - 0.5,
+  );
+  if (!(bottomHit instanceof Element) || !lastNavigationItem.contains(bottomHit)) {
+    throw new Error("The final built-in row does not own its bottom rendered pixel.");
   }
   const betweenStages = Number.parseFloat(getComputedStyle(firstSection).marginBottom);
   if (Math.abs(controlToFirstStage - betweenStages) > 0.25) {
@@ -164,9 +203,13 @@ agent-browser --session "$qa_session" eval '(() => {
   }
 
   return JSON.stringify({
+    builtInRhythm,
+    builtInToThreadFilter,
+    contentClearance: contentRect.top - lastNavigationRect.bottom,
+    bottomPixelOwner: bottomHit.tagName,
     controlBottom: controlRect.bottom,
     controlHeight: controlRect.height,
-    tasksHeight: tasksRect.height,
+    builtInHeight: builtInRect.height,
     controlToFirstStage,
     betweenStages,
     shieldTop,
@@ -272,7 +315,7 @@ agent-browser --session "$qa_session" eval '(() => {
 
 agent-browser --session "$qa_session" click \
   '[data-sidebar-sticky-tier="label"] button[aria-label^="Collapse "]' >/dev/null
-agent-browser --session "$qa_session" hover 'button[aria-label^="Projects and sections"]' >/dev/null
+agent-browser --session "$qa_session" hover '[data-thread-filter-trigger]' >/dev/null
 agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const toggle = document.querySelector(
@@ -296,7 +339,7 @@ agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval 'document.querySelector("[data-sidebar=\"content\"]").scrollTop = 120' >/dev/null
 agent-browser --session "$qa_session" wait 200 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
-  const control = document.querySelector("button[aria-label^=\"Projects and sections\"]");
+  const control = document.querySelector("[data-thread-filter-trigger]");
   const stack = control?.closest("[data-sidebar-sticky-stack]");
   const scrollContent = control?.closest("[data-sidebar=\"content\"]");
   const firstStage = document.querySelector("[data-sidebar-sticky-tier=\"label\"]");
@@ -338,7 +381,7 @@ agent-browser --session "$qa_session" eval '(() => {
 })()'
 
 agent-browser --session "$qa_session" eval '(() => {
-  const control = document.querySelector("button[aria-label^=\"Projects and sections\"]");
+  const control = document.querySelector("[data-thread-filter-trigger]");
   const row = control?.parentElement;
   const stack = control?.closest("[data-sidebar-sticky-stack]");
   if (
@@ -359,14 +402,14 @@ agent-browser --session "$qa_session" eval '(() => {
   });
 })()'
 agent-browser --session "$qa_session" click \
-  'button[aria-label^="Projects and sections"]' >/dev/null
+  '[data-thread-filter-trigger]' >/dev/null
 agent-browser --session "$qa_session" find role menuitemradio click \
   --name "$qa_empty_project_name" >/dev/null
 agent-browser --session "$qa_session" wait --text \
   "No threads in this project" >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const expected = window.__threadStagesExpectedFilterInsets;
-  const control = document.querySelector("button[aria-label^=\"Projects and sections\"]");
+  const control = document.querySelector("[data-thread-filter-trigger]");
   const row = control?.parentElement;
   const content = control?.closest("[data-sidebar=\"content\"]");
   if (
@@ -395,7 +438,7 @@ agent-browser --session "$qa_session" eval '(() => {
   return JSON.stringify({ emptyProjectFilterInsets: actual });
 })()'
 agent-browser --session "$qa_session" eval '(() => {
-  const control = document.querySelector("button[aria-label^=\"Projects and sections\"]");
+  const control = document.querySelector("[data-thread-filter-trigger]");
   const controlIcon = control?.querySelector("svg");
   const controlLabel = control?.querySelector("span");
   const messageLabel = [...document.querySelectorAll("span")].find(

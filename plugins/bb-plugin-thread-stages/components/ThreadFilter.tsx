@@ -68,11 +68,12 @@ export function ThreadFilter({
       : "Projects and sections";
 
   return (
-    <div className="group/thread-filter sticky top-2 z-[70] mb-4 flex min-w-0 items-center gap-1 rounded-md bg-sidebar outline-none ring-sidebar-ring has-[.thread-filter-trigger:focus-visible]:ring-2 before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-sidebar before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-sidebar after:content-['']">
+    <div className="group/thread-filter sticky top-[var(--bb-sidebar-sticky-stack-padding-top)] z-[70] mb-4 flex min-w-0 items-center gap-1 rounded-md bg-sidebar outline-none ring-sidebar-ring has-[.thread-filter-trigger:focus-visible]:ring-2 before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-sidebar before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-sidebar after:content-['']">
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
           <button
             type="button"
+            data-thread-filter-trigger=""
             aria-label={
               activeLabel === null
                 ? filterLabel

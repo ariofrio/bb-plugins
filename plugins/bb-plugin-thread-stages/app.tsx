@@ -77,6 +77,7 @@ import {
   serializeThreadFilter,
   type ThreadFilter as ThreadFilterValue,
 } from "./thread-filter";
+import { mountSidebarContentSpacing } from "./sidebar-content-spacing";
 
 const COLLAPSED_STATUSES_STORAGE_KEY =
   "bb.plugin.workflow-stage.collapsedStatuses";
@@ -595,6 +596,7 @@ function SidebarStageLayout({
       data-sidebar="group"
       data-sidebar-sticky-stack=""
       data-sidebar-sticky-density="compact-actions"
+      data-thread-stages-sidebar-root=""
       className="relative flex w-full min-w-0 flex-col"
       style={
         {
@@ -1701,6 +1703,13 @@ export default definePluginApp((app) => {
         },
         { capture: true, signal },
       );
+    },
+  });
+
+  app.contentScripts.register({
+    id: "sidebar-content-spacing",
+    mount({ signal }) {
+      return mountSidebarContentSpacing(signal);
     },
   });
 });

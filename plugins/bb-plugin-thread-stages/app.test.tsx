@@ -11,7 +11,10 @@ describe("thread stages app registration", () => {
       id: "workflow-stage",
       title: "Thread stages",
     });
-    expect(app.contentScripts).toHaveLength(1);
-    expect(app.contentScripts[0]).toMatchObject({ id: "workflow-shortcuts" });
+    expect(app.contentScripts).toHaveLength(2);
+    expect(app.contentScripts.map(({ id }) => id)).toEqual([
+      "workflow-shortcuts",
+      "sidebar-content-spacing",
+    ]);
   });
 });
