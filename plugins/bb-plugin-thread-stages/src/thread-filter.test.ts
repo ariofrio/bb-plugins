@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   filterThreads,
   normalizeThreadFilter,
+  serializeThreadFilter,
   type ThreadFilter,
 } from "./thread-filter";
 
@@ -15,6 +16,12 @@ const sections = [
 ] as const;
 
 describe("normalizeThreadFilter", () => {
+  it("serializes the uncategorized section scope", () => {
+    expect(serializeThreadFilter({ kind: "uncategorized" })).toBe(
+      "uncategorized",
+    );
+  });
+
   it("keeps available filters, migrates legacy project ids, and rejects stale values", () => {
     expect(
       normalizeThreadFilter("project:proj_beta", projects, sections),
@@ -28,6 +35,9 @@ describe("normalizeThreadFilter", () => {
       kind: "section",
       id: "section_now",
     });
+    expect(
+      normalizeThreadFilter("uncategorized", projects, sections),
+    ).toEqual({ kind: "uncategorized" });
     expect(normalizeThreadFilter("proj_alpha", projects, sections)).toEqual({
       kind: "project",
       id: "proj_alpha",
@@ -38,6 +48,7 @@ describe("normalizeThreadFilter", () => {
     expect(
       normalizeThreadFilter("section:section_removed", projects, sections),
     ).toBeNull();
+    expect(normalizeThreadFilter("uncategorized", projects, [])).toBeNull();
     expect(normalizeThreadFilter(null, projects, sections)).toBeNull();
   });
 
@@ -45,6 +56,9 @@ describe("normalizeThreadFilter", () => {
     expect(normalizeThreadFilter("section:section_now", projects, null)).toEqual({
       kind: "section",
       id: "section_now",
+    });
+    expect(normalizeThreadFilter("uncategorized", projects, null)).toEqual({
+      kind: "uncategorized",
     });
   });
 });
@@ -69,6 +83,18 @@ describe("filterThreads", () => {
       projectId: "proj_beta",
       sectionId: "section_later",
     },
+    {
+      id: "thr_uncategorized",
+      parentThreadId: null,
+      projectId: "proj_beta",
+      sectionId: null,
+    },
+    {
+      id: "thr_uncategorized_child",
+      parentThreadId: "thr_uncategorized",
+      projectId: "proj_beta",
+      sectionId: "section_now",
+    },
   ] as const;
 
   it("returns every thread when no filter is selected", () => {
@@ -83,5 +109,10 @@ describe("filterThreads", () => {
   it("keeps descendants of roots in the selected section", () => {
     const filter: ThreadFilter = { kind: "section", id: "section_now" };
     expect(filterThreads(threads, filter)).toEqual([threads[0], threads[1]]);
+  });
+
+  it("keeps descendants of uncategorized roots", () => {
+    const filter: ThreadFilter = { kind: "uncategorized" };
+    expect(filterThreads(threads, filter)).toEqual([threads[3], threads[4]]);
   });
 });

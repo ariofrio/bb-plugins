@@ -12,10 +12,13 @@ interface FilterableThread {
 export type ThreadFilter =
   | { kind: "project"; id: string }
   | { kind: "section"; id: string }
+  | { kind: "uncategorized" }
   | null;
 
 export function serializeThreadFilter(filter: ThreadFilter): string | null {
-  return filter === null ? null : `${filter.kind}:${filter.id}`;
+  if (filter === null) return null;
+  if (filter.kind === "uncategorized") return filter.kind;
+  return `${filter.kind}:${filter.id}`;
 }
 
 export function normalizeThreadFilter(
@@ -24,6 +27,11 @@ export function normalizeThreadFilter(
   sections: readonly FilterReference[] | null,
 ): ThreadFilter {
   if (storedValue === null) return null;
+  if (storedValue === "uncategorized") {
+    return sections === null || sections.length > 0
+      ? { kind: "uncategorized" }
+      : null;
+  }
 
   const separator = storedValue.indexOf(":");
   const kind = separator === -1 ? "project" : storedValue.slice(0, separator);
@@ -70,7 +78,6 @@ export function filterThreads<T extends FilterableThread>(
     return current;
   }
 
-  return threads.filter(
-    (thread) => rootThread(thread).sectionId === filter.id,
-  );
+  const sectionId = filter.kind === "uncategorized" ? null : filter.id;
+  return threads.filter((thread) => rootThread(thread).sectionId === sectionId);
 }

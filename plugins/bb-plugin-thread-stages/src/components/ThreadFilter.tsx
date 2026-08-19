@@ -97,7 +97,14 @@ export function ThreadFilter({
     value?.kind === "section"
       ? sections.find((section) => section.id === value.id)
       : undefined;
-  const activeLabel = activeProject?.name ?? activeSection?.name ?? null;
+  const activeUncategorized = value?.kind === "uncategorized";
+  const activeLabel = activeProject?.isPersonal
+    ? "Threads"
+    : activeProject?.name ??
+      activeSection?.name ??
+      (activeUncategorized ? "Uncategorized" : null);
+  const personalProject = projects.find((project) => project.isPersonal);
+  const regularProjects = projects.filter((project) => !project.isPersonal);
   const scopeLabel =
     sections.length === 0 ? "Projects" : "Projects and sections";
   const allLabel =
@@ -119,7 +126,7 @@ export function ThreadFilter({
           >
             {activeProject ? (
               <ProjectFilterIcon icon={projectIcons.get(activeProject.id)} />
-            ) : activeSection ? (
+            ) : activeSection || activeUncategorized ? (
               <Icon name="ListView" className="size-4 shrink-0" aria-hidden />
             ) : (
               <Icon
@@ -145,6 +152,10 @@ export function ThreadFilter({
                   onChange(null);
                   return;
                 }
+                if (nextValue === "uncategorized") {
+                  onChange({ kind: "uncategorized" });
+                  return;
+                }
                 const [kind, id] = nextValue.split(":", 2);
                 if ((kind === "project" || kind === "section") && id) {
                   onChange({ kind, id });
@@ -164,49 +175,45 @@ export function ThreadFilter({
                     Projects
                   </DropdownMenu.Label>
                   <DropdownMenu.Group>
-                    {projects.map((project) => {
-                      return project.isPersonal ? (
-                        <ThreadFilterItem
-                          key={project.id}
-                          label={project.name}
-                          value={`project:${project.id}`}
-                        >
-                          <ProjectFilterIcon
-                            icon={projectIcons.get(project.id)}
-                          />
-                        </ThreadFilterItem>
-                      ) : (
-                        <ActionableThreadFilterItem
-                          key={project.id}
-                          label={project.name}
-                          selected={
-                            value?.kind === "project" && value.id === project.id
+                    {personalProject ? (
+                      <ThreadFilterItem
+                        label="Threads"
+                        value={`project:${personalProject.id}`}
+                      >
+                        <ProjectFilterIcon
+                          icon={projectIcons.get(personalProject.id)}
+                        />
+                      </ThreadFilterItem>
+                    ) : null}
+                    {regularProjects.map((project) => (
+                      <ActionableThreadFilterItem
+                        key={project.id}
+                        label={project.name}
+                        selected={
+                          value?.kind === "project" && value.id === project.id
+                        }
+                        onSelect={() => {
+                          onChange({ kind: "project", id: project.id });
+                          setOpen(false);
+                        }}
+                      >
+                        <ProjectFilterIcon
+                          icon={projectIcons.get(project.id)}
+                        />
+                        <ProjectActions
+                          canAddLocalPath={
+                            projectActionStates.get(project.id)
+                              ?.canAddLocalPath ?? false
                           }
-                          onSelect={() => {
-                            onChange({ kind: "project", id: project.id });
-                            setOpen(false);
-                          }}
-                        >
-                          <ProjectFilterIcon
-                            icon={projectIcons.get(project.id)}
-                          />
-                          <ProjectActions
-                            canAddLocalPath={
-                              projectActionStates.get(project.id)
-                                ?.canAddLocalPath ?? false
-                            }
-                            onAddLocalPath={() =>
-                              onAddProjectLocalPath(project)
-                            }
-                            onOpenSettings={() =>
-                              onOpenProjectSettings(project)
-                            }
-                            onRemove={() => onRemoveProject(project)}
-                            onRename={() => onRenameProject(project)}
-                          />
-                        </ActionableThreadFilterItem>
-                      );
-                    })}
+                          onAddLocalPath={() => onAddProjectLocalPath(project)}
+                          onOpenSettings={() =>
+                            onOpenProjectSettings(project)
+                          }
+                          onRemove={() => onRemoveProject(project)}
+                          onRename={() => onRenameProject(project)}
+                        />
+                      </ActionableThreadFilterItem>
+                    ))}
                   </DropdownMenu.Group>
                 </>
               ) : null}
@@ -216,6 +223,16 @@ export function ThreadFilter({
                     Sections
                   </DropdownMenu.Label>
                   <DropdownMenu.Group>
+                    <ThreadFilterItem
+                      label="Uncategorized"
+                      value="uncategorized"
+                    >
+                      <Icon
+                        name="ListView"
+                        className="size-4 shrink-0"
+                        aria-hidden
+                      />
+                    </ThreadFilterItem>
                     {sections.map((section) => (
                       <ActionableThreadFilterItem
                         key={section.id}

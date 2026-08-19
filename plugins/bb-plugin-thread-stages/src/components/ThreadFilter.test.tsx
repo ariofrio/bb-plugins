@@ -65,7 +65,13 @@ describe("ThreadFilter", () => {
     expect(within(menu).getByText("Sections")).toBeDefined();
     expect(
       within(menu).getAllByRole("menuitemradio").map((item) => item.textContent),
-    ).toEqual(["All projects and sections", "Alpha", "Personal", "Waiting"]);
+    ).toEqual([
+      "All projects and sections",
+      "Threads",
+      "Alpha",
+      "Uncategorized",
+      "Waiting",
+    ]);
     expect(
       within(menu)
         .getByRole("menuitemradio", { name: "All projects and sections" })
@@ -116,6 +122,17 @@ describe("ThreadFilter", () => {
     rerender(
       <ThreadFilter
         {...sharedProps}
+        value={{ kind: "project", id: "proj_personal" }}
+      />,
+    );
+    trigger = screen.getByRole("button", {
+      name: "Projects and sections: Threads",
+    });
+    expect(trigger.querySelector('[data-icon="Folder"]')).not.toBeNull();
+
+    rerender(
+      <ThreadFilter
+        {...sharedProps}
         value={{ kind: "section", id: "section_waiting" }}
       />,
     );
@@ -123,9 +140,15 @@ describe("ThreadFilter", () => {
       name: "Projects and sections: Waiting",
     });
     expect(trigger.querySelector('[data-icon="ListView"]')).not.toBeNull();
+
+    rerender(<ThreadFilter {...sharedProps} value={{ kind: "uncategorized" }} />);
+    trigger = screen.getByRole("button", {
+      name: "Projects and sections: Uncategorized",
+    });
+    expect(trigger.querySelector('[data-icon="ListView"]')).not.toBeNull();
   });
 
-  it("reports project, section, and clear selections", () => {
+  it("reports project, section, uncategorized, and clear selections", () => {
     const onChange = vi.fn();
     render(
       <ThreadFilter
@@ -148,6 +171,12 @@ describe("ThreadFilter", () => {
 
     fireEvent.keyDown(trigger, { key: "Enter" });
     fireEvent.click(
+      screen.getByRole("menuitemradio", { name: "Uncategorized" }),
+      { detail: 1 },
+    );
+
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(
       screen.getByRole("menuitemradio", {
         name: "All projects and sections",
       }),
@@ -157,7 +186,8 @@ describe("ThreadFilter", () => {
       kind: "section",
       id: "section_waiting",
     });
-    expect(onChange).toHaveBeenNthCalledWith(2, null);
+    expect(onChange).toHaveBeenNthCalledWith(2, { kind: "uncategorized" });
+    expect(onChange).toHaveBeenNthCalledWith(3, null);
   });
 
   it("omits project and section groups independently when they are empty", () => {
@@ -189,6 +219,11 @@ describe("ThreadFilter", () => {
     const projectsOnlyMenu = screen.getByRole("menu");
     expect(within(projectsOnlyMenu).getByText("Projects")).toBeDefined();
     expect(within(projectsOnlyMenu).queryByText("Sections")).toBeNull();
+    expect(
+      within(projectsOnlyMenu).queryByRole("menuitemradio", {
+        name: "Uncategorized",
+      }),
+    ).toBeNull();
 
     fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
     rerender(
@@ -427,7 +462,7 @@ describe("ThreadFilter", () => {
     ).toBe(false);
   });
 
-  it("opens section actions on right click and does not give Personal a submenu", () => {
+  it("opens section actions on right click and does not give Threads a submenu", () => {
     render(
       <ThreadFilter
         {...actions}
@@ -446,7 +481,7 @@ describe("ThreadFilter", () => {
     );
     expect(
       screen
-        .getByRole("menuitemradio", { name: "Personal" })
+        .getByRole("menuitemradio", { name: "Threads" })
         .querySelector('[data-icon="ChevronRight"]'),
     ).toBeNull();
     const waiting = screen.getByRole("menuitemradio", { name: "Waiting" });
