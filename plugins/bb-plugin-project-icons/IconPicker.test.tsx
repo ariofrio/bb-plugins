@@ -162,6 +162,39 @@ describe("IconPicker", () => {
     expect(screen.queryByText(/Showing \d+ of \d+/)).toBeNull();
   });
 
+  it("clears search with a plugin-rendered control", () => {
+    render(
+      <IconPicker
+        catalog={catalog}
+        loading={false}
+        open
+        onOpenChange={vi.fn()}
+        projectName="Example project"
+        icon="circle"
+        defaultIcon="folder"
+        color={null}
+        onPick={vi.fn()}
+        onPickColor={vi.fn()}
+        onReset={vi.fn()}
+        trigger={<button type="button">Change icon</button>}
+      />,
+    );
+
+    const search = screen.getByRole("searchbox", { name: "Search icons" });
+    fireEvent.change(search, { target: { value: "launch" } });
+    expect(screen.queryByRole("button", { name: "circle" })).toBeNull();
+
+    const clearSearch = screen.getByRole("button", { name: "Clear search" });
+    expect(fireEvent.mouseDown(clearSearch)).toBe(false);
+    fireEvent.click(clearSearch);
+
+    expect(search).toHaveProperty("value", "");
+    screen.getByRole("button", { name: "circle" });
+    expect(
+      screen.queryByRole("button", { name: "Clear search" }),
+    ).toBeNull();
+  });
+
   it("selects the category currently at the top of the scrolling catalog", () => {
     const scrollIntoView = vi.fn();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {

@@ -67,6 +67,7 @@ export function IconPicker({
     right: false,
   });
   const titleId = useId();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const categoryScrollerRef = useRef<HTMLDivElement>(null);
   const categoryChipRefs = useRef(new Map<string, HTMLButtonElement>());
   const sectionRefs = useRef(new Map<string, HTMLElement>());
@@ -199,17 +200,32 @@ export function IconPicker({
             <Icon
               name="Search"
               aria-hidden
-              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
             />
             <Input
-              type="search"
+              ref={searchInputRef}
+              role="searchbox"
               aria-label="Search icons"
               autoFocus
               placeholder="Search icons"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="pl-8"
+              className="pr-10 pl-9"
             />
+            {query.length > 0 ? (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  setQuery("");
+                  searchInputRef.current?.focus();
+                }}
+                className="absolute top-1/2 right-1 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <Icon name="X" aria-hidden className="size-3.5" />
+              </button>
+            ) : null}
           </div>
 
           {!searching && groups.length > 0 ? (
