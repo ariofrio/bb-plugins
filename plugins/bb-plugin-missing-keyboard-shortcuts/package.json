@@ -13,6 +13,7 @@
     "url": "https://github.com/ariofrio/bb-plugins/issues"
   },
   "files": [
+    "assets",
     "app.tsx",
     "dist",
     "server.ts"
@@ -35,7 +36,7 @@
     "name": "Missing keyboard shortcuts",
     "description": "Adds keyboard shortcuts that BB does not provide.",
     "branding": {
-      "icon": "Zap"
+      "icon": "./assets/icon.svg"
     },
     "server": "./server.ts",
     "app": "./app.tsx",

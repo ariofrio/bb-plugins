@@ -35,7 +35,7 @@
     "name": "Codex theme",
     "description": "Match bb's palette to the OpenAI ChatGPT desktop app.",
     "branding": {
-      "icon": "Palette"
+      "icon": "./assets/icon.svg"
     },
     "server": "./server.ts",
     "skills": [],

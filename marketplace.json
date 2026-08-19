@@ -9,8 +9,16 @@
       "id": "codex-theme",
       "displayName": "Codex theme",
       "description": "Adds a light-and-dark bb theme based on the OpenAI ChatGPT desktop palette.",
-      "icon": "Palette",
-      "tags": ["theme", "appearance", "light", "dark", "codex"],
+      "icon": {
+        "url": "./plugins/bb-plugin-codex-theme/assets/icon.svg"
+      },
+      "tags": [
+        "theme",
+        "appearance",
+        "light",
+        "dark",
+        "codex"
+      ],
       "author": {
         "name": "Andres Riofrio",
         "github": "ariofrio",
@@ -29,8 +37,16 @@
       "id": "missing-keyboard-shortcuts",
       "displayName": "Missing keyboard shortcuts",
       "description": "Adds keyboard shortcuts for common bb navigation, thread creation, composers, side chats, and terminals.",
-      "icon": "Zap",
-      "tags": ["keyboard-shortcuts", "navigation", "threads", "interface", "productivity"],
+      "icon": {
+        "url": "./plugins/bb-plugin-missing-keyboard-shortcuts/assets/icon.svg"
+      },
+      "tags": [
+        "keyboard-shortcuts",
+        "navigation",
+        "threads",
+        "interface",
+        "productivity"
+      ],
       "author": {
         "name": "Andres Riofrio",
         "github": "ariofrio",
@@ -49,8 +65,15 @@
       "id": "project-breadcrumbs",
       "displayName": "Project breadcrumbs",
       "description": "Adds the current project and its settings, rename, and removal actions to each standard thread header.",
-      "icon": "Folder",
-      "tags": ["interface", "projects", "navigation", "threads"],
+      "icon": {
+        "url": "./plugins/bb-plugin-project-breadcrumbs/assets/icon.svg"
+      },
+      "tags": [
+        "interface",
+        "projects",
+        "navigation",
+        "threads"
+      ],
       "author": {
         "name": "Andres Riofrio",
         "github": "ariofrio",
@@ -69,8 +92,16 @@
       "id": "project-icons",
       "displayName": "Project icons",
       "description": "Gives each bb project a searchable icon and optional color in thread headers and the Thread stages sidebar.",
-      "icon": "Palette",
-      "tags": ["projects", "icons", "colors", "interface", "sidebar"],
+      "icon": {
+        "url": "./plugins/bb-plugin-project-icons/assets/icon.svg"
+      },
+      "tags": [
+        "projects",
+        "icons",
+        "colors",
+        "interface",
+        "sidebar"
+      ],
       "author": {
         "name": "Andres Riofrio",
         "github": "ariofrio",
@@ -90,7 +121,14 @@
       "displayName": "Thread stages",
       "description": "Organizes root threads into manually ordered stages, with automatic transitions, keyboard shortcuts, and a CLI.",
       "icon": "ListTodo",
-      "tags": ["stages", "sidebar", "threads", "productivity", "keyboard-shortcuts", "cli"],
+      "tags": [
+        "stages",
+        "sidebar",
+        "threads",
+        "productivity",
+        "keyboard-shortcuts",
+        "cli"
+      ],
       "author": {
         "name": "Andres Riofrio",
         "github": "ariofrio",

@@ -13,6 +13,7 @@
     "url": "https://github.com/ariofrio/bb-plugins/issues"
   },
   "files": [
+    "assets",
     "app.tsx",
     "dist",
     "server.ts"
@@ -26,7 +27,7 @@
     "name": "Project breadcrumbs",
     "description": "Adds the current project and its actions menu to thread headers.",
     "branding": {
-      "icon": "Folder"
+      "icon": "./assets/icon.svg"
     },
     "server": "./server.ts",
     "app": "./app.tsx",

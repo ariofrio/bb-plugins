@@ -29,7 +29,13 @@ test("publishes every repository plugin from its immutable release line", async 
     assert.ok(listing, `missing marketplace listing for ${id}`);
     assert.equal(collectionPlugin.name, id);
     assert.equal(listing.displayName, manifest.bb.name);
-    assert.equal(listing.icon, manifest.bb.branding.icon);
+    if (manifest.bb.branding.icon.startsWith("./")) {
+      assert.deepEqual(listing.icon, {
+        url: `./${directory}/${manifest.bb.branding.icon.slice(2)}`,
+      });
+    } else {
+      assert.equal(listing.icon, manifest.bb.branding.icon);
+    }
     assert.match(listing.description, /\.$/);
     assert.deepEqual(listing.author, {
       name: "Andres Riofrio",

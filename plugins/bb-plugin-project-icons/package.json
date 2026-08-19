@@ -13,6 +13,7 @@
     "url": "https://github.com/ariofrio/bb-plugins/issues"
   },
   "files": [
+    "assets",
     "app.tsx",
     "dist",
     "server.ts"
@@ -36,7 +37,7 @@
     "name": "Project icons",
     "description": "Give each project an icon and color, shown in the thread header and the task sidebar.",
     "branding": {
-      "icon": "Palette"
+      "icon": "./assets/icon.svg"
     },
     "server": "./server.ts",
     "app": "./app.tsx",

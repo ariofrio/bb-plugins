@@ -28,13 +28,13 @@
       </td>
       <td valign="top" align="center">
         <p></p>
-        <p><img src="assets/plugin-icons/folder.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-project-breadcrumbs#readme">Project breadcrumbs</a></strong></p>
+        <p><img src="assets/plugin-icons/folder-arrow-right.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-project-breadcrumbs#readme">Project breadcrumbs</a></strong></p>
         <p>Adds the current project and its actions menu before each thread title</p>
         <p></p>
       </td>
       <td valign="top" align="center">
         <p></p>
-        <p><img src="assets/plugin-icons/palette.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-codex-theme#readme">Codex theme</a></strong></p>
+        <p><img src="assets/plugin-icons/chatgpt.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-codex-theme#readme">Codex theme</a></strong></p>
         <p>Matches bb's palette to the OpenAI ChatGPT desktop app, light and dark</p>
         <p></p>
       </td>
@@ -42,13 +42,13 @@
     <tr>
       <td valign="top" align="center">
         <p></p>
-        <p><img src="assets/plugin-icons/palette.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-project-icons#readme">Project icons</a></strong></p>
+        <p><img src="assets/plugin-icons/shapes-01.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-project-icons#readme">Project icons</a></strong></p>
         <p>Gives each project an icon and optional color, in the thread header and sidebar</p>
         <p></p>
       </td>
       <td valign="top" align="center">
         <p></p>
-        <p><img src="assets/plugin-icons/zap.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Missing keyboard shortcuts</a></strong></p>
+        <p><img src="assets/plugin-icons/command.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Missing keyboard shortcuts</a></strong></p>
         <p>Adds shortcuts for threads, history, the composer, side chats, and terminals</p>
         <p></p>
       </td>
