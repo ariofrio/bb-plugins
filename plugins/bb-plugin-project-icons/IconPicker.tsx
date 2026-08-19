@@ -195,7 +195,7 @@ export function IconPicker({
             </button>
           </div>
 
-          <div className="relative px-1">
+          <div className="relative">
             <Icon
               name="Search"
               aria-hidden
