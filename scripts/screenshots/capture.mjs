@@ -495,6 +495,23 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
 }
 
 /**
+ * A running thread spins forever, so every capture would otherwise catch it at
+ * a different angle and every recapture would report a change that is not one.
+ * Only looping animations are paused: bb opens its menus and dialogs with
+ * animations that run once, and pausing those leaves an empty box where the
+ * menu should be.
+ */
+async function freezeLoopingAnimations(page) {
+  await page.evaluate(() => {
+    for (const animation of document.getAnimations()) {
+      if (animation.effect?.getTiming().iterations !== Infinity) continue;
+      animation.pause();
+      animation.currentTime = 0;
+    }
+  });
+}
+
+/**
  * Arranges the app, shades it, and hands the page to whoever wants a frame of
  * it. Each frame gets its own window, because a card may want a different one.
  */
@@ -502,6 +519,7 @@ async function render({ browser, stack, fixture, shot, theme, viewport, style, t
   const { context, page } = await openApp({ browser, stack, theme, viewport, style });
   try {
     await shot.prepare({ page, fixture, stack, theme });
+    await freezeLoopingAnimations(page);
     const highlightBoxes = await highlightBoxesFor({ page, shot });
     let chipBoxes = [];
     if (highlightBoxes.length > 0) {
