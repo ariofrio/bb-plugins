@@ -18,21 +18,21 @@ describe("ThreadFilter", () => {
   ] as const;
   const sections = [{ id: "section_waiting", name: "Waiting" }] as const;
 
-  it("groups project and section filters under a Filter threads trigger", () => {
+  it("groups project and section filters under a Projects and sections trigger", () => {
     render(
       <ThreadFilter
         projects={projects}
         sections={sections}
         value={null}
-        showStageCounts
         onChange={() => {}}
         onNewProject={() => {}}
         onNewSection={() => {}}
-        onShowStageCountsChange={() => {}}
       />,
     );
 
-    const trigger = screen.getByRole("button", { name: "Filter threads" });
+    const trigger = screen.getByRole("button", {
+      name: "Projects and sections",
+    });
     expect(trigger.querySelector('[data-icon="FilterMail"]')).not.toBeNull();
     expect(
       screen
@@ -52,7 +52,7 @@ describe("ThreadFilter", () => {
     expect(within(menu).getByText("Sections")).toBeDefined();
     expect(
       within(menu).getAllByRole("menuitemradio").map((item) => item.textContent),
-    ).toEqual(["All threads", "Alpha", "Personal", "Waiting"]);
+    ).toEqual(["Show all threads", "Alpha", "Personal", "Waiting"]);
   });
 
   it("reports project, section, and clear selections", () => {
@@ -62,22 +62,22 @@ describe("ThreadFilter", () => {
         projects={projects}
         sections={sections}
         value={{ kind: "project", id: "proj_alpha" }}
-        showStageCounts
         onChange={onChange}
         onNewProject={() => {}}
         onNewSection={() => {}}
-        onShowStageCountsChange={() => {}}
       />,
     );
 
     const trigger = screen.getByRole("button", {
-      name: "Filter threads: Alpha",
+      name: "Projects and sections: Alpha",
     });
     fireEvent.keyDown(trigger, { key: "Enter" });
     fireEvent.click(screen.getByRole("menuitemradio", { name: "Waiting" }));
 
     fireEvent.keyDown(trigger, { key: "Enter" });
-    fireEvent.click(screen.getByRole("menuitemradio", { name: "All threads" }));
+    fireEvent.click(
+      screen.getByRole("menuitemradio", { name: "Show all threads" }),
+    );
 
     expect(onChange).toHaveBeenNthCalledWith(1, {
       kind: "section",
@@ -89,19 +89,18 @@ describe("ThreadFilter", () => {
   it("omits project and section groups independently when they are empty", () => {
     const sharedProps = {
       value: null,
-      showStageCounts: true,
       onChange: () => {},
       onNewProject: () => {},
       onNewSection: () => {},
-      onShowStageCountsChange: () => {},
     } as const;
     const { rerender } = render(
       <ThreadFilter {...sharedProps} projects={[]} sections={sections} />,
     );
 
-    fireEvent.keyDown(screen.getByRole("button", { name: "Filter threads" }), {
-      key: "Enter",
-    });
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Projects and sections" }),
+      { key: "Enter" },
+    );
     expect(screen.queryByText("Projects")).toBeNull();
     expect(screen.getByText("Sections")).toBeDefined();
 
@@ -109,9 +108,10 @@ describe("ThreadFilter", () => {
     rerender(
       <ThreadFilter {...sharedProps} projects={projects} sections={[]} />,
     );
-    fireEvent.keyDown(screen.getByRole("button", { name: "Filter threads" }), {
-      key: "Enter",
-    });
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Projects and sections" }),
+      { key: "Enter" },
+    );
     expect(screen.getByText("Projects")).toBeDefined();
     expect(screen.queryByText("Sections")).toBeNull();
   });
@@ -124,11 +124,9 @@ describe("ThreadFilter", () => {
         projects={projects}
         sections={sections}
         value={null}
-        showStageCounts
         onChange={() => {}}
         onNewProject={onNewProject}
         onNewSection={onNewSection}
-        onShowStageCountsChange={() => {}}
       />,
     );
 
@@ -140,30 +138,24 @@ describe("ThreadFilter", () => {
     expect(screen.queryByRole("menu")).toBeNull();
   });
 
-  it("toggles stage counts from the same sidebar menu", () => {
-    const onShowStageCountsChange = vi.fn();
+  it("keeps stage counts out of the sidebar menu", () => {
     render(
       <ThreadFilter
         projects={projects}
         sections={sections}
         value={null}
-        showStageCounts
         onChange={() => {}}
         onNewProject={() => {}}
         onNewSection={() => {}}
-        onShowStageCountsChange={onShowStageCountsChange}
       />,
     );
 
-    fireEvent.keyDown(screen.getByRole("button", { name: "Filter threads" }), {
-      key: "Enter",
-    });
-    const counts = screen.getByRole("menuitemcheckbox", {
-      name: "Show stage counts",
-    });
-
-    expect(counts.getAttribute("aria-checked")).toBe("true");
-    fireEvent.click(counts);
-    expect(onShowStageCountsChange).toHaveBeenCalledWith(false);
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Projects and sections" }),
+      { key: "Enter" },
+    );
+    expect(
+      screen.queryByRole("menuitemcheckbox", { name: "Show stage counts" }),
+    ).toBeNull();
   });
 });

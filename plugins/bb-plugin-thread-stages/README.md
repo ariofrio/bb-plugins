@@ -14,13 +14,13 @@ icons](../bb-plugin-project-icons#readme) plugin is installed, so a
 stage-grouped list still tells you what a thread belongs to. Without that
 plugin the rows look as they always have.
 
-Use **Filter threads** above the stages to focus the whole sidebar—including
-pinned and search results—on one project or one native thread section. The
-selection is stored only in the current browser and does not change stage
-assignments or synchronization. The adjacent actions create a project through
-bb's native host folder picker or open the New section dialog. The same menu
-can hide the stage counts, which show the number of filtered root threads in
-each unpinned stage and are enabled by default.
+Use **Projects and sections** above the stages to focus the whole
+sidebar—including pinned and search results—on one project or one native
+thread section. The selection is stored only in the current browser and does
+not change stage assignments or synchronization. The adjacent actions create a
+project through bb's native host folder picker or open the New section dialog.
+Stage counts show the number of filtered root threads in each unpinned stage;
+they are enabled by default and can be hidden in the plugin's settings.
 
 Drag root threads to reorder or change their stage. Ordering uses
 fractional keys, so a move updates only the moved thread. Root threads enter

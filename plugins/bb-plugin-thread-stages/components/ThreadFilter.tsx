@@ -23,11 +23,9 @@ interface ThreadFilterProps {
   onChange: (filter: ThreadFilterValue) => void;
   onNewProject: () => void;
   onNewSection: () => void;
-  onShowStageCountsChange: (show: boolean) => void;
   projectIcons?: ReadonlyMap<string, ProjectIconView>;
   projects: readonly ThreadFilterProject[];
   sections: readonly ThreadFilterSection[];
-  showStageCounts: boolean;
   value: ThreadFilterValue;
 }
 
@@ -45,11 +43,9 @@ export function ThreadFilter({
   onChange,
   onNewProject,
   onNewSection,
-  onShowStageCountsChange,
   projectIcons = new Map(),
   projects,
   sections,
-  showStageCounts,
   value,
 }: ThreadFilterProps) {
   const activeProject =
@@ -70,13 +66,15 @@ export function ThreadFilter({
             type="button"
             aria-label={
               activeLabel === null
-                ? "Filter threads"
-                : `Filter threads: ${activeLabel}`
+                ? "Projects and sections"
+                : `Projects and sections: ${activeLabel}`
             }
             className="flex h-7 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-sidebar-foreground/85 outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 data-[state=open]:bg-state-active data-[state=open]:text-sidebar-foreground max-md:pointer-coarse:h-9 dark:text-sidebar-foreground"
           >
             <Icon name="FilterMail" className="size-4 shrink-0" aria-hidden />
-            <span className="truncate">{activeLabel ?? "Filter threads"}</span>
+            <span className="truncate">
+              {activeLabel ?? "Projects and sections"}
+            </span>
           </button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
@@ -99,7 +97,7 @@ export function ThreadFilter({
                 }
               }}
             >
-              <ThreadFilterItem label="All threads" value="">
+              <ThreadFilterItem label="Show all threads" value="">
                 <Icon name="FilterMail" className="size-4 shrink-0" aria-hidden />
               </ThreadFilterItem>
               {projects.length > 0 ? (
@@ -163,20 +161,6 @@ export function ThreadFilter({
                 </>
               ) : null}
             </DropdownMenu.RadioGroup>
-            <DropdownMenu.Separator className="-mx-1 my-1 h-px bg-border" />
-            <DropdownMenu.CheckboxItem
-              checked={showStageCounts}
-              className={ITEM_CLASS}
-              onCheckedChange={(checked) => {
-                onShowStageCountsChange(checked === true);
-              }}
-              onSelect={(event) => event.preventDefault()}
-            >
-              <DropdownMenu.ItemIndicator className="absolute left-2 inline-flex size-3.5 items-center justify-center">
-                <Icon name="Check" className="size-3.5" aria-hidden />
-              </DropdownMenu.ItemIndicator>
-              <span>Show stage counts</span>
-            </DropdownMenu.CheckboxItem>
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>

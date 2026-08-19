@@ -190,6 +190,14 @@ export const rpcContract = defineRpcContract({
 });
 
 export default function plugin(bb: BbPluginApi) {
+  bb.settings.define({
+    showStageCounts: {
+      type: "boolean",
+      label: "Show stage counts",
+      description: "Show the number of root threads in each stage.",
+      default: true,
+    },
+  });
   const db = bb.storage.database();
   bb.storage.migrate(db, THREAD_WORKFLOW_MIGRATIONS);
   const store = createThreadWorkflowStore(db);

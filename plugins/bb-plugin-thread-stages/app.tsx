@@ -6,6 +6,7 @@ import {
   useRealtime,
   useRealtimeConnectionState,
   useRpc,
+  useSettings,
   type PluginSidebarThread,
   type PluginSidebarThreadActions,
   type PluginThreadListProps,
@@ -50,7 +51,6 @@ import { ThreadSectionDialog } from "./components/ThreadSectionDialog";
 import { createNativeCommandDelegate } from "./native-command-delegation";
 import { notifyNativeShortcutHandled } from "./native-command-hints";
 import { usePersistentStringSet } from "./persistent-string-set";
-import { usePersistentBoolean } from "./persistent-boolean";
 import {
   fetchProjectIcons,
   subscribeToProjectIconChanges,
@@ -85,10 +85,6 @@ const THREAD_FILTER_STORAGE_KEY = "bb.plugin.thread-stages.threadFilter";
 const PROJECT_FILTER_STORAGE_KEY = "bb.plugin.thread-stages.projectFilter";
 const LEGACY_PROJECT_FILTER_STORAGE_KEY =
   "bb.plugin.thread-workflow.projectFilter";
-const SHOW_STAGE_COUNTS_STORAGE_KEY =
-  "bb.plugin.thread-stages.showStageCounts";
-const LEGACY_SHOW_STAGE_COUNTS_STORAGE_KEY =
-  "bb.plugin.thread-workflow.showStageCounts";
 const PINNED_SECTION = "Pinned" as const;
 type SidebarGroup = WorkflowStage | typeof PINNED_SECTION;
 const COLLAPSIBLE_SECTION_SET: ReadonlySet<string> = new Set([
@@ -629,6 +625,7 @@ function WorkflowStageList({
   const sidebar = experimental_useSidebarThreads();
   const actions = experimental_useSidebarThreadActions();
   const connectionState = useRealtimeConnectionState();
+  const settings = useSettings();
   const [organization, setOrganization] = useState<OrganizationState | null>(
     null,
   );
@@ -656,11 +653,7 @@ function WorkflowStageList({
   const [collapsedThreads, setCollapsedThreads] = usePersistentStringSet(
     COLLAPSED_THREADS_STORAGE_KEY,
   );
-  const [showStageCounts, setShowStageCounts] = usePersistentBoolean(
-    SHOW_STAGE_COUNTS_STORAGE_KEY,
-    true,
-    LEGACY_SHOW_STAGE_COUNTS_STORAGE_KEY,
-  );
+  const showStageCounts = settings.values?.showStageCounts !== false;
   const [mutationPending, setMutationPending] = useState(false);
   const [pinnedThreadIds, setPinnedThreadIds] = useState<readonly string[]>([]);
   const [storedThreadFilter, setStoredThreadFilter] = useState<string | null>(
@@ -1128,8 +1121,6 @@ function WorkflowStageList({
       onChange={changeThreadFilter}
       onNewProject={() => void createProject()}
       onNewSection={() => setNewSectionOpen(true)}
-      showStageCounts={showStageCounts}
-      onShowStageCountsChange={setShowStageCounts}
     />
   );
   const newSectionDialog = (

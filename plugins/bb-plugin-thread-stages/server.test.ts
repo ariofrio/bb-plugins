@@ -19,6 +19,14 @@ describe("thread stages plugin API", () => {
   it("registers its complete host-facing contract", () => {
     const harness = createPluginHarness();
 
+    expect(harness.inspection.registrations.settingsDescriptors).toEqual({
+      showStageCounts: {
+        type: "boolean",
+        label: "Show stage counts",
+        description: "Show the number of root threads in each stage.",
+        default: true,
+      },
+    });
     expect(harness.inspection.registrations.rpcMethods).toEqual([
       "createProjectFromFolder",
       "createSection",

@@ -48,7 +48,7 @@ agent-browser --session "$qa_session" eval '(() => {
   }
   return JSON.stringify({ actionsAwayFromHover: states });
 })()'
-agent-browser --session "$qa_session" hover 'button[aria-label^="Filter threads"]' >/dev/null
+agent-browser --session "$qa_session" hover 'button[aria-label^="Projects and sections"]' >/dev/null
 agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const actions = ["New project", "New section"].map((label) =>
@@ -77,7 +77,7 @@ agent-browser --session "$qa_session" eval '(() => {
   return JSON.stringify({ actionsOnHover: states });
 })()'
 agent-browser --session "$qa_session" eval '(() => {
-  const control = document.querySelector("button[aria-label^=\"Filter threads\"]");
+  const control = document.querySelector("button[aria-label^=\"Projects and sections\"]");
   const tasksLabel = [...document.querySelectorAll("button span")].find(
     (node) => node.textContent?.trim() === "Tasks",
   );
@@ -105,7 +105,7 @@ agent-browser --session "$qa_session" eval '(() => {
   const controlToFirstStage = stageRect.top - controlRect.bottom;
   if (Math.abs(controlRect.height - tasksRect.height) > 0.25) {
     throw new Error(
-      `Filter threads is ${controlRect.height}px tall; the built-in Tasks row is ${tasksRect.height}px.`,
+      `Projects and sections is ${controlRect.height}px tall; the built-in Tasks row is ${tasksRect.height}px.`,
     );
   }
   const betweenStages = Number.parseFloat(getComputedStyle(firstSection).marginBottom);
@@ -239,7 +239,7 @@ agent-browser --session "$qa_session" eval '(() => {
 
 agent-browser --session "$qa_session" click \
   '[data-sidebar-sticky-tier="label"] button[aria-label^="Collapse "]' >/dev/null
-agent-browser --session "$qa_session" hover 'button[aria-label^="Filter threads"]' >/dev/null
+agent-browser --session "$qa_session" hover 'button[aria-label^="Projects and sections"]' >/dev/null
 agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const toggle = document.querySelector(
@@ -263,7 +263,7 @@ agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval 'document.querySelector("[data-sidebar=\"content\"]").scrollTop = 120' >/dev/null
 agent-browser --session "$qa_session" wait 200 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
-  const control = document.querySelector("button[aria-label^=\"Filter threads\"]");
+  const control = document.querySelector("button[aria-label^=\"Projects and sections\"]");
   const stack = control?.closest("[data-sidebar-sticky-stack]");
   const scrollContent = control?.closest("[data-sidebar=\"content\"]");
   const firstStage = document.querySelector("[data-sidebar-sticky-tier=\"label\"]");
@@ -305,7 +305,7 @@ agent-browser --session "$qa_session" eval '(() => {
 })()'
 
 agent-browser --session "$qa_session" eval '(() => {
-  const control = document.querySelector("button[aria-label^=\"Filter threads\"]");
+  const control = document.querySelector("button[aria-label^=\"Projects and sections\"]");
   const row = control?.parentElement;
   const stack = control?.closest("[data-sidebar-sticky-stack]");
   if (
@@ -326,14 +326,14 @@ agent-browser --session "$qa_session" eval '(() => {
   });
 })()'
 agent-browser --session "$qa_session" click \
-  'button[aria-label^="Filter threads"]' >/dev/null
+  'button[aria-label^="Projects and sections"]' >/dev/null
 agent-browser --session "$qa_session" find role menuitemradio click \
   --name "$qa_empty_project_name" >/dev/null
 agent-browser --session "$qa_session" wait --text \
   "No threads in this project" >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const expected = window.__threadStagesExpectedFilterInsets;
-  const control = document.querySelector("button[aria-label^=\"Filter threads\"]");
+  const control = document.querySelector("button[aria-label^=\"Projects and sections\"]");
   const row = control?.parentElement;
   const content = control?.closest("[data-sidebar=\"content\"]");
   if (
