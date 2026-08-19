@@ -60,7 +60,7 @@ for (const plugin of plugins) {
 
   console.log(`\n=== ${plugin.name}`);
   // The server entry runs from source, so its dependencies must be installed.
-  run("npm", ["install"], plugin.directory);
+  run("npm", ["install", "--workspaces=false"], plugin.directory);
   if (existing === undefined) {
     run(bb, ["plugin", "install", plugin.directory, "--yes"], repositoryRoot);
   }

@@ -48,7 +48,7 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: ${{ matrix.release.directory }}/package-lock.json
-      - run: npm ci
+      - run: npm ci --workspaces=false
       - run: npm run release:check
 
   tag:
