@@ -64,7 +64,6 @@ beforeEach(() => {
     .gap-1 { column-gap: 4px; row-gap: 4px; }
     .grid-cols-11 { grid-template-columns: repeat(11, minmax(0, 1fr)); }
     .size-7 { width: 28px; height: 28px; }
-    [class~="w-[386px]"] { width: 386px; }
   `;
   document.head.append(styles);
 });
