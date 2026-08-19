@@ -1,4 +1,4 @@
-<h1 align="center">ariofrio's bb plugins</h1>
+<h1 align="center"><a href="https://github.com/ariofrio">Andres Riofrio</a>'s bb plugins</h1>
 
 <p align="center"><strong>Plugins for <a href="https://getbb.app">bb</a>, the agent IDE that builds itself</strong></p>
 
