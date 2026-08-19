@@ -4,6 +4,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -152,6 +153,33 @@ describe("ThreadFilter", () => {
     expect(onNewProject).toHaveBeenCalledOnce();
     expect(onNewSection).toHaveBeenCalledOnce();
     expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("shows built-in-style tooltips for the creation actions", async () => {
+    render(
+      <ThreadFilter
+        projects={projects}
+        sections={sections}
+        value={null}
+        onChange={() => {}}
+        onNewProject={() => {}}
+        onNewSection={() => {}}
+      />,
+    );
+
+    const newProject = screen.getByRole("button", { name: "New project" });
+    fireEvent.focus(newProject);
+    expect((await screen.findByRole("tooltip")).textContent).toBe(
+      "New project",
+    );
+
+    fireEvent.blur(newProject);
+    await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+
+    fireEvent.focus(screen.getByRole("button", { name: "New section" }));
+    expect((await screen.findByRole("tooltip")).textContent).toBe(
+      "New section",
+    );
   });
 
   it("keeps stage counts out of the sidebar menu", () => {
