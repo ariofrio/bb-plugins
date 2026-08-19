@@ -27,7 +27,7 @@ Add this repository as a bb marketplace, then install the plugin from it:
 
 ```sh
 bb marketplace add git:github.com/ariofrio/bb-plugins
-bb plugin install project-icons@ariofrio-bb-plugins
+bb plugin install project-icons@ariofrio
 ```
 
 Skip the first line if you already added the marketplace for another plugin.

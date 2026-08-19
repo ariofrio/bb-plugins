@@ -24,7 +24,7 @@ select it:
 
 ```sh
 bb marketplace add git:github.com/ariofrio/bb-plugins
-bb plugin install chatgpt-theme@ariofrio-bb-plugins
+bb plugin install chatgpt-theme@ariofrio
 bb theme set plugin:chatgpt-theme:chatgpt
 ```
 
