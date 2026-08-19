@@ -7,9 +7,9 @@ Personal plugins for [bb](https://getbb.app).
 <table>
   <thead>
     <tr>
-      <th align="left" width="33%">Organization</th>
-      <th align="left" width="33%">Navigation</th>
-      <th align="left" width="33%">Themes</th>
+      <th align="center" width="33%">Organization</th>
+      <th align="center" width="33%">Navigation</th>
+      <th align="center" width="33%">Themes</th>
     </tr>
   </thead>
   <tbody>
