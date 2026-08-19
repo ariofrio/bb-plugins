@@ -10,11 +10,13 @@ import {
 } from "react";
 import { portalScopeProps } from "../lib/portal-scope";
 import type { ProjectIconView } from "../icons";
+import type { SidebarFilterCountMode } from "../sidebar-settings";
 import {
   serializeThreadFilter,
   type ThreadFilter as ThreadFilterValue,
 } from "../thread-filter";
 import { Icon } from "./Icon";
+import { ThreadFilterOptionsMenu } from "./SidebarOptionsMenu";
 import {
   Tooltip,
   TooltipContent,
@@ -34,8 +36,12 @@ interface ThreadFilterSection {
 }
 
 interface ThreadFilterProps {
+  count?: number;
+  countMode?: SidebarFilterCountMode;
   newProjectDisabled?: boolean;
   onChange: (filter: ThreadFilterValue) => void;
+  onCountModeChange?: (mode: SidebarFilterCountMode) => void;
+  onHide?: () => void;
   onNewProject: () => void;
   onNewSection: () => void;
   onAddProjectLocalPath?: (project: ThreadFilterProject) => void;
@@ -73,8 +79,12 @@ const SubmenuPointerEnterContext = createContext<(() => void) | undefined>(
 );
 
 export function ThreadFilter({
+  count,
+  countMode = "None",
   newProjectDisabled = false,
   onChange,
+  onCountModeChange = () => {},
+  onHide = () => {},
   onNewProject,
   onNewSection,
   onAddProjectLocalPath = () => {},
@@ -90,6 +100,8 @@ export function ThreadFilter({
   value,
 }: ThreadFilterProps) {
   const [open, setOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const actionsOpen = open || optionsOpen;
   const activeProject =
     value?.kind === "project"
       ? projects.find((project) => project.id === value.id)
@@ -110,9 +122,15 @@ export function ThreadFilter({
     sections.length === 0 ? "Projects" : "Projects and sections";
   const allLabel =
     sections.length === 0 ? "All projects" : "All projects and sections";
+  const countLabel =
+    countMode === "Projects"
+      ? `${count} projects`
+      : countMode === "Sections"
+        ? `${count} sections`
+        : `${count} projects and sections`;
 
   return (
-    <div className="group/thread-filter sticky top-[var(--bb-sidebar-sticky-stack-padding-top)] z-[70] mb-4 flex min-w-0 items-center gap-1 rounded-md bg-sidebar outline-none ring-sidebar-ring has-[.thread-filter-trigger:focus-visible]:ring-2 before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-sidebar before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-sidebar after:content-['']">
+    <div className="bb-sidebar-hover-actions-row group/thread-filter sticky top-[var(--bb-sidebar-sticky-stack-padding-top)] z-[70] mb-4 flex min-w-0 items-center gap-1 rounded-md bg-sidebar outline-none ring-sidebar-ring has-[.thread-filter-trigger:focus-visible]:ring-2 before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-sidebar before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-sidebar after:content-['']">
       <DropdownMenu.Root open={open} onOpenChange={setOpen}>
         <DropdownMenu.Trigger asChild>
           <button
@@ -258,11 +276,25 @@ export function ThreadFilter({
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
+      {count === undefined ? null : (
+        <span
+          aria-label={countLabel}
+          data-sidebar-hover-actions-open={actionsOpen ? "true" : undefined}
+          className="bb-sidebar-hover-actions-fade pointer-events-none absolute right-0 z-10 inline-flex size-7 items-center justify-center tabular-nums text-xs text-subtle-foreground/60"
+        >
+          {count}
+        </span>
+      )}
       <TooltipProvider>
         <span
           data-thread-filter-actions=""
-          data-state={open ? "open" : "closed"}
-          className="relative z-20 flex shrink-0 items-center gap-1 opacity-0 pointer-events-none group-hover/thread-filter:opacity-100 group-hover/thread-filter:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto max-md:pointer-coarse:opacity-100 max-md:pointer-coarse:pointer-events-auto"
+          data-testid="thread-filter-actions"
+          data-state={actionsOpen ? "open" : "closed"}
+          data-sidebar-hover-actions-open={
+            actionsOpen ? "true" : undefined
+          }
+          data-sidebar-hover-actions-mobile="always"
+          className="bb-sidebar-hover-actions relative z-20 flex shrink-0 items-center gap-1 opacity-0 pointer-events-none group-hover/thread-filter:opacity-100 group-hover/thread-filter:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto max-md:pointer-coarse:opacity-100 max-md:pointer-coarse:pointer-events-auto"
         >
           <ThreadFilterAction
             disabled={newProjectDisabled}
@@ -274,6 +306,12 @@ export function ThreadFilter({
             icon="SectionAdd"
             label="New section"
             onClick={onNewSection}
+          />
+          <ThreadFilterOptionsMenu
+            countMode={countMode}
+            onCountModeChange={onCountModeChange}
+            onHide={onHide}
+            onOpenChange={setOptionsOpen}
           />
         </span>
       </TooltipProvider>

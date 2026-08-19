@@ -46,6 +46,7 @@ import {
 } from "./components/ThreadIndicator";
 import { SplitPaneMiniMap } from "./components/SplitPaneMiniMap";
 import { ThreadFilter } from "./components/ThreadFilter";
+import { StageOptionsMenu } from "./components/SidebarOptionsMenu";
 import {
   FilterEntityRemoveDialog,
   FilterEntityRenameDialog,
@@ -83,6 +84,12 @@ import {
   type ThreadFilter as ThreadFilterValue,
 } from "./thread-filter";
 import { mountSidebarContentSpacing } from "./sidebar-content-spacing";
+import {
+  countSidebarFilterEntities,
+  normalizeSidebarFilterCountMode,
+  updateThreadStagesSettings,
+  type ThreadStagesSettingsUpdate,
+} from "./sidebar-settings";
 
 const COLLAPSED_STATUSES_STORAGE_KEY =
   "bb.plugin.workflow-stage.collapsedStatuses";
@@ -454,6 +461,8 @@ interface SidebarSectionProps {
   onDropAtEnd: (event: DragEvent<HTMLElement>) => void;
   onDragOverEnd: (event: DragEvent<HTMLElement>) => void;
   onToggle: () => void;
+  onShowCountsChange?: (show: boolean) => void;
+  showCounts?: boolean;
   label: SidebarGroup;
   threads: readonly PluginSidebarThread[];
 }
@@ -466,9 +475,12 @@ function SidebarSection({
   onDropAtEnd,
   onDragOverEnd,
   onToggle,
+  onShowCountsChange,
+  showCounts = false,
   label,
   threads,
 }: SidebarSectionProps) {
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const activityThread = collapsed ? groupIndicator(threads) : null;
   const id = `thread-stages-group-${label.replace(/\s/g, "-")}`;
   return (
@@ -521,19 +533,43 @@ function SidebarSection({
         {count === undefined || activityThread ? null : (
           <span
             aria-label={`${count} ${count === 1 ? "thread" : "threads"}`}
-            className="mr-2 shrink-0 tabular-nums text-subtle-foreground/60"
+            data-sidebar-hover-actions-open={
+              optionsOpen ? "true" : undefined
+            }
+            className="bb-sidebar-hover-actions-fade pointer-events-none mr-2 shrink-0 tabular-nums text-subtle-foreground/60"
           >
             {count}
           </span>
         )}
         {activityThread ? (
-          <span className="pointer-events-none absolute right-2 top-1/2 z-20 inline-flex -translate-y-1/2 items-center text-subtle-foreground">
+          <span
+            data-sidebar-hover-actions-open={
+              optionsOpen ? "true" : undefined
+            }
+            className="bb-sidebar-hover-actions-fade pointer-events-none absolute right-2 top-1/2 z-20 inline-flex -translate-y-1/2 items-center text-subtle-foreground"
+          >
             <ThreadIndicator
               indicator={activityThread.indicator}
               label={activityThread.indicatorLabel}
             />
           </span>
         ) : null}
+        {label === PINNED_SECTION || !onShowCountsChange ? null : (
+          <span
+            data-sidebar-hover-actions-open={
+              optionsOpen ? "true" : undefined
+            }
+            data-sidebar-hover-actions-mobile="always"
+            className="bb-sidebar-hover-actions absolute inset-y-0 right-0 z-30 flex items-center"
+          >
+            <StageOptionsMenu
+              stage={label}
+              showCounts={showCounts}
+              onOpenChange={setOptionsOpen}
+              onShowCountsChange={onShowCountsChange}
+            />
+          </span>
+        )}
       </div>
       {collapsed ? null : <div className="mt-1">{children}</div>}
     </section>
@@ -667,6 +703,10 @@ function WorkflowStageList({
     COLLAPSED_THREADS_STORAGE_KEY,
   );
   const showStageCounts = settings.values?.showStageCounts !== false;
+  const showSidebarFilter = settings.values?.showSidebarFilter !== false;
+  const sidebarFilterCountMode = normalizeSidebarFilterCountMode(
+    settings.values?.sidebarFilterCount,
+  );
   const [mutationPending, setMutationPending] = useState(false);
   const [pinnedThreadIds, setPinnedThreadIds] = useState<readonly string[]>([]);
   const [storedThreadFilter, setStoredThreadFilter] = useState<string | null>(
@@ -685,6 +725,21 @@ function WorkflowStageList({
   const [projectCreatePending, setProjectCreatePending] = useState(false);
   const wasConnected = useRef(false);
   const syncInFlight = useRef(false);
+
+  const saveSettings = useCallback(
+    async (values: ThreadStagesSettingsUpdate) => {
+      try {
+        await updateThreadStagesSettings(values);
+      } catch (cause) {
+        toast.error(
+          cause instanceof Error
+            ? cause.message
+            : "Could not save Thread stages settings.",
+        );
+      }
+    },
+    [],
+  );
 
   const clearDrag = useCallback(() => {
     setDraggingThreadId(null);
@@ -1201,8 +1256,15 @@ function WorkflowStageList({
     [changeThreadFilter, rpc, threadFilter],
   );
 
-  const filterControl = (
+  const filterCount = countSidebarFilterEntities(
+    sidebarFilterCountMode,
+    sidebar.projects.length,
+    sections.length,
+  );
+  const filterControl = showSidebarFilter ? (
     <ThreadFilter
+      count={filterCount}
+      countMode={sidebarFilterCountMode}
       newProjectDisabled={projectCreatePending}
       projectIcons={projectIcons}
       projectActionStates={projectActionStates}
@@ -1210,6 +1272,10 @@ function WorkflowStageList({
       sections={sections}
       value={threadFilter}
       onChange={changeThreadFilter}
+      onCountModeChange={(mode) =>
+        void saveSettings({ sidebarFilterCount: mode })
+      }
+      onHide={() => void saveSettings({ showSidebarFilter: false })}
       onNewProject={() => void createProject()}
       onNewSection={() => setNewSectionOpen(true)}
       onAddProjectLocalPath={(project) =>
@@ -1233,7 +1299,7 @@ function WorkflowStageList({
         setRenameTarget({ kind: "section", ...section })
       }
     />
-  );
+  ) : null;
   const filterDialogs = (
     <>
       <ThreadSectionDialog
@@ -1514,6 +1580,10 @@ function WorkflowStageList({
                 dropGroup === stage && dropBefore === null && dropAfter === null
               }
               onToggle={() => toggleCollapsed(stage)}
+              showCounts={showStageCounts}
+              onShowCountsChange={(show) =>
+                void saveSettings({ showStageCounts: show })
+              }
               onDragOverEnd={(event) => {
                 if (
                   !draggingThreadId ||

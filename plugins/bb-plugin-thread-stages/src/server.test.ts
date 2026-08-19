@@ -20,6 +20,21 @@ describe("thread stages plugin API", () => {
     const harness = createPluginHarness();
 
     expect(harness.inspection.registrations.settingsDescriptors).toEqual({
+      showSidebarFilter: {
+        type: "boolean",
+        label: "Show projects and sections in sidebar",
+        description:
+          "Show the Projects and sections filter and management controls in the sidebar.",
+        default: true,
+      },
+      sidebarFilterCount: {
+        type: "select",
+        label: "Projects and sections count",
+        description:
+          "Choose which total to show beside Projects and sections in the sidebar.",
+        options: ["None", "Projects", "Sections", "Projects + sections"],
+        default: "None",
+      },
       showStageCounts: {
         type: "boolean",
         label: "Show stage counts",
