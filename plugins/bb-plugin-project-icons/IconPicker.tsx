@@ -1,21 +1,31 @@
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
-import { type ReactElement, useId, useMemo, useState } from "react";
+import {
+  type ReactElement,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   categoryLabel,
   iconLabel,
   searchIcons,
   type CatalogEntry,
 } from "./icon-search";
-import { projectIconColor } from "./project-icon-colors";
+import {
+  projectIconColor,
+  projectIconColorStyle,
+} from "./project-icon-colors";
 import { PROJECT_ICON_COLORS, type ProjectIconColor } from "./store";
+import { Icon } from "@/components/ui/icon";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
-  PopoverDescription,
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
 
 export interface CatalogIcon extends Omit<CatalogEntry, "export"> {
   glyph: IconSvgElement;
@@ -28,10 +38,11 @@ export interface IconPickerProps {
   onOpenChange: (open: boolean) => void;
   projectName: string;
   icon: string;
+  defaultIcon: string;
   color: ProjectIconColor | null;
   onPick: (icon: string) => void;
   onPickColor: (color: ProjectIconColor | null) => void;
-  onReset: () => void;
+  onResetIcon: () => void;
   trigger: ReactElement;
 }
 
@@ -42,24 +53,97 @@ export function IconPicker({
   onOpenChange,
   projectName,
   icon,
+  defaultIcon,
   color,
   onPick,
   onPickColor,
-  onReset,
+  onResetIcon,
   trigger,
 }: IconPickerProps) {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [categoryOverflow, setCategoryOverflow] = useState({
+    left: false,
+    right: false,
+  });
   const titleId = useId();
-  const descriptionId = useId();
-  const categories = useMemo(
-    () => [...new Set(catalog.map((entry) => entry.category))].sort(),
-    [catalog],
+  const categoryScrollerRef = useRef<HTMLDivElement>(null);
+  const categoryChipRefs = useRef(new Map<string, HTMLButtonElement>());
+  const sectionRefs = useRef(new Map<string, HTMLElement>());
+  const groups = useMemo(() => groupCatalog(catalog), [catalog]);
+  const selectedGlyph = useMemo(
+    () => catalog.find((entry) => entry.name === icon)?.glyph,
+    [catalog, icon],
   );
   const { results, total } = useMemo(
-    () => searchIcons(catalog, query, category),
-    [catalog, category, query],
+    () => searchIcons(catalog, query, null),
+    [catalog, query],
   );
+  const searching = query.trim().length > 0;
+
+  useEffect(() => {
+    if (
+      groups.length > 0 &&
+      !groups.some(({ name }) => name === activeCategory)
+    ) {
+      setActiveCategory(groups[0]?.name ?? null);
+    }
+  }, [activeCategory, groups]);
+
+  useEffect(() => {
+    if (activeCategory === null) return;
+    categoryChipRefs.current.get(activeCategory)?.scrollIntoView?.({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "nearest",
+    });
+  }, [activeCategory]);
+
+  const updateCategoryOverflow = () => {
+    const scroller = categoryScrollerRef.current;
+    if (scroller === null) return;
+    setCategoryOverflow({
+      left: scroller.scrollLeft > 1,
+      right:
+        scroller.scrollLeft + scroller.clientWidth < scroller.scrollWidth - 1,
+    });
+  };
+
+  useEffect(() => {
+    updateCategoryOverflow();
+    window.addEventListener("resize", updateCategoryOverflow);
+    return () => window.removeEventListener("resize", updateCategoryOverflow);
+  }, [groups]);
+
+  const scrollCategories = (direction: -1 | 1) => {
+    categoryScrollerRef.current?.scrollBy({
+      left: direction * 180,
+      behavior: "smooth",
+    });
+  };
+
+  const jumpToCategory = (name: string) => {
+    setActiveCategory(name);
+    sectionRefs.current.get(name)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  const trackVisibleCategory = (scrollingElement: HTMLDivElement) => {
+    const threshold = scrollingElement.getBoundingClientRect().top + 8;
+    let next = groups[0]?.name ?? null;
+    for (const { name } of groups) {
+      const section = sectionRefs.current.get(name);
+      if (
+        section !== undefined &&
+        section.getBoundingClientRect().top <= threshold
+      ) {
+        next = name;
+      } else if (section !== undefined) break;
+    }
+    if (next !== null) setActiveCategory(next);
+  };
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
@@ -69,110 +153,224 @@ export function IconPicker({
         sideOffset={8}
         collisionPadding={8}
         aria-labelledby={titleId}
-        aria-describedby={descriptionId}
         mobileTitle={null}
       >
-        <div className="flex flex-col space-y-1.5 text-left">
-          <PopoverTitle id={titleId}>Icon for {projectName}</PopoverTitle>
-          <PopoverDescription id={descriptionId}>
-            Pick an icon and an optional color for this project.
-          </PopoverDescription>
-        </div>
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            {PROJECT_ICON_COLORS.map((swatch) => (
-              <button
-                key={swatch}
-                type="button"
-                aria-label={swatch}
-                aria-pressed={color === swatch}
-                onClick={() => onPickColor(color === swatch ? null : swatch)}
-                style={{ backgroundColor: projectIconColor(swatch) ?? undefined }}
-                className={`size-5 rounded-full border transition-colors ${
-                  color === swatch
-                    ? "ring-2 ring-ring ring-offset-1 ring-offset-background"
-                    : "border-transparent"
-                }`}
+        <div className="flex h-[calc(var(--radix-popover-content-available-height)-2rem)] max-h-[32rem] flex-col gap-3 overflow-hidden max-md:h-[calc(85dvh-3rem)] max-md:max-h-none">
+          <PopoverTitle id={titleId} className="sr-only">
+            Icon for {projectName}
+          </PopoverTitle>
+
+          <div className="flex items-center gap-2 py-1">
+            <div
+              aria-label={`Selected icon: ${iconLabel(icon)}`}
+              style={projectIconColorStyle(color)}
+              className="flex size-7 shrink-0 items-center justify-center rounded-md bg-state-active"
+            >
+              {selectedGlyph === undefined ? (
+                <Icon name="Folder" aria-hidden className="size-[18px]" />
+              ) : (
+                <HugeiconsIcon
+                  icon={selectedGlyph}
+                  className="size-[18px]"
+                  aria-hidden
+                />
+              )}
+            </div>
+            <div
+              role="group"
+              aria-label="Color"
+              className="flex min-w-0 flex-1 items-center gap-2"
+            >
+              <ColorSwatch
+                label="Theme color"
+                selected={color === null}
+                onClick={() => onPickColor(null)}
+                className="bg-muted-foreground"
               />
-            ))}
+              {PROJECT_ICON_COLORS.map((swatch) => {
+                const label = titleCase(swatch);
+                return (
+                  <ColorSwatch
+                    key={swatch}
+                    label={label}
+                    selected={color === swatch}
+                    onClick={() => onPickColor(swatch)}
+                    style={{
+                      backgroundColor: projectIconColor(swatch) ?? undefined,
+                    }}
+                  />
+                );
+              })}
+            </div>
             <button
               type="button"
-              onClick={() => onPickColor(null)}
-              className={`ml-1 rounded-md px-2 py-1 text-xs ${
-                color === null
-                  ? "bg-state-active text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              aria-label="Remove custom icon"
+              onClick={onResetIcon}
+              disabled={icon === defaultIcon}
+              className="shrink-0 rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground disabled:invisible"
             >
-              Theme color
-            </button>
-            <button
-              type="button"
-              onClick={onReset}
-              className="ml-auto rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              Reset
+              Remove
             </button>
           </div>
 
-          <Input
-            autoFocus
-            placeholder="Search icons"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-
-          <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
-            <CategoryChip
-              active={category === null}
-              label="All"
-              onClick={() => setCategory(null)}
+          <div className="relative px-1">
+            <Icon
+              name="Search"
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
             />
-            {categories.map((name) => (
-              <CategoryChip
-                key={name}
-                active={category === name}
-                label={categoryLabel(name)}
-                onClick={() => setCategory(category === name ? null : name)}
-              />
-            ))}
+            <Input
+              type="search"
+              aria-label="Search icons"
+              autoFocus
+              placeholder="Search icons"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              className="pl-8"
+            />
           </div>
 
-          <div className="grid max-h-72 grid-cols-8 gap-1 overflow-y-auto max-md:grid-cols-6">
-            {(results as CatalogIcon[]).map((entry) => {
-              const glyph = entry.glyph;
-              return (
-                <button
-                  key={entry.name}
-                  type="button"
-                  title={iconLabel(entry.name)}
-                  aria-label={iconLabel(entry.name)}
-                  aria-pressed={entry.name === icon}
-                  onClick={() => onPick(entry.name)}
-                  className={`flex aspect-square items-center justify-center rounded-md transition-colors ${
-                    entry.name === icon
-                      ? "bg-state-active text-foreground"
-                      : "text-muted-foreground hover:bg-state-hover hover:text-foreground"
-                  }`}
-                >
-                  <HugeiconsIcon icon={glyph} className="size-5" aria-hidden />
-                </button>
-              );
-            })}
-          </div>
+          {!searching && groups.length > 0 ? (
+            <nav
+              aria-label="Icon categories"
+              className="flex min-w-0 items-center gap-1"
+            >
+              <button
+                type="button"
+                aria-label="Previous categories"
+                disabled={!categoryOverflow.left}
+                onClick={() => scrollCategories(-1)}
+                className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground disabled:opacity-30"
+              >
+                <Icon name="ChevronLeft" aria-hidden className="size-3.5" />
+              </button>
+              <div
+                ref={categoryScrollerRef}
+                onScroll={updateCategoryOverflow}
+                className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {groups.map(({ name }) => (
+                  <CategoryChip
+                    key={name}
+                    active={activeCategory === name}
+                    label={titleCase(categoryLabel(name))}
+                    onClick={() => jumpToCategory(name)}
+                    buttonRef={(node) => {
+                      if (node === null) categoryChipRefs.current.delete(name);
+                      else categoryChipRefs.current.set(name, node);
+                    }}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                aria-label="Next categories"
+                disabled={!categoryOverflow.right}
+                onClick={() => scrollCategories(1)}
+                className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground disabled:opacity-30"
+              >
+                <Icon name="ChevronRight" aria-hidden className="size-3.5" />
+              </button>
+            </nav>
+          ) : null}
 
-          <p className="text-xs text-muted-foreground">
-            {loading
-              ? "Loading icons…"
-              : total === 0
-              ? "No icons match."
-              : total > results.length
-                ? `Showing ${results.length} of ${total} — keep typing to narrow.`
-                  : `${total} ${total === 1 ? "icon" : "icons"}`}
-          </p>
+          <div
+            role="region"
+            aria-label={searching ? "Icon search results" : "Icon catalog"}
+            className="min-h-0 flex-1 overflow-y-auto pr-1"
+            onScroll={(event) => {
+              if (!searching) trackVisibleCategory(event.currentTarget);
+            }}
+          >
+            {loading ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                Loading icons…
+              </p>
+            ) : searching ? (
+              total === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  No icons match.
+                </p>
+              ) : (
+                <>
+                  <IconGrid
+                    entries={results as CatalogIcon[]}
+                    icon={icon}
+                    color={color}
+                    onPick={onPick}
+                  />
+                  {total > results.length ? (
+                    <p className="pt-2 text-center text-xs text-muted-foreground">
+                      Showing {results.length} of {total}. Keep typing to narrow.
+                    </p>
+                  ) : null}
+                </>
+              )
+            ) : (
+              <div className="space-y-3">
+                {groups.map(({ name, entries }) => {
+                  const headingId = `${titleId}-${name}`;
+                  return (
+                    <section
+                      key={name}
+                      ref={(node) => {
+                        if (node === null) sectionRefs.current.delete(name);
+                        else sectionRefs.current.set(name, node);
+                      }}
+                      aria-labelledby={headingId}
+                      className="scroll-mt-1 [content-visibility:auto] [contain-intrinsic-size:auto_12rem]"
+                    >
+                      <h3
+                        id={headingId}
+                        className="mb-1.5 text-xs font-medium text-muted-foreground"
+                      >
+                        {titleCase(categoryLabel(name))}
+                      </h3>
+                      <IconGrid
+                        entries={entries}
+                        icon={icon}
+                        color={color}
+                        onPick={onPick}
+                      />
+                    </section>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function ColorSwatch({
+  label,
+  selected,
+  onClick,
+  className = "",
+  style,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-pressed={selected}
+      onClick={onClick}
+      style={style}
+      className={`size-5 shrink-0 rounded-full border transition-colors ${className} ${
+        selected
+          ? "ring-2 ring-ring ring-offset-1 ring-offset-background"
+          : "border-transparent"
+      }`}
+    />
   );
 }
 
@@ -180,16 +378,20 @@ function CategoryChip({
   active,
   label,
   onClick,
+  buttonRef,
 }: {
   active: boolean;
   label: string;
   onClick: () => void;
+  buttonRef?: (node: HTMLButtonElement | null) => void;
 }) {
   return (
     <button
+      ref={buttonRef}
       type="button"
+      aria-current={active ? "true" : undefined}
       onClick={onClick}
-      className={`shrink-0 rounded-full px-2 py-0.5 text-xs capitalize transition-colors ${
+      className={`shrink-0 rounded-full px-2 py-0.5 text-xs transition-colors ${
         active
           ? "bg-state-active text-foreground"
           : "text-muted-foreground hover:text-foreground"
@@ -198,4 +400,62 @@ function CategoryChip({
       {label}
     </button>
   );
+}
+
+function IconGrid({
+  entries,
+  icon,
+  color,
+  onPick,
+}: {
+  entries: readonly CatalogIcon[];
+  icon: string;
+  color: ProjectIconColor | null;
+  onPick: (icon: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-9 gap-0.5 max-md:grid-cols-8">
+      {entries.map((entry) => (
+        <button
+          key={entry.name}
+          type="button"
+          title={iconLabel(entry.name)}
+          aria-label={iconLabel(entry.name)}
+          aria-pressed={entry.name === icon}
+          onClick={() => onPick(entry.name)}
+          style={projectIconColorStyle(color)}
+          className={`flex aspect-square items-center justify-center rounded-md transition-colors ${
+            entry.name === icon
+              ? "bg-state-active"
+              : color === null
+                ? "text-muted-foreground hover:bg-state-hover hover:text-foreground"
+                : "hover:bg-state-hover"
+          }`}
+        >
+          <HugeiconsIcon
+            icon={entry.glyph}
+            className="size-[18px]"
+            aria-hidden
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function groupCatalog(catalog: readonly CatalogIcon[]) {
+  const byCategory = new Map<string, CatalogIcon[]>();
+  for (const entry of catalog) {
+    const entries = byCategory.get(entry.category) ?? [];
+    entries.push(entry);
+    byCategory.set(entry.category, entries);
+  }
+  return [...byCategory.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([name, entries]) => ({ name, entries }));
+}
+
+function titleCase(value: string): string {
+  if (value.toLowerCase() === "ai") return "AI";
+  return value.replace(/\b\w/g, (character) => character.toUpperCase());
 }

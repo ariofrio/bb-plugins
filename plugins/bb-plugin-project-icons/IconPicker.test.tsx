@@ -1,7 +1,36 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { CircleIcon } from "@hugeicons/core-free-icons";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IconPicker } from "./IconPicker";
+import { projectIconColor } from "./project-icon-colors";
+
+const catalog = [
+  {
+    name: "sparkles",
+    category: "ai",
+    tags: [],
+    glyph: CircleIcon,
+  },
+  {
+    name: "circle",
+    category: "shapes",
+    tags: [],
+    glyph: CircleIcon,
+  },
+  {
+    name: "rocket",
+    category: "space",
+    tags: ["launch"],
+    glyph: CircleIcon,
+  },
+];
 
 function mockMatchMedia(matches: boolean) {
   Object.defineProperty(window, "matchMedia", {
@@ -26,6 +55,175 @@ beforeEach(() => {
 });
 
 describe("IconPicker", () => {
+  it("offers theme color first and previews every icon in the selected color", () => {
+    render(
+      <IconPicker
+        catalog={catalog}
+        loading={false}
+        open
+        onOpenChange={vi.fn()}
+        projectName="Example project"
+        icon="circle"
+        defaultIcon="folder"
+        color="red"
+        onPick={vi.fn()}
+        onPickColor={vi.fn()}
+        onResetIcon={vi.fn()}
+        trigger={<button type="button">Change icon</button>}
+      />,
+    );
+
+    const swatches = within(screen.getByRole("group", { name: "Color" }))
+      .getAllByRole("button");
+    expect(swatches[0]).toBe(screen.getByRole("button", { name: "Theme color" }));
+    expect(swatches[1]).toBe(screen.getByRole("button", { name: "Red" }));
+    expect(screen.getByRole("button", { name: "circle" }).style.color).toBe(
+      projectIconColor("red"),
+    );
+    expect(screen.getByLabelText("Selected icon: circle").style.color).toBe(
+      projectIconColor("red"),
+    );
+  });
+
+  it("resets the icon independently from its color", () => {
+    const onPickColor = vi.fn();
+    const onResetIcon = vi.fn();
+    render(
+      <IconPicker
+        catalog={catalog}
+        loading={false}
+        open
+        onOpenChange={vi.fn()}
+        projectName="Example project"
+        icon="circle"
+        defaultIcon="folder"
+        color="red"
+        onPick={vi.fn()}
+        onPickColor={onPickColor}
+        onResetIcon={onResetIcon}
+        trigger={<button type="button">Change icon</button>}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove custom icon" }));
+    expect(onResetIcon).toHaveBeenCalledOnce();
+    expect(onPickColor).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Theme color" }));
+    expect(onPickColor).toHaveBeenCalledWith(null);
+  });
+
+  it("browses one grouped catalog and switches to results while searching", () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    render(
+      <IconPicker
+        catalog={catalog}
+        loading={false}
+        open
+        onOpenChange={vi.fn()}
+        projectName="Example project"
+        icon="circle"
+        defaultIcon="folder"
+        color={null}
+        onPick={vi.fn()}
+        onPickColor={vi.fn()}
+        onResetIcon={vi.fn()}
+        trigger={<button type="button">Change icon</button>}
+      />,
+    );
+
+    const categories = screen.getByRole("navigation", {
+      name: "Icon categories",
+    });
+    screen.getByRole("heading", { name: "AI" });
+    screen.getByRole("heading", { name: "Shapes" });
+    screen.getByRole("heading", { name: "Space" });
+
+    fireEvent.click(within(categories).getByRole("button", { name: "Space" }));
+    expect(scrollIntoView).toHaveBeenCalled();
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search icons" }), {
+      target: { value: "launch" },
+    });
+    expect(
+      screen.queryByRole("navigation", { name: "Icon categories" }),
+    ).toBeNull();
+    screen.getByRole("button", { name: "rocket" });
+    expect(screen.queryByRole("button", { name: "circle" })).toBeNull();
+  });
+
+  it("selects the category currently at the top of the scrolling catalog", () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
+    render(
+      <IconPicker
+        catalog={catalog}
+        loading={false}
+        open
+        onOpenChange={vi.fn()}
+        projectName="Example project"
+        icon="circle"
+        defaultIcon="folder"
+        color={null}
+        onPick={vi.fn()}
+        onPickColor={vi.fn()}
+        onResetIcon={vi.fn()}
+        trigger={<button type="button">Change icon</button>}
+      />,
+    );
+    scrollIntoView.mockClear();
+
+    const catalogRegion = screen.getByRole("region", {
+      name: "Icon catalog",
+    });
+    const shapesSection = screen.getByRole("region", { name: "Shapes" });
+    const spaceSection = screen.getByRole("region", { name: "Space" });
+    Object.defineProperty(catalogRegion, "scrollTop", {
+      configurable: true,
+      value: 200,
+    });
+    Object.defineProperty(shapesSection, "offsetTop", {
+      configurable: true,
+      value: 200,
+    });
+    Object.defineProperty(spaceSection, "offsetTop", {
+      configurable: true,
+      value: 300,
+    });
+    vi.spyOn(catalogRegion, "getBoundingClientRect").mockReturnValue({
+      ...catalogRegion.getBoundingClientRect(),
+      top: 100,
+    });
+    vi.spyOn(shapesSection, "getBoundingClientRect").mockReturnValue({
+      ...shapesSection.getBoundingClientRect(),
+      top: 80,
+    });
+    vi.spyOn(spaceSection, "getBoundingClientRect").mockReturnValue({
+      ...spaceSection.getBoundingClientRect(),
+      top: 105,
+    });
+
+    fireEvent.scroll(catalogRegion);
+
+    expect(
+      screen
+        .getByRole("button", { name: "Space" })
+        .getAttribute("aria-current"),
+    ).toBe("true");
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "nearest",
+    });
+  });
+
   it("opens as a non-modal editor", () => {
     render(
       <IconPicker
@@ -35,10 +233,11 @@ describe("IconPicker", () => {
         onOpenChange={vi.fn()}
         projectName="Example project"
         icon="Folder"
+        defaultIcon="Folder"
         color={null}
         onPick={vi.fn()}
         onPickColor={vi.fn()}
-        onReset={vi.fn()}
+        onResetIcon={vi.fn()}
         trigger={<button type="button">Change icon</button>}
       />,
     );
@@ -57,10 +256,11 @@ describe("IconPicker", () => {
         onOpenChange={vi.fn()}
         projectName="Example project"
         icon="Folder"
+        defaultIcon="Folder"
         color={null}
         onPick={vi.fn()}
         onPickColor={vi.fn()}
-        onReset={vi.fn()}
+        onResetIcon={vi.fn()}
         trigger={<button type="button">Change icon</button>}
       />,
     );
