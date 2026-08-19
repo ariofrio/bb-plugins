@@ -76,7 +76,8 @@ describe("ThreadActionsDropdown", () => {
     expect(screen.getByText("Mark read")).toBeDefined();
     expect(screen.getByText("Pin")).toBeDefined();
     expect(screen.getByText("Rename")).toBeDefined();
-    expect(screen.getByText("Set workflow stage")).toBeDefined();
+    expect(screen.getByText("Set stage")).toBeDefined();
+    expect(screen.queryByText("Set workflow stage")).toBeNull();
     expect(screen.queryByText("Move up")).toBeNull();
     expect(screen.queryByText("Move down")).toBeNull();
     expect(screen.getByText("Archive")).toBeDefined();
@@ -107,7 +108,7 @@ describe("ThreadActionsDropdown", () => {
     );
 
     fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
-    expect(screen.queryByText("Set workflow stage")).toBeNull();
+    expect(screen.queryByText("Set stage")).toBeNull();
   });
 });
 
@@ -139,7 +140,7 @@ describe("ThreadActionsContextMenu", () => {
 
     fireEvent.contextMenu(screen.getByRole("button", { name: "Thread row" }));
     const parentMenu = screen.getByRole("menu", { name: "Thread actions" });
-    fireEvent.click(screen.getByText("Set workflow stage"));
+    fireEvent.click(screen.getByText("Set stage"));
 
     expect(parentMenu.contains(screen.getByText("Done"))).toBe(false);
   });

@@ -124,7 +124,7 @@ function ContextMenuItems(props: CommonMenuProps) {
               className={ITEM_CLASS}
             >
               <Icon name="ListTodo" aria-hidden />
-              Set workflow stage
+              Set stage
               <Icon name="ChevronRight" className="ml-auto" aria-hidden />
             </ContextMenu.SubTrigger>
             <ContextMenu.Portal>
@@ -207,7 +207,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
               className={ITEM_CLASS}
             >
               <Icon name="ListTodo" aria-hidden />
-              Set workflow stage
+              Set stage
               <Icon name="ChevronRight" className="ml-auto" aria-hidden />
             </DropdownMenu.SubTrigger>
             <DropdownMenu.Portal>
