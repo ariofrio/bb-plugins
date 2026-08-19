@@ -83,7 +83,12 @@ describe("ThreadActionsDropdown", () => {
     expect(screen.getByText("Pin")).toBeDefined();
     expect(screen.getByText("Rename")).toBeDefined();
     expect(screen.getByText("Move to stage")).toBeDefined();
-    expect(screen.getByText("Move to section")).toBeDefined();
+    const moveToSectionItem = screen
+      .getByText("Move to section")
+      .closest('[role="menuitem"]');
+    expect(
+      moveToSectionItem?.querySelector("svg")?.getAttribute("data-icon"),
+    ).toBe("ListView");
     const organizationItems = screen
       .getAllByRole("menuitem")
       .map((item) => item.textContent?.trim());
@@ -164,7 +169,12 @@ describe("ThreadActionsDropdown", () => {
     expect(screen.getByText("No section")).toBeDefined();
     expect(screen.getByText("Now")).toBeDefined();
     expect(screen.getByText("Later")).toBeDefined();
-    expect(screen.getByText("New section")).toBeDefined();
+    const newSectionItem = screen
+      .getByText("New section")
+      .closest('[role="menuitem"]');
+    expect(newSectionItem?.querySelector("svg")?.getAttribute("data-icon")).toBe(
+      "SectionAdd",
+    );
     fireEvent.click(screen.getByText("Later"));
     expect(onSetSection).toHaveBeenCalledWith("section_2");
 

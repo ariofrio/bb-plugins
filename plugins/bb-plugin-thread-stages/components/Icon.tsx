@@ -21,6 +21,7 @@ import {
   HelpCircleIcon,
   LayoutTwoColumnIcon,
   Loading03Icon,
+  ListViewIcon,
   Mail01Icon,
   MailOpenIcon,
   MoreHorizontalIcon,
@@ -35,7 +36,11 @@ import {
   ComputerTerminal01Icon,
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
-import { ClockSquareIcon, DashedSquareIcon } from "./composed-icons";
+import {
+  ClockSquareIcon,
+  DashedSquareIcon,
+  SectionAddIcon,
+} from "./composed-icons";
 
 const ICONS = {
   Archive: ArchiveIcon,
@@ -62,6 +67,7 @@ const ICONS = {
   DashedSquare: DashedSquareIcon,
   Diamond: DiamondIcon,
   ListTodo: CheckListIcon,
+  ListView: ListViewIcon,
   Loading: Loading03Icon,
   Mail: Mail01Icon,
   MailOpen: MailOpenIcon,
@@ -69,6 +75,7 @@ const ICONS = {
   Pin: PinIcon,
   PinOff: PinOffIcon,
   Search: Search01Icon,
+  SectionAdd: SectionAddIcon,
   Square: SquareIcon,
   Target: Target02Icon,
   Terminal: ComputerTerminal01Icon,

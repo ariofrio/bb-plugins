@@ -158,7 +158,7 @@ function ContextMenuItems(props: CommonMenuProps) {
       )}
       <ContextMenu.Sub>
         <ContextMenu.SubTrigger className={ITEM_CLASS}>
-          <Icon name="Folder" aria-hidden />
+          <Icon name="ListView" aria-hidden />
           Move to section
           <Icon name="ChevronRight" className="ml-auto" aria-hidden />
         </ContextMenu.SubTrigger>
@@ -203,7 +203,7 @@ function ContextMenuItems(props: CommonMenuProps) {
               className={ITEM_CLASS}
               onSelect={props.onNewSection}
             >
-              <span className="w-4" />
+              <Icon name="SectionAdd" aria-hidden />
               New section
             </ContextMenu.Item>
           </ContextMenu.SubContent>
@@ -289,7 +289,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
       )}
       <DropdownMenu.Sub>
         <DropdownMenu.SubTrigger className={ITEM_CLASS}>
-          <Icon name="Folder" aria-hidden />
+          <Icon name="ListView" aria-hidden />
           Move to section
           <Icon name="ChevronRight" className="ml-auto" aria-hidden />
         </DropdownMenu.SubTrigger>
@@ -334,7 +334,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
               className={ITEM_CLASS}
               onSelect={props.onNewSection}
             >
-              <span className="w-4" />
+              <Icon name="SectionAdd" aria-hidden />
               New section
             </DropdownMenu.Item>
           </DropdownMenu.SubContent>
