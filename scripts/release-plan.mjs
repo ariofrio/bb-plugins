@@ -50,13 +50,16 @@ export function buildReleasePlan(changes) {
       throw new Error(`${directory} produces an empty plugin id`);
     }
 
+    const title = `${after.bb.name} v${after.version}`;
+
     releases.push({
       id,
       directory,
       packageName: after.name,
       version: after.version,
       tag: `${id}/v${after.version}`,
-      message: `Release ${after.bb.name} v${after.version}`,
+      title,
+      message: `Release ${title}`,
     });
   }
 

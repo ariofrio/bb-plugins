@@ -11,3 +11,9 @@
 ### Patch Changes
 
 - 728ffc9: Replace the project icon dialog with a compact popover that groups searchable icons by category, keeps filtered category navigation visible, and improves color, reset, scrolling, and search controls.
+
+## 0.1.0
+
+### Minor Changes
+
+- Initial release: an icon and optional color for each bb project.

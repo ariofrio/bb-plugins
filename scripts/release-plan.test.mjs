@@ -25,6 +25,7 @@ test("plans a BB tag when a plugin version increases", () => {
         packageName: "bb-plugin-project-icons",
         version: "0.1.1",
         tag: "project-icons/v0.1.1",
+        title: "Project icons v0.1.1",
         message: "Release Project icons v0.1.1",
       },
     ],

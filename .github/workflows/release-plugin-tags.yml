@@ -69,3 +69,18 @@ jobs:
         env:
           RELEASES: ${{ needs.plan.outputs.releases }}
           TARGET_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+
+  release:
+    needs: [plan, tag]
+    if: needs.plan.outputs.count != '0'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - run: node scripts/create-github-releases.mjs --publish
+        env:
+          RELEASES: ${{ needs.plan.outputs.releases }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
