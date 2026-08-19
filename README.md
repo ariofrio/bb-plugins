@@ -53,9 +53,11 @@ rebuilds and reloads every plugin.
 Create a Changeset with `npm run changeset` for every user-visible plugin
 change. After the change reaches `main`, automation opens or updates a release
 pull request with version, lockfile, and changelog updates. Merging that pull
-request validates the affected plugins and creates immutable
-`<plugin-id>/vX.Y.Z` Git tags. Marketplace semver ranges then expose compatible
-releases without catalog changes.
+request validates the affected plugins, creates immutable `<plugin-id>/vX.Y.Z`
+Git tags, and publishes a
+[GitHub release](https://github.com/ariofrio/bb-plugins/releases) per tag
+carrying that version's changelog entry. Marketplace semver ranges then expose
+compatible releases without catalog changes.
 
 `npm run release:check` runs each plugin's tests, type checks, build, SDK
 declaration verification, and packed artifact verification.
