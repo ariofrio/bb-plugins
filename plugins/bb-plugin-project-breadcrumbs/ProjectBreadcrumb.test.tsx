@@ -30,7 +30,7 @@ describe("ProjectBreadcrumb", () => {
     const onRename = vi.fn().mockResolvedValue(undefined);
     const onRemove = vi.fn().mockResolvedValue(undefined);
     const { container } = render(
-      <span data-project-header-breadcrumb-root="">
+      <span data-project-breadcrumbs-root="">
         <ProjectBreadcrumb
           projectName="bb-plugins"
           onOpenSettings={onOpenSettings}

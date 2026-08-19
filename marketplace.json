@@ -46,8 +46,8 @@
       }
     },
     {
-      "id": "project-header-breadcrumb",
-      "displayName": "Project header breadcrumb",
+      "id": "project-breadcrumbs",
+      "displayName": "Project breadcrumbs",
       "description": "Adds the current project and its settings, rename, and removal actions to each standard thread header.",
       "icon": "Folder",
       "tags": ["interface", "projects", "navigation", "threads"],
@@ -59,9 +59,9 @@
       "source": {
         "git": {
           "url": "https://github.com/ariofrio/bb-plugins.git",
-          "subdir": "plugins/bb-plugin-project-header-breadcrumb",
+          "subdir": "plugins/bb-plugin-project-breadcrumbs",
           "range": "^0.1.0",
-          "tagPrefix": "project-header-breadcrumb/"
+          "tagPrefix": "project-breadcrumbs/"
         }
       }
     },

@@ -28,7 +28,7 @@
       </td>
       <td valign="top" align="center">
         <p></p>
-        <p><img src="assets/plugin-icons/folder.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-project-header-breadcrumb#readme">Project header breadcrumb</a></strong></p>
+        <p><img src="assets/plugin-icons/folder.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-project-breadcrumbs#readme">Project breadcrumbs</a></strong></p>
         <p>Adds the current project and its actions menu before each thread title</p>
         <p></p>
       </td>

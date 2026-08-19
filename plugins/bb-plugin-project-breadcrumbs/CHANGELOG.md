@@ -1,4 +1,4 @@
-# bb-plugin-project-header-breadcrumb
+# bb-plugin-project-breadcrumbs
 
 ## 0.1.0
 

@@ -8,7 +8,7 @@ interface IconPortalMount {
 
 /**
  * bb has no slot before the thread title, so the icon is portaled into the
- * header the way the Project header breadcrumb plugin portals the project
+ * header the way the Project breadcrumbs plugin portals the project
  * name. When that plugin is installed the icon goes immediately before its
  * breadcrumb; otherwise it sits directly before the title.
  *
@@ -36,7 +36,7 @@ export function installProjectIconPortal(
   }
 
   const breadcrumb = center.querySelector<HTMLElement>(
-    "[data-project-header-breadcrumb-root]",
+    "[data-project-breadcrumbs-root]",
   );
   const anchor = breadcrumb ?? titleContainer;
 

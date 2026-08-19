@@ -20,7 +20,7 @@ function renderHeader({ withBreadcrumb }: { withBreadcrumb: boolean }): {
   if (center === null) throw new Error("missing center");
   if (withBreadcrumb) {
     const breadcrumb = document.createElement("span");
-    breadcrumb.dataset.projectHeaderBreadcrumbRoot = "";
+    breadcrumb.dataset.projectBreadcrumbsRoot = "";
     center.insertBefore(breadcrumb, center.firstElementChild);
   }
   const marker = document.querySelector<HTMLElement>("[data-marker]");
@@ -43,7 +43,7 @@ describe("installProjectIconPortal", () => {
       Array.from(center.children).map((child) =>
         child.hasAttribute("data-project-icon-root")
           ? "icon"
-          : child.hasAttribute("data-project-header-breadcrumb-root")
+          : child.hasAttribute("data-project-breadcrumbs-root")
             ? "breadcrumb"
             : child.hasAttribute("data-title")
               ? "title"

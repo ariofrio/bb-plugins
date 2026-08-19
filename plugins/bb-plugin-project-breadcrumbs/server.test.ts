@@ -12,7 +12,7 @@ function createPluginHarness() {
   const update = vi.fn().mockResolvedValue({});
   const deleteProject = vi.fn().mockResolvedValue({ ok: true });
   const host = createFakePluginHost({
-    pluginId: "project-header-breadcrumb",
+    pluginId: "project-breadcrumbs",
     sdk: {
       projects: { update, delete: deleteProject },
     },

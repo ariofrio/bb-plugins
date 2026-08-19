@@ -25,7 +25,7 @@ export function installBreadcrumbPortal(
   }
 
   const target = marker.ownerDocument.createElement("span");
-  target.dataset.projectHeaderBreadcrumbRoot = "";
+  target.dataset.projectBreadcrumbsRoot = "";
   target.className =
     "-mr-0.5 inline-flex min-w-0 shrink-0 items-center gap-1.5 text-sm font-semibold";
   center.insertBefore(target, titleContainer);

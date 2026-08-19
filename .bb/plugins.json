@@ -12,8 +12,8 @@
       "source": "./plugins/bb-plugin-missing-keyboard-shortcuts"
     },
     {
-      "name": "project-header-breadcrumb",
-      "source": "./plugins/bb-plugin-project-header-breadcrumb"
+      "name": "project-breadcrumbs",
+      "source": "./plugins/bb-plugin-project-breadcrumbs"
     },
     {
       "name": "project-icons",

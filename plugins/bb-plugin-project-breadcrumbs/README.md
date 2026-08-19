@@ -1,9 +1,9 @@
-# Project header breadcrumb
+# Project breadcrumbs
 
 Adds the current project to each standard-project thread header:
 
 ```text
-bb-plugins  >  Add project header breadcrumb
+bb-plugins  >  Add project breadcrumbs
 ```
 
 The project name uses the same muted, hoverable treatment as bb's project
@@ -42,20 +42,20 @@ standard Project settings/Rename/Remove action set.
 Install it from this repository's plugin collection:
 
 ```sh
-bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin project-header-breadcrumb
+bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin project-breadcrumbs
 ```
 
 Update an installed copy with:
 
 ```sh
-bb plugin update project-header-breadcrumb
+bb plugin update project-breadcrumbs
 ```
 
 ## Development
 
 ```sh
 npm run release:check
-bb plugin reload project-header-breadcrumb
+bb plugin reload project-breadcrumbs
 ```
 
 `release:check` runs the tests and typecheck, checks the committed SDK

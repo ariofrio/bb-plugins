@@ -49,8 +49,8 @@ never reach the network.
 ## Header placement
 
 bb has no slot before the thread title, so the icon is portaled into the
-header the same way [Project header
-breadcrumb](../bb-plugin-project-header-breadcrumb#readme) portals the project
+header the same way [Project
+breadcrumbs](../bb-plugin-project-breadcrumbs#readme) portals the project
 name: immediately before that breadcrumb when it is installed, and before the
 title when it is not. `header-dom.test.ts` pins both shapes so a bb header
 change fails locally rather than moving the icon silently.
