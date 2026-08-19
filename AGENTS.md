@@ -20,6 +20,7 @@
 
 - Every plugin screenshot comes from `npm run screenshots`, which boots a throwaway bb, installs every plugin in this repository, seeds one shared fixture, and captures each shot in light and dark. Never edit or replace the files it writes by hand; change `scripts/screenshots/shots.mjs` and recapture.
 - Each shot is captured twice from the same arranged window, with the same shade and cutouts: `screenshot-<mode>.png` is bb's whole default window and belongs in the plugin's own README, and `card-<mode>.png` is cropped to one fixed width and belongs in the root README's table, where a shared crop width is what keeps the five cells at one zoom level. A shot chooses where its card sits, not how large it is.
+- Only the window shots carry a window frame — macOS's corner radius, a hairline, and a shadow, on transparent margins. A card is a crop of an interface, not a window, so framing one would claim it is the whole app.
 - Capturing needs macOS, the bb desktop app, and `npx playwright install chromium`. `npm run check:screenshots` needs neither, and CI runs it to report a screenshot whose plugin changed after it was captured.
 
 ## Testing

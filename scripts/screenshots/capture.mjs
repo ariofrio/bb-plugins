@@ -267,6 +267,61 @@ export async function openApp({ browser, stack, theme, viewport, style }) {
 }
 
 /**
+ * The window a full-window capture is missing. The web client draws bb's
+ * chrome but not its silhouette, so the frame supplies exactly that: macOS's
+ * corner radius, the hairline its edge catches, and the shadow it casts —
+ * tuned per mode, because the same pair of images is read on a white page and
+ * on a near-black one. No traffic lights: bb sits them over the top of its own
+ * sidebar, where this capture shows the sidebar toggle instead, and painting
+ * them in would put real controls in the wrong place.
+ */
+const WINDOW_FRAME = {
+  // macOS's own window rounding, so the silhouette matches the app rather than
+  // a card. The margin holds the shadow and nothing else.
+  radius: 10,
+  padding: { top: 32, side: 40, bottom: 48 },
+  light: {
+    edge: "rgba(0, 0, 0, 0.16)",
+    shadow:
+      "0 18px 40px -16px rgba(15, 15, 20, 0.55), 0 4px 10px -6px rgba(15, 15, 20, 0.4)",
+  },
+  dark: {
+    edge: "rgba(255, 255, 255, 0.16)",
+    shadow:
+      "0 18px 40px -16px rgba(0, 0, 0, 0.9), 0 4px 10px -6px rgba(0, 0, 0, 0.75)",
+  },
+};
+
+async function writeFramedWindow({ browser, image, size, theme, output }) {
+  const { padding, radius } = WINDOW_FRAME;
+  const context = await browser.newContext({
+    viewport: {
+      width: size.width + padding.side * 2,
+      height: size.height + padding.top + padding.bottom,
+    },
+    deviceScaleFactor: 2,
+  });
+  const sheet = await context.newPage();
+  await sheet.setContent(
+    `<body style="margin:0;background:transparent">
+       <div id="frame" style="
+         width:${size.width + padding.side * 2}px;
+         padding:${padding.top}px ${padding.side}px ${padding.bottom}px;
+         box-sizing:border-box">
+         <img src="data:image/png;base64,${image.toString("base64")}"
+              style="display:block;width:${size.width}px;height:${size.height}px;
+                     border-radius:${radius}px;
+                     box-shadow:${WINDOW_FRAME[theme].shadow},
+                                0 0 0 1px ${WINDOW_FRAME[theme].edge}">
+       </div>
+     </body>`,
+  );
+  mkdirSync(dirname(output), { recursive: true });
+  await sheet.locator("#frame").screenshot({ path: output, omitBackground: true });
+  await context.close();
+}
+
+/**
  * Joins two captures along the diagonal, which is how the theme plugin shows
  * both of its palettes in one image. The base holds the top-left triangle, so
  * a reader meets the mode they are already in and sees the other alongside it.
@@ -303,9 +358,16 @@ async function writeDiagonalSplit({ browser, base, corner, output, size }) {
       cornerUrl: `data:image/png;base64,${corner.toString("base64")}`,
     },
   );
-  mkdirSync(dirname(output), { recursive: true });
-  await sheet.locator("#c").screenshot({ path: output });
+  const joined = await sheet
+    .locator("#c")
+    .screenshot(output === undefined ? {} : { path: mkdirFor(output) });
   await context.close();
+  return joined;
+}
+
+function mkdirFor(output) {
+  mkdirSync(dirname(output), { recursive: true });
+  return output;
 }
 
 export async function capture({ stack, fixture, shots, shotFiles }) {
@@ -313,9 +375,17 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
   const captured = [];
   try {
     for (const shot of shots) {
-      // A split shot's own frames are ingredients: each output pairs one mode's
-      // frame with the other's, so nothing is written until both exist.
-      const files = shot.split ? {} : shotFiles(shot);
+      // Only cards are written as they are taken. A window capture is an
+      // ingredient: it gets its frame, and a split shot's gets the other
+      // mode's diagonal first, so nothing is written until both modes exist.
+      const outputs = shotFiles(shot);
+      const files = shot.split
+        ? {}
+        : Object.fromEntries(
+            Object.entries(outputs).filter(([name]) =>
+              name.startsWith("card-"),
+            ),
+          );
       await shot.setup?.({ fixture, stack });
       const frames = { fullWindow: {}, card: {} };
       for (const theme of shot.themes ?? THEMES) {
@@ -381,24 +451,33 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
           take: (frame) => takeCard(frame, shot.card.viewport),
         });
       }
-      if (shot.split) {
-        const outputs = shotFiles(shot);
-        for (const theme of shot.themes ?? THEMES) {
-          const other = OTHER_THEME[theme];
-          for (const [name, taken, size] of [
-            [FULL_WINDOW_FILE(theme), frames.fullWindow, VIEWPORT],
-            [CARD_FILE(theme), frames.card, frames.card.clip],
-          ]) {
-            if (outputs[name] === undefined) continue;
-            await writeDiagonalSplit({
-              browser,
-              base: taken[theme],
-              corner: taken[other],
-              output: outputs[name],
-              size: { width: size.width, height: size.height },
-            });
-          }
+      for (const theme of shot.themes ?? THEMES) {
+        const other = OTHER_THEME[theme];
+        if (shot.split && outputs[CARD_FILE(theme)] !== undefined) {
+          await writeDiagonalSplit({
+            browser,
+            base: frames.card[theme],
+            corner: frames.card[other],
+            output: outputs[CARD_FILE(theme)],
+            size: frames.card.clip,
+          });
         }
+        if (outputs[FULL_WINDOW_FILE(theme)] === undefined) continue;
+        const window = shot.split
+          ? await writeDiagonalSplit({
+              browser,
+              base: frames.fullWindow[theme],
+              corner: frames.fullWindow[other],
+              size: VIEWPORT,
+            })
+          : frames.fullWindow[theme];
+        await writeFramedWindow({
+          browser,
+          image: window,
+          size: VIEWPORT,
+          theme,
+          output: outputs[FULL_WINDOW_FILE(theme)],
+        });
       }
       await shot.teardown?.({ fixture, stack });
       captured.push(shot);
