@@ -335,7 +335,9 @@ describe("ThreadFilter", () => {
     const alpha = screen.getByRole("menuitemradio", { name: "Alpha" });
     fireEvent.keyDown(alpha, { key: "ArrowRight" });
 
-    const submenu = screen.getAllByRole("menu")[1];
+    const [rootMenu, submenu] = screen.getAllByRole("menu");
+    expect(rootMenu.classList.contains("z-50")).toBe(true);
+    expect(submenu.classList.contains("z-50")).toBe(true);
     expect(
       within(submenu).getAllByRole("menuitem").map((item) => item.textContent),
     ).toEqual(["Project settings", "Rename", "Add local path", "Remove"]);
