@@ -4,19 +4,25 @@ Personal plugins for [bb](https://getbb.app).
 
 ## Plugins
 
-- <img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20"> [Codex theme](plugins/bb-plugin-codex-theme#readme) —
-  matches bb's palette to the OpenAI ChatGPT desktop app in light and dark mode.
-- <img src="assets/plugin-icons/zap.svg" alt="" width="20" height="20"> [Missing keyboard shortcuts](plugins/bb-plugin-missing-keyboard-shortcuts#readme) —
-  adds shortcuts for starting threads, navigating history, focusing the
-  primary composer, and toggling a side chat or thread terminal.
-- <img src="assets/plugin-icons/folder.svg" alt="" width="20" height="20"> [Project header breadcrumb](plugins/bb-plugin-project-header-breadcrumb#readme) —
-  adds the current project and its native actions menu before each thread title.
-- <img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20"> [Project icons](plugins/bb-plugin-project-icons#readme) —
-  gives each project an icon and optional color, shown next to its name in the
-  thread header.
-- <img src="assets/plugin-icons/list-todo.svg" alt="" width="20" height="20"> [Thread workflow](plugins/bb-plugin-thread-workflow#readme) —
-  organizes sidebar threads into manually ordered Backlog, To do, Working,
-  Blocked, Done, and Canceled workflow stages.
+<p>
+  <img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20">
+  <a href="plugins/bb-plugin-codex-theme#readme">Codex theme</a> — matches bb's
+  palette to the OpenAI ChatGPT desktop app in light and dark mode.<br>
+  <img src="assets/plugin-icons/zap.svg" alt="" width="20" height="20">
+  <a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Missing keyboard shortcuts</a> —
+  adds shortcuts for starting threads, navigating history, focusing the primary
+  composer, and toggling a side chat or thread terminal.<br>
+  <img src="assets/plugin-icons/folder.svg" alt="" width="20" height="20">
+  <a href="plugins/bb-plugin-project-header-breadcrumb#readme">Project header breadcrumb</a> —
+  adds the current project and its native actions menu before each thread title.<br>
+  <img src="assets/plugin-icons/palette.svg" alt="" width="20" height="20">
+  <a href="plugins/bb-plugin-project-icons#readme">Project icons</a> — gives each
+  project an icon and optional color, shown next to its name in the thread header.<br>
+  <img src="assets/plugin-icons/list-todo.svg" alt="" width="20" height="20">
+  <a href="plugins/bb-plugin-thread-workflow#readme">Thread workflow</a> — organizes
+  sidebar threads into manually ordered Backlog, To do, Working, Blocked, Done,
+  and Canceled workflow stages.
+</p>
 
 ## Install
 
