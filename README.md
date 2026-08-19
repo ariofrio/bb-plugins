@@ -22,8 +22,8 @@
     <tr>
       <td valign="top" align="center">
         <p></p>
-        <p><img src="assets/plugin-icons/list-todo.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-thread-workflow#readme">Thread workflow</a></strong></p>
-        <p>Groups sidebar threads into drag-ordered workflow stages that update as they run</p>
+        <p><img src="assets/plugin-icons/list-todo.svg" alt="" width="40" height="40"><br><strong><a href="plugins/bb-plugin-thread-stages#readme">Thread stages</a></strong></p>
+        <p>Groups sidebar threads into drag-ordered stages that update as they run</p>
         <p></p>
       </td>
       <td valign="top" align="center">
