@@ -63,22 +63,21 @@ Add this repository as a bb marketplace, then choose any of its plugins in
 Settings → Plugins:
 
 ```sh
-bb marketplace add git:github.com/ariofrio/bb-plugins@main
+bb marketplace add git:github.com/ariofrio/bb-plugins
 ```
 
-The marketplace tracks each plugin's Git release tags, so new releases appear
-without re-adding it. Its catalog is defined in
-[marketplace.json](marketplace.json).
-
-To install one plugin directly from `main`, follow its README, or select it
-from the repository's plugin collection:
+Or install one of them from the command line:
 
 ```sh
-bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin chatgpt-theme
+bb plugin install chatgpt-theme@ariofrio-bb-plugins
 ```
 
-The available collection names are listed in [.bb/plugins.json](.bb/plugins.json).
-Nothing here is published to npm yet.
+The entry ids are `chatgpt-theme`, `missing-keyboard-shortcuts`,
+`project-breadcrumbs`, `project-icons`, and `thread-stages`, and each plugin's
+README repeats its own. Every entry resolves the plugin's highest
+`<entry-id>/vX.Y.Z` release tag, so `bb plugin update <entry-id>` picks up new
+releases and the marketplace never has to be re-added. Its catalog is defined
+in [marketplace.json](marketplace.json). Nothing here is published to npm yet.
 
 ## Development
 
@@ -92,6 +91,17 @@ npm run install:plugins
 
 Run the same command after a `git pull`: it installs whatever is missing, then
 rebuilds and reloads every plugin.
+
+To run one plugin's unreleased code without a checkout, install it from `main`
+by its collection name — the names are listed in
+[.bb/plugins.json](.bb/plugins.json):
+
+```sh
+bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin chatgpt-theme
+```
+
+That install follows the branch rather than the release tags, so
+`bb plugin update <plugin-id>` moves it to the newest commit on `main`.
 
 ### Releases
 

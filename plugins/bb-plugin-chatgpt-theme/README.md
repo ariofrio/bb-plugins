@@ -19,10 +19,16 @@ being read in in the top-left corner.
 
 ## Install
 
+Add this repository as a bb marketplace, then install the theme from it and
+select it:
+
 ```sh
-bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin chatgpt-theme
+bb marketplace add git:github.com/ariofrio/bb-plugins
+bb plugin install chatgpt-theme@ariofrio-bb-plugins
 bb theme set plugin:chatgpt-theme:chatgpt
 ```
+
+Skip the first line if you already added the marketplace for another plugin.
 
 Installing the plugin makes the palette available under Settings → Appearance;
 it does not activate the palette automatically. To update it later:
