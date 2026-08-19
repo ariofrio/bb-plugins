@@ -49,7 +49,7 @@
       <td valign="top" align="center">
         <p></p>
         <p><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><img src="plugins/bb-plugin-missing-keyboard-shortcuts/assets/icon.svg" alt="" width="40" height="40"><br><strong>Missing keyboard shortcuts</strong></a></p>
-        <p>Add shortcuts to start threads with or without a project, navigate history, and reach the terminal, side chat, or composer.</p>
+        <p>Add shortcuts to start personal or project threads, navigate history, and reach the composer or panel tabs.</p>
         <p></p>
       </td>
       <td></td>

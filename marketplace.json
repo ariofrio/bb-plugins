@@ -37,7 +37,7 @@
     {
       "id": "missing-keyboard-shortcuts",
       "displayName": "Missing keyboard shortcuts",
-      "description": "Add shortcuts to start threads with or without a project, navigate history, and reach the terminal, side chat, or composer.",
+      "description": "Add shortcuts to start personal or project threads, navigate history, and reach the composer or panel tabs.",
       "icon": {
         "url": "./plugins/bb-plugin-missing-keyboard-shortcuts/assets/icon.svg"
       },
