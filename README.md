@@ -1,6 +1,6 @@
 <h1 align="center">ariofrio's bb plugins</h1>
 
-<p align="center"><strong>Plugins for <a href="https://getbb.app">bb</a>, the agent IDE that builds itself.</strong></p>
+<p align="center"><strong>Plugins for <a href="https://getbb.app">bb</a>, the agent IDE that builds itself</strong></p>
 
 <table>
   <thead>
