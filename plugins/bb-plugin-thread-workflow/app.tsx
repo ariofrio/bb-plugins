@@ -16,6 +16,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type DragEvent,
   type MouseEvent,
 } from "react";
@@ -441,7 +442,7 @@ function SidebarSection({
       <div
         data-sidebar="group-label"
         data-sidebar-sticky-tier="label"
-        className="bb-sidebar-hover-actions-row sticky top-0 z-[60] flex h-6 items-center rounded-md bg-sidebar pl-2 pr-0 text-xs font-normal leading-5 text-subtle-foreground/75 transition-colors max-md:pointer-coarse:h-9"
+        className="bb-sidebar-hover-actions-row sticky z-[60] flex h-6 items-center rounded-md bg-sidebar pl-2 pr-0 text-xs font-normal leading-5 text-subtle-foreground/75 transition-colors max-md:pointer-coarse:h-9"
       >
         <span className="relative z-10 flex min-w-0 flex-1 items-center gap-1 text-left">
           {label === PINNED_SECTION ? null : (
@@ -1044,6 +1045,12 @@ function WorkflowStageList({
       data-sidebar-sticky-stack=""
       data-sidebar-sticky-density="compact-actions"
       className="relative flex w-full min-w-0 flex-col"
+      style={
+        {
+          "--bb-sidebar-sticky-label-top":
+            "calc(var(--bb-sidebar-sticky-stack-padding-top) + 2.75rem)",
+        } as CSSProperties
+      }
       onDragEnd={clearDrag}
     >
       {error ? (

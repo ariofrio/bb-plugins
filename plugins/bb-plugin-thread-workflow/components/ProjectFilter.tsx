@@ -36,7 +36,7 @@ export function ProjectFilter({
   const activeIcon = value === null ? null : projectIcons.get(value);
 
   return (
-    <div className="mb-4 flex min-w-0">
+    <div className="sticky top-2 z-[70] mb-4 flex min-w-0 bg-sidebar before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-sidebar before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-sidebar after:content-['']">
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
           <button

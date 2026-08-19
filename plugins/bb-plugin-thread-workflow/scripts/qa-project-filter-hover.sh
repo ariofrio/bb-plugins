@@ -67,3 +67,47 @@ agent-browser --session "$qa_session" eval '(() => {
     cursor,
   });
 })()'
+
+agent-browser --session "$qa_session" eval 'document.querySelector("[data-sidebar=\"content\"]").scrollTop = 120' >/dev/null
+agent-browser --session "$qa_session" wait 200 >/dev/null
+agent-browser --session "$qa_session" eval '(() => {
+  const control = document.querySelector("button[aria-label^=\"Filter by project\"]");
+  const stack = control?.closest("[data-sidebar-sticky-stack]");
+  const scrollContent = control?.closest("[data-sidebar=\"content\"]");
+  const firstStage = document.querySelector("[data-sidebar-sticky-tier=\"label\"]");
+  const firstSection = firstStage?.closest("section");
+  if (
+    !(control instanceof HTMLElement) ||
+    !(stack instanceof HTMLElement) ||
+    !(scrollContent instanceof HTMLElement) ||
+    !(firstStage instanceof HTMLElement) ||
+    !(firstSection instanceof HTMLElement)
+  ) {
+    throw new Error("Could not find sticky workflow layout after scrolling.");
+  }
+
+  const controlRect = control.getBoundingClientRect();
+  const contentRect = scrollContent.getBoundingClientRect();
+  const expectedControlTop = contentRect.top + Number.parseFloat(getComputedStyle(stack).paddingTop);
+  if (Math.abs(controlRect.top - expectedControlTop) > 0.25) {
+    throw new Error(
+      `Project filter scrolled to ${controlRect.top}px; sticky top is ${expectedControlTop}px.`,
+    );
+  }
+
+  const stageRect = firstStage.getBoundingClientRect();
+  const betweenStages = Number.parseFloat(getComputedStyle(firstSection).marginBottom);
+  const expectedStageTop = controlRect.bottom + betweenStages;
+  if (Math.abs(stageRect.top - expectedStageTop) > 0.25) {
+    throw new Error(
+      `Sticky stage top is ${stageRect.top}px; expected ${expectedStageTop}px below project filter.`,
+    );
+  }
+
+  return JSON.stringify({
+    scrollTop: scrollContent.scrollTop,
+    controlTop: controlRect.top,
+    stageTop: stageRect.top,
+    betweenStages,
+  });
+})()'
