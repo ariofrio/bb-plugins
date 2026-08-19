@@ -4,6 +4,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -102,5 +103,35 @@ describe("sidebar options menus", () => {
     expect(checkbox.getAttribute("aria-checked")).toBe("true");
     fireEvent.click(checkbox);
     expect(onShowCountsChange).toHaveBeenCalledWith(false);
+  });
+
+  it("does not restore focus to the filter trigger after a pointer dismissal", async () => {
+    render(
+      <ThreadFilterOptionsMenu
+        countMode="None"
+        onCountModeChange={() => {}}
+        onHide={() => {}}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", {
+      name: "Projects and sections options",
+    });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    expect(screen.getByRole("menu")).toBeDefined();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    fireEvent.pointerDown(document.body, { button: 0, pointerType: "mouse" });
+
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    expect(document.activeElement).not.toBe(trigger);
+
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
+
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+    expect(document.activeElement).toBe(trigger);
   });
 });

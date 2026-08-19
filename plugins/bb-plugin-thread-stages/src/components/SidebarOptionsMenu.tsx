@@ -1,4 +1,5 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { useRef } from "react";
 import { portalScopeProps } from "../lib/portal-scope";
 import {
   SIDEBAR_FILTER_COUNT_MODES,
@@ -31,10 +32,19 @@ export function ThreadFilterOptionsMenu({
   onHide,
   onOpenChange,
 }: ThreadFilterOptionsMenuProps) {
+  const pointerDismissedRef = useRef(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
   return (
-    <DropdownMenu.Root onOpenChange={onOpenChange}>
+    <DropdownMenu.Root
+      onOpenChange={(open) => {
+        if (open) pointerDismissedRef.current = false;
+        onOpenChange?.(open);
+      }}
+    >
       <DropdownMenu.Trigger asChild>
         <button
+          ref={triggerRef}
           type="button"
           aria-label="Projects and sections options"
           className={`${TRIGGER_CLASS} ${PANEL_OPTIONS_TRIGGER_CLASS}`}
@@ -52,6 +62,15 @@ export function ThreadFilterOptionsMenu({
           align="end"
           sideOffset={4}
           className={CONTENT_CLASS}
+          onPointerDownOutside={() => {
+            pointerDismissedRef.current = true;
+          }}
+          onCloseAutoFocus={(event) => {
+            if (!pointerDismissedRef.current) return;
+            pointerDismissedRef.current = false;
+            event.preventDefault();
+            triggerRef.current?.blur();
+          }}
         >
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger className={ITEM_CLASS}>
