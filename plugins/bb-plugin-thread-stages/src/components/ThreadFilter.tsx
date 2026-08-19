@@ -66,7 +66,8 @@ const ACTION_CLASS =
 const ACTION_TOOLTIP_DELAY_MS = 350;
 const LABEL_CLASS =
   "px-2 py-1.5 text-[11px] font-medium text-muted-foreground";
-const SUB_CONTENT_CLASS = `${CONTENT_CLASS} z-[80]`;
+const SUB_CONTENT_CLASS =
+  "z-[80] min-w-28 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
 const SubmenuPointerEnterContext = createContext<(() => void) | undefined>(
   undefined,
 );
@@ -297,8 +298,17 @@ function ActionableThreadFilterItem({
   selected: boolean;
 }) {
   const [submenuOpen, setSubmenuOpen] = useState(false);
-  const [pointerInside, setPointerInside] = useState(false);
+  const [pointerTarget, setPointerTarget] = useState<
+    "item" | "chevron" | null
+  >(null);
+  const [keyboardFocused, setKeyboardFocused] = useState(false);
   const suppressSyntheticClick = useRef(false);
+  const selectTargetActive =
+    pointerTarget === "item" ||
+    (pointerTarget === null && keyboardFocused && !submenuOpen);
+  const chevronActive =
+    pointerTarget === "chevron" ||
+    (pointerTarget === null && submenuOpen);
 
   function handleClick(event: ReactMouseEvent<HTMLDivElement>): void {
     if (
@@ -358,21 +368,31 @@ function ActionableThreadFilterItem({
           event.preventDefault();
           setSubmenuOpen(true);
         }}
-        onKeyDown={handleKeyDown}
-        onPointerEnter={() => setPointerInside(true)}
-        onPointerLeave={() => setPointerInside(false)}
-        onPointerMove={(event) => {
+        onBlur={() => setKeyboardFocused(false)}
+        onFocus={(event) => {
           if (
             event.target instanceof Node &&
             event.currentTarget.contains(event.target)
           ) {
-            setPointerInside(true);
+            setKeyboardFocused(true);
           }
+        }}
+        onKeyDown={handleKeyDown}
+        onPointerEnter={() => setPointerTarget("item")}
+        onPointerLeave={() => setPointerTarget(null)}
+        onPointerMove={(event) => {
+          if (!(event.target instanceof Element)) return;
+          if (!event.currentTarget.contains(event.target)) return;
+          setPointerTarget(
+            event.target.closest("[data-thread-filter-submenu-chevron]")
+              ? "chevron"
+              : "item",
+          );
         }}
       >
         <span
           data-thread-filter-select-target=""
-          data-active={pointerInside ? "" : undefined}
+          data-active={selectTargetActive ? "" : undefined}
           className={ACTIONABLE_SELECT_TARGET_CLASS}
         >
           {selected ? (
@@ -381,7 +401,7 @@ function ActionableThreadFilterItem({
             </span>
           ) : null}
           <SubmenuPointerEnterContext.Provider
-            value={() => setPointerInside(false)}
+            value={() => setPointerTarget(null)}
           >
             {children}
           </SubmenuPointerEnterContext.Provider>
@@ -389,8 +409,8 @@ function ActionableThreadFilterItem({
         </span>
         <span
           data-thread-filter-submenu-chevron=""
-          data-active={!pointerInside && submenuOpen ? "" : undefined}
-          className="ml-1 inline-flex size-5 shrink-0 items-center justify-center rounded-sm transition-colors data-[active]:bg-state-hover data-[active]:text-foreground"
+          data-active={chevronActive ? "" : undefined}
+          className="ml-1 inline-flex size-[1.625rem] shrink-0 items-center justify-center rounded-sm transition-colors data-[active]:bg-state-hover data-[active]:text-foreground"
         >
           <Icon name="ChevronRight" className="size-3.5" aria-hidden />
         </span>

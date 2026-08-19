@@ -430,6 +430,21 @@ describe("ThreadFilter", () => {
         ?.hasAttribute("data-active"),
     ).toBe(false);
 
+    fireEvent.pointerMove(
+      alpha.querySelector("[data-thread-filter-submenu-chevron]") ?? alpha,
+      { pointerType: "mouse" },
+    );
+    expect(
+      alpha
+        .querySelector("[data-thread-filter-select-target]")
+        ?.hasAttribute("data-active"),
+    ).toBe(false);
+    expect(
+      alpha
+        .querySelector("[data-thread-filter-submenu-chevron]")
+        ?.hasAttribute("data-active"),
+    ).toBe(true);
+
     fireEvent.pointerEnter(
       screen.getByRole("menuitem", { name: "Project settings" }),
       { pointerType: "mouse" },
@@ -449,7 +464,42 @@ describe("ThreadFilter", () => {
         ?.hasAttribute("data-active"),
     ).toBe(true);
 
-    fireEvent.pointerMove(alpha, { pointerType: "mouse" });
+    fireEvent.pointerMove(
+      alpha.querySelector("[data-thread-filter-select-target]") ?? alpha,
+      { pointerType: "mouse" },
+    );
+    expect(
+      alpha
+        .querySelector("[data-thread-filter-select-target]")
+        ?.hasAttribute("data-active"),
+    ).toBe(true);
+    expect(
+      alpha
+        .querySelector("[data-thread-filter-submenu-chevron]")
+        ?.hasAttribute("data-active"),
+    ).toBe(false);
+  });
+
+  it("shows keyboard-focused actionable items as active", () => {
+    render(
+      <ThreadFilter
+        {...actions}
+        projects={projects}
+        sections={sections}
+        value={null}
+        onChange={() => {}}
+        onNewProject={() => {}}
+        onNewSection={() => {}}
+      />,
+    );
+
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Projects and sections" }),
+      { key: "Enter" },
+    );
+    const alpha = screen.getByRole("menuitemradio", { name: "Alpha" });
+    fireEvent.focus(alpha);
+
     expect(
       alpha
         .querySelector("[data-thread-filter-select-target]")
