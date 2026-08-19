@@ -3,8 +3,8 @@
 <p align="center"><strong>Plugins for <a href="https://getbb.app">bb</a>, the agent IDE that builds itself</strong></p>
 
 <p align="center">
-  <a href="https://getbb.app"><img src="https://img.shields.io/badge/bb-0.39%2B-2E6E7E?style=flat-square" alt="bb 0.39+"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/ariofrio/bb-plugins?style=flat-square&color=4C566A" alt="MIT license"></a>
+  <a href="https://getbb.app"><img src="https://img.shields.io/badge/bb-0.39%2B-0A9396?style=flat-square" alt="bb 0.39+"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/ariofrio/bb-plugins?style=flat-square&color=007EC6" alt="MIT license"></a>
   <a href="https://github.com/ariofrio/bb-plugins/actions/workflows/plugins.yml"><img src="https://img.shields.io/github/actions/workflow/status/ariofrio/bb-plugins/plugins.yml?branch=main&style=flat-square&label=CI" alt="CI status"></a>
 </p>
 
