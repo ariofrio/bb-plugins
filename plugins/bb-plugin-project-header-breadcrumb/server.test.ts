@@ -1,41 +1,34 @@
-import type { BbPluginApi } from "@bb/plugin-sdk";
-import { describe, expect, it, vi } from "vitest";
+import { createFakePluginHost } from "@get-bb/plugin-sdk/testing";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import plugin from "./server";
 
-interface ProjectRpcHandlers {
-  renameProject(input: {
-    projectId: string;
-    name: string;
-  }): Promise<{ ok: true }>;
-  removeProject(input: { projectId: string }): Promise<{ ok: true }>;
-}
+const disposeHosts: Array<() => Promise<void>> = [];
+
+afterEach(async () => {
+  await Promise.all(disposeHosts.splice(0).map((dispose) => dispose()));
+});
 
 function createPluginHarness() {
   const update = vi.fn().mockResolvedValue({});
   const deleteProject = vi.fn().mockResolvedValue({ ok: true });
-  const registration: { handlers?: ProjectRpcHandlers } = {};
-  const bb = {
-    sdk: { projects: { update, delete: deleteProject } },
-    rpc: {
-      register(_contract: unknown, nextHandlers: ProjectRpcHandlers) {
-        registration.handlers = nextHandlers;
-      },
+  const host = createFakePluginHost({
+    pluginId: "project-header-breadcrumb",
+    sdk: {
+      projects: { update, delete: deleteProject },
     },
-  } as unknown as BbPluginApi;
+  });
+  disposeHosts.push(() => host.harness.lifecycle.dispose());
 
-  plugin(bb);
-  if (registration.handlers === undefined) {
-    throw new Error("RPC handlers were not registered");
-  }
-  return { handlers: registration.handlers, update, deleteProject };
+  plugin(host.bb);
+  return { ...host, update, deleteProject };
 }
 
 describe("project action RPC", () => {
   it("renames projects through the bb SDK", async () => {
-    const { handlers, update } = createPluginHarness();
+    const { harness, update } = createPluginHarness();
 
     await expect(
-      handlers.renameProject({
+      harness.behavior.callRpc("renameProject", {
         projectId: "proj_1",
         name: "Renamed project",
       }),
@@ -47,11 +40,23 @@ describe("project action RPC", () => {
   });
 
   it("removes projects through the bb SDK", async () => {
-    const { handlers, deleteProject } = createPluginHarness();
+    const { harness, deleteProject } = createPluginHarness();
 
     await expect(
-      handlers.removeProject({ projectId: "proj_1" }),
+      harness.behavior.callRpc("removeProject", { projectId: "proj_1" }),
     ).resolves.toEqual({ ok: true });
     expect(deleteProject).toHaveBeenCalledWith({ projectId: "proj_1" });
+  });
+
+  it("rejects invalid rename input at the RPC boundary", async () => {
+    const { harness, update } = createPluginHarness();
+
+    await expect(
+      harness.behavior.callRpc("renameProject", {
+        projectId: "proj_1",
+        name: "   ",
+      }),
+    ).rejects.toMatchObject({ code: "invalid_input" });
+    expect(update).not.toHaveBeenCalled();
   });
 });

@@ -4,7 +4,7 @@ import {
   type PluginThreadHeaderActionProps,
   useBbNavigate,
   useRpc,
-} from "@bb/plugin-sdk/app";
+} from "@get-bb/plugin-sdk/app";
 import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ProjectBreadcrumb } from "./ProjectBreadcrumb";

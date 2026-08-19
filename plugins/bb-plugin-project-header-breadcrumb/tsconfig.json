@@ -13,12 +13,6 @@
       "node"
     ],
     "paths": {
-      "@bb/plugin-sdk": [
-        "./types/bb-plugin-sdk.d.ts"
-      ],
-      "@bb/plugin-sdk/app": [
-        "./types/bb-plugin-sdk-app.d.ts"
-      ],
       "@/*": [
         "./*"
       ]
@@ -34,7 +28,6 @@
     "*.test.ts",
     "*.test.tsx",
     "vitest.config.ts",
-    "types",
     "components",
     "lib",
     "hooks"
