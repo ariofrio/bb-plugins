@@ -1,0 +1,27 @@
+{
+  "$schema": "https://getbb.app/schemas/plugins.schema.json",
+  "schemaVersion": 1,
+  "name": "ariofrio-bb-plugins",
+  "plugins": [
+    {
+      "name": "codex-theme",
+      "source": "./plugins/bb-plugin-codex-theme"
+    },
+    {
+      "name": "missing-keyboard-shortcuts",
+      "source": "./plugins/bb-plugin-missing-keyboard-shortcuts"
+    },
+    {
+      "name": "project-header-breadcrumb",
+      "source": "./plugins/bb-plugin-project-header-breadcrumb"
+    },
+    {
+      "name": "project-icons",
+      "source": "./plugins/bb-plugin-project-icons"
+    },
+    {
+      "name": "thread-tasks",
+      "source": "./plugins/bb-plugin-thread-tasks"
+    }
+  ]
+}

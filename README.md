@@ -4,6 +4,8 @@ Personal plugins for [bb](https://github.com/ymichael/bb).
 
 ## Plugins
 
+- [Codex theme](plugins/bb-plugin-codex-theme#readme) — matches bb's palette
+  to the OpenAI ChatGPT desktop app in light and dark mode.
 - [Missing keyboard shortcuts](plugins/bb-plugin-missing-keyboard-shortcuts#readme) —
   adds shortcuts for starting threads, navigating history, focusing the
   primary composer, and toggling a side chat or thread terminal.
@@ -28,12 +30,14 @@ npm run install:plugins
 
 Run the same command after a `git pull`: it installs whatever is missing, then
 rebuilds and reloads every plugin. To install one plugin on its own, follow its
-README.
+README, or select it from the repository's plugin collection:
 
-`bb plugin install git:...` installs the plugin at a repository root, so it
-cannot reach these plugins until bb supports multi-plugin repositories
-([get-bb/bb#1097](https://github.com/get-bb/bb/issues/1097)). Nothing here is
-published to npm yet either.
+```sh
+bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin codex-theme
+```
+
+The available collection names are listed in [.bb/plugins.json](.bb/plugins.json).
+Nothing here is published to npm yet.
 
 ## Releases
 

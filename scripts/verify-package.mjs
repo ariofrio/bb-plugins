@@ -3,7 +3,13 @@
 // and build metadata. Usage: node scripts/verify-package.mjs [pluginDir]
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import {
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve, sep } from "node:path";
 import { derivePluginId } from "./plugin-id.mjs";
@@ -25,19 +31,22 @@ const listFiles = (directory) =>
     .filter((entry) => entry.isFile())
     .map((entry) => toPackagePath(join(entry.parentPath, entry.name)));
 
-const entryPaths = [manifest.bb.server, manifest.bb.app]
-  .filter(Boolean)
-  .map((entry) => entry.replace(/^\.\//, ""));
 const skillPaths = (manifest.bb.skills ?? []).flatMap((directory) =>
   listFiles(directory),
 );
+const allowlistedFiles = (manifest.files ?? []).flatMap((entry) => {
+  const normalized = entry.replace(/^\.\//, "");
+  return statSync(join(pluginDirectory, normalized)).isDirectory()
+    ? listFiles(normalized)
+    : [normalized];
+});
 const expectedFiles = [
-  "LICENSE",
-  "README.md",
-  "package.json",
-  ...entryPaths,
-  ...listFiles("dist"),
-  ...skillPaths,
+  ...new Set([
+    "LICENSE",
+    "README.md",
+    "package.json",
+    ...allowlistedFiles,
+  ]),
 ].sort();
 
 const temporaryDirectory = mkdtempSync(join(tmpdir(), `${pluginId}-pack-`));

@@ -1,0 +1,412 @@
+/*
+ * codex — bb theme replicating the OpenAI Codex desktop app.
+ *
+ * Values were sourced from the LIVE Codex app DOM (not pixel-sampled). A match
+ * is established from corresponding rendered leaves and their effective
+ * ancestors in both apps; root tokens and inherited parent declarations are
+ * used only to trace a measured leaf value back to its source.
+ *
+ * Notes on Codex specifics that don't map 1:1 to bb:
+ *   - Sidebar: Codex renders it with a native macOS vibrancy material; the DOM
+ *     side-bar-background token (#141414 dark / #f6f6f6 light) is the base under
+ *     that material. bb has no vibrancy yet, so it shows the base directly.
+ *   - Accent vs button vs transcript link: Codex's general interactive accent
+ *     and focus treatment is blue, its primary *button* is monochrome, and its
+ *     rendered transcript-link leaves use a separate blue. bb funnels several
+ *     general roles through --primary, while transcript links are targeted
+ *     below with their measured leaf color.
+ *   - Composer: Codex uses a rounded translucent *fill* with no border; bb
+ *     draws a bordered field, so --input carries Codex's input-border value.
+ *   - --ansi-bg-fg-* has no Codex token because the terminal computes readable
+ *     text dynamically. The bb values below reproduce that contrast decision
+ *     for each fixed ANSI palette entry.
+ *
+ * Role checks by driving the live app (CDP clicks + computed leaf reads):
+ *   - --primary/--file-accent: corresponding general accent/icon leaves.
+ *   - --codex-transcript-link: the text-bearing descendant inside actual
+ *     transcript anchors, not the ordinary-foreground anchor wrapper.
+ *   - --popover: opened a real [role=menu]; it renders the same oklab base as
+ *     the composer (~#2d2d2d), NOT --color-token-menu-background (#363636).
+ *   - --diff-added/removed: the React diff uses the Tailwind utility
+ *     .bg-[var(--color-token-diff-editor-inserted|removed-line-background)]
+ *     (distinct from Monaco's --vscode-diffEditor-* and --color-editor-added).
+ *   - --pr-merged: bb-only. Codex has NO merged-PR color; its purple is a
+ *     general accent (--color-accent-purple/--color-text-discovery/charts).
+ *   - --attention: bb-only "amber dot"; mapped to Codex's caution amber
+ *     (the nearest semantic), not a dedicated attention token.
+ *
+ * Light/dark mode is a per-client setting; this one stylesheet handles both.
+ */
+
+:root, .light {
+  /* Anchors — main-surface-primary / foreground */
+  --canvas: #ffffff;
+  --ink: #1a1c1f;
+
+  /* Accent — color-token-primary / color-border-focus */
+  --primary: #339cff;
+  --primary-foreground: #ffffff;      /* button-foreground (light) */
+  --ring: #339cff;
+  --sidebar-ring: #339cff;
+  --timeline-accent: var(--primary);  /* unread dot / bb NEW transcript marker */
+
+  /* Sidebar — side-bar-background / list-hover-background */
+  --sidebar: #f6f6f6;
+  --sidebar-accent: color-mix(in oklab, var(--ink) 5.5%, transparent);
+
+  /* Settings panel cards — background-panel */
+  --card: #ffffff;
+
+  /* input-border */
+  --input: color-mix(in oklab, var(--ink) 12%, transparent);
+
+  /* Codex composer fill is white in light (= canvas); see element rule below */
+  --composer-surface: #ffffff;
+
+  /* Component-only values with no distinct bb token */
+  --codex-soft-border: color-mix(in oklab, var(--ink) 8%, transparent);
+  --codex-settings-control: #f6f6f6;
+  --codex-menu-surface: color-mix(in oklab, #ffffff 90%, transparent);
+  --codex-panel-surface: #ffffff;
+  --codex-button-fill: color-mix(in oklab, var(--ink) 5%, transparent);
+  --codex-button-fill-hover: color-mix(in oklab, var(--ink) 10%, transparent);
+  --codex-switch-off: color-mix(in oklab, var(--ink) 10%, transparent);
+  --codex-user-bubble: color-mix(in oklab, var(--ink) 5%, transparent);
+  --codex-inline-code: color-mix(in oklab, var(--ink) 9%, transparent);
+  --codex-worked-metadata: color-mix(in srgb, var(--ink) 65%, transparent);
+  --codex-file-path: color-mix(in srgb, var(--ink) 70%, transparent);
+  --codex-transcript-link: #2e82d2;
+
+  /* Text tiers — text-secondary (65%) / text-tertiary (50%), alpha of ink */
+  --muted-foreground: color-mix(in srgb, var(--ink) 65%, transparent);
+  --subtle-foreground: color-mix(in srgb, var(--ink) 50%, transparent);
+
+  /* Semantic / status */
+  --destructive: #e02e2a;             /* danger-solid */
+  --destructive-foreground: #ffffff;  /* button-foreground */
+  --destructive-text: #e02e2a;        /* text-danger */
+  --warning: #e25507;                 /* warning-solid */
+  --warning-text: #e25507;            /* text-warning */
+  --attention: #ffc300;               /* caution-solid */
+  --success: #008635;                 /* success-solid */
+  --diff-added: color-mix(in oklab, #00a240 15%, transparent);   /* diff inserted-line */
+  --diff-removed: color-mix(in oklab, #ba2623 15%, transparent); /* diff removed-line */
+  --pr-merged: #924ff7;               /* discovery-solid */
+  --file-accent: #339cff;             /* color-token-primary */
+
+  /* Terminal — Codex light ANSI palette (embedded VS Code terminal.ansi*) */
+  --ansi-0:  #000000;
+  --ansi-1:  #d53538;
+  --ansi-2:  #008809;
+  --ansi-3:  #bd5800;
+  --ansi-4:  #001bcb;
+  --ansi-5:  #751ed9;
+  --ansi-6:  #0071ea;
+  --ansi-7:  #666666;
+  --ansi-8:  #000000;
+  --ansi-9:  #f44a4c;
+  --ansi-10: #59d24e;
+  --ansi-11: #f87915;
+  --ansi-12: #006aff;
+  --ansi-13: #9840ff;
+  --ansi-14: #20b8ff;
+  --ansi-15: #828282;
+
+  /* Readable foregrounds used when an ANSI color is the background. */
+  --ansi-bg-fg-0:  #ffffff;
+  --ansi-bg-fg-1:  #ffffff;
+  --ansi-bg-fg-2:  #ffffff;
+  --ansi-bg-fg-3:  #ffffff;
+  --ansi-bg-fg-4:  #ffffff;
+  --ansi-bg-fg-5:  #ffffff;
+  --ansi-bg-fg-6:  #ffffff;
+  --ansi-bg-fg-7:  #ffffff;
+  --ansi-bg-fg-8:  #ffffff;
+  --ansi-bg-fg-9:  #000000;
+  --ansi-bg-fg-10: #000000;
+  --ansi-bg-fg-11: #000000;
+  --ansi-bg-fg-12: #ffffff;
+  --ansi-bg-fg-13: #ffffff;
+  --ansi-bg-fg-14: #000000;
+  --ansi-bg-fg-15: #000000;
+}
+
+.dark {
+  /* Anchors — main-surface-primary / foreground */
+  --canvas: #181818;
+  --ink: #ffffff;
+
+  /* Accent — color-token-primary; focus = accent @76% */
+  --primary: #83c3ff;
+  --primary-foreground: #0d0d0d;      /* button-foreground (dark) */
+  --ring: color-mix(in srgb, #83c3ff 76%, transparent);   /* color-border-focus */
+  --sidebar-ring: color-mix(in srgb, #83c3ff 76%, transparent);
+  --timeline-accent: var(--primary);  /* unread dot / bb NEW transcript marker */
+
+  /* Sidebar — side-bar-background / list-hover-background */
+  --sidebar: #141414;
+  --sidebar-accent: color-mix(in oklab, var(--ink) 7.8%, transparent);
+
+  /* Settings panel cards — background-panel */
+  --card: #232323;
+  --popover: #2d2d2d;                 /* measured on a live [role=menu]/composer (oklab base) */
+  --composer-surface: color-mix(in oklab, #2d2d2d 86.4706%, transparent);
+
+  /* Dark variants of component-only values */
+  --codex-settings-control: #141414;
+  --codex-soft-border: color-mix(in oklab, var(--ink) 8.2%, transparent);
+  --codex-menu-surface: #2d2d2d;
+  --codex-panel-surface: #2d2d2d;
+  --codex-inline-code: color-mix(in oklab, var(--ink) 10.7%, transparent);
+  --codex-worked-metadata: color-mix(in srgb, var(--ink) 60%, transparent);
+  --codex-transcript-link: #9ccfff;
+
+  /* input-border */
+  --input: color-mix(in oklab, var(--ink) 15.7%, transparent);
+
+  /* Semantic / status */
+  --destructive: #ff6764;             /* danger-solid */
+  --destructive-foreground: #0d0d0d;  /* button-foreground */
+  --destructive-text: #ff6764;        /* text-danger */
+  --warning: #fb6a22;                 /* warning-solid */
+  --warning-text: #ff8549;            /* text-warning */
+  --attention: #ffd240;               /* caution-solid */
+  --success: #008635;                 /* success-solid */
+  --diff-added: color-mix(in oklab, #40c977 23%, transparent);   /* diff inserted-line */
+  --diff-removed: color-mix(in oklab, #fa423e 23%, transparent); /* diff removed-line */
+  --pr-merged: #ad7bf9;               /* discovery-solid */
+  --file-accent: #83c3ff;             /* color-token-primary */
+
+  /* Terminal — Codex dark ANSI palette (embedded VS Code terminal.ansi*) */
+  --ansi-0:  #ffffff;
+  --ansi-1:  #f67576;
+  --ansi-2:  #85df7b;
+  --ansi-3:  #fa994c;
+  --ansi-4:  #3d8dff;
+  --ansi-5:  #b06dff;
+  --ansi-6:  #6dcbf4;
+  --ansi-7:  #999999;
+  --ansi-8:  #000000;
+  --ansi-9:  #f44a4c;
+  --ansi-10: #59d24e;
+  --ansi-11: #f87915;
+  --ansi-12: #006aff;
+  --ansi-13: #9840ff;
+  --ansi-14: #20b8ff;
+  --ansi-15: #828282;
+
+  --ansi-bg-fg-0:  #000000;
+  --ansi-bg-fg-1:  #000000;
+  --ansi-bg-fg-2:  #000000;
+  --ansi-bg-fg-3:  #000000;
+  --ansi-bg-fg-4:  #000000;
+  --ansi-bg-fg-5:  #000000;
+  --ansi-bg-fg-6:  #000000;
+  --ansi-bg-fg-7:  #000000;
+  --ansi-bg-fg-8:  #ffffff;
+  --ansi-bg-fg-9:  #000000;
+  --ansi-bg-fg-10: #000000;
+  --ansi-bg-fg-11: #000000;
+  --ansi-bg-fg-12: #ffffff;
+  --ansi-bg-fg-13: #ffffff;
+  --ansi-bg-fg-14: #000000;
+  --ansi-bg-fg-15: #000000;
+}
+
+/*
+ * Targeted component rules for Codex roles without a one-to-one bb token.
+ * The custom theme is injected as the last stylesheet, so these rules out-order
+ * the corresponding Tailwind utilities without changing unrelated consumers.
+ */
+
+/*
+ * Sidebar text is matched at the rendered row/label roles rather than from the
+ * sidebar's inherited foreground. Codex keeps idle and hovered thread/project
+ * titles at 85%, promotes only the selected title to full foreground, and uses
+ * 50% foreground for section headings.
+ */
+.bb-sidebar-hover-actions-row[class~="group/thread-row"],
+.bb-sidebar-hover-actions-row[class~="group/thread-row"]:hover {
+  color: color-mix(in srgb, var(--sidebar-foreground) 85%, transparent);
+}
+
+.bb-sidebar-hover-actions-row[class~="group/thread-row"].bg-state-active,
+.bb-sidebar-hover-actions-row[class~="group/thread-row"].bg-state-active:hover {
+  background-color: var(--sidebar-accent);
+  color: var(--sidebar-foreground);
+}
+
+.bb-sidebar-hover-actions-row[class~="text-subtle-foreground/75"],
+.bb-sidebar-hover-actions-row[class~="text-subtle-foreground/75"]:hover {
+  color: var(--subtle-foreground);
+}
+
+/* Project/group titles are ordinary sidebar items, not section headings. */
+[data-sidebar-sticky-project-item] [data-sidebar="group-label"],
+[data-sidebar-sticky-project-item] [data-sidebar="group-label"]:hover {
+  color: color-mix(in srgb, var(--sidebar-foreground) 85%, transparent);
+}
+
+/* Codex's right-panel tabs sit on main-surface pills; text carries selection. */
+[class~="group/tab-pill"],
+[class~="group/tab-pill"]:hover {
+  background-color: var(--canvas);
+}
+
+/* Right utility panel: Codex uses the elevated dropdown/main-control surface. */
+aside[class~="bg-sidebar"][class~="border-l"] {
+  background-color: var(--codex-panel-surface);
+  border-color: transparent;
+  box-shadow:
+    -8px 0 16px -8px rgb(0 0 0 / 18%),
+    0 0 0 0.5px var(--input),
+    0 3px 7.5px rgb(0 0 0 / 4%),
+    0 0 20px rgb(0 0 0 / 5%);
+}
+
+aside[class~="bg-sidebar"][class~="border-l"] [class~="bg-sidebar"] {
+  background-color: transparent;
+}
+
+/* Codex elevates the main content surface above its sidebar material. */
+main[class~="bg-background"][class~="flex-1"] {
+  box-shadow:
+    0 0 0 0.5px var(--input),
+    0 3px 7.5px rgb(0 0 0 / 4%),
+    0 0 20px rgb(0 0 0 / 5%);
+}
+
+/* Composer: translucent elevated surface. */
+[data-promptbox] {
+  background-color: var(--composer-surface);
+  box-shadow:
+    0 0 0 0.5px var(--input),
+    0 3px 7.5px rgb(0 0 0 / 4%),
+    0 0 20px rgb(0 0 0 / 5%);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+/* Menus use the same fine outline language with a smaller blur. */
+[role="menu"] {
+  background-color: var(--codex-menu-surface);
+  box-shadow:
+    0 0 0 0.5px var(--codex-soft-border),
+    0 0 0 0.5px var(--codex-soft-border),
+    0 8px 16px -4px rgb(0 0 0 / 12%);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+[role="menuitem"]:hover,
+[role="menuitem"]:focus {
+  background-color: var(--sidebar-accent);
+}
+
+/* Radix puts the tooltip role on a child of the visible content surface. */
+div:has(> [role="tooltip"]) {
+  background-color: var(--popover);
+  box-shadow: none;
+  color: var(--foreground);
+}
+
+/* Settings cards and their secondary copy. */
+main .rounded-lg.border.border-border.bg-card {
+  border-color: var(--codex-soft-border);
+}
+
+main .bg-card [class~="text-subtle-foreground/75"] {
+  color: var(--muted-foreground);
+}
+
+/* Select-style Settings controls. */
+main .bg-card button[aria-haspopup="menu"] {
+  background-color: var(--codex-settings-control);
+  border-color: var(--codex-soft-border);
+  box-shadow: 0 1px 2px -1px rgb(0 0 0 / 8%);
+}
+
+main .bg-card button[aria-haspopup="menu"]:hover,
+main .bg-card button[aria-haspopup="menu"][data-state="open"] {
+  background-color: var(--sidebar-accent);
+}
+
+/* Switch track and thumb colors/elevation; native bb geometry is retained. */
+main .bg-card [role="switch"][data-state="checked"] {
+  background-color: #339cff;
+  box-shadow: none;
+}
+
+main .bg-card [role="switch"][data-state="unchecked"] {
+  background-color: var(--codex-switch-off);
+  box-shadow: none;
+}
+
+main .bg-card [role="switch"] > span {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  box-shadow: 0 1px 2px -1px rgb(0 0 0 / 8%);
+}
+
+/* Visible Settings card actions use a faint fill and transparent border. */
+main .bg-card button[class~="border-input"][class~="bg-transparent"] {
+  background-color: var(--codex-button-fill);
+  border-color: transparent;
+  color: var(--foreground);
+}
+
+main .bg-card button[class~="border-input"][class~="bg-transparent"]:hover {
+  background-color: var(--codex-button-fill-hover);
+}
+
+/* Icon-only Settings actions are tertiary until their component hover. */
+main button[class~="size-7"][class~="text-muted-foreground"] {
+  background-color: transparent;
+  color: var(--subtle-foreground);
+}
+
+main button[class~="size-7"][class~="text-muted-foreground"]:hover {
+  background-color: var(--sidebar-accent);
+  color: var(--subtle-foreground);
+}
+
+/* Transcript-specific text and surfaces. */
+[data-timeline-row-list] [title^="Worked for"] > span {
+  color: var(--codex-worked-metadata);
+}
+
+/* bb otherwise compounds the intended text/icon colors with a 40% wrapper. */
+[data-timeline-row-list] .timeline-row-header > span > [class~="opacity-40"] {
+  opacity: 1;
+}
+
+[data-timeline-row-list] .timeline-row-header > svg {
+  color: color-mix(in srgb, var(--ink) 40%, transparent);
+  opacity: 1;
+}
+
+[data-markdown-preview] a {
+  color: var(--codex-transcript-link);
+}
+
+[data-timeline-row-list] [data-icon="FileText"] + span > span:last-child {
+  color: var(--codex-file-path);
+}
+
+[data-markdown-preview] :not(pre) > code {
+  background-color: var(--codex-inline-code);
+}
+
+/* User-message bubble and action colors. */
+[data-timeline-row-list] div[class~="rounded-xl"][class~="border-border-seam"][class~="bg-surface-recessed"] {
+  background-color: var(--codex-user-bubble);
+}
+
+[data-timeline-row-list] [class~="group/message"] button[class~="size-5"] {
+  color: var(--subtle-foreground);
+}
+
+[data-timeline-row-list] [class~="group/message"] button[class~="size-5"]:hover {
+  background-color: var(--sidebar-accent);
+  color: var(--subtle-foreground);
+}

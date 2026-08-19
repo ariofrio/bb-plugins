@@ -1,0 +1,47 @@
+{
+  "name": "bb-plugin-codex-theme",
+  "version": "0.1.0",
+  "license": "MIT",
+  "files": [
+    "assets",
+    "dist",
+    "server.ts",
+    "themes"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "bb plugin build",
+    "verify:types": "node ../../scripts/verify-types.mjs",
+    "verify:package": "node ../../scripts/verify-package.mjs",
+    "release:check": "npm run typecheck && npm run verify:types && npm run build && npm run verify:package",
+    "prepublishOnly": "npm run release:check",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "bb": ">=0.39",
+    "bbPluginSdk": "^0.4.8"
+  },
+  "bb": {
+    "name": "Codex theme",
+    "description": "Match bb's palette to the OpenAI ChatGPT desktop app.",
+    "branding": {
+      "icon": "Palette"
+    },
+    "server": "./server.ts",
+    "skills": [],
+    "themes": [
+      {
+        "id": "codex",
+        "name": "Codex",
+        "description": "Colors and shadows measured from the OpenAI ChatGPT desktop app.",
+        "css": "./themes/codex.css"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@get-bb/plugin-sdk": "0.4.8",
+    "@types/node": "^22.0.0",
+    "bb-app": "0.39.0",
+    "typescript": "^5.7.0"
+  }
+}
