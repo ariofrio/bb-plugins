@@ -14,11 +14,13 @@ icons](../bb-plugin-project-icons#readme) plugin is installed, so a
 stage-grouped list still tells you what a thread belongs to. Without that
 plugin the rows look as they always have.
 
-Use the project filter above the stages to focus the whole sidebar—including
-pinned and search results—on one project. The selection is stored only in the
-current browser and does not change stage assignments or synchronization.
-The same menu can hide the stage counts, which show the number of filtered
-root threads in each unpinned stage and are enabled by default.
+Use **Filter threads** above the stages to focus the whole sidebar—including
+pinned and search results—on one project or one native thread section. The
+selection is stored only in the current browser and does not change stage
+assignments or synchronization. The adjacent actions create a project through
+bb's native host folder picker or open the New section dialog. The same menu
+can hide the stage counts, which show the number of filtered root threads in
+each unpinned stage and are enabled by default.
 
 Drag root threads to reorder or change their stage. Ordering uses
 fractional keys, so a move updates only the moved thread. Root threads enter
@@ -119,7 +121,7 @@ committed. The package is not published to npm yet, but it stays publishable
 so it can be.
 
 `qa:project-filter-hover` opens an isolated browser against `BB_SERVER_URL` and
-fails if a sticky stage shield covers the project filter's rounded bottom edge.
+fails if a sticky stage shield covers the thread filter's rounded bottom edge.
 
 ## License
 

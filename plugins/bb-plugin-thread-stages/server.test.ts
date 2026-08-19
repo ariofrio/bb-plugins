@@ -20,6 +20,8 @@ describe("thread stages plugin API", () => {
     const harness = createPluginHarness();
 
     expect(harness.inspection.registrations.rpcMethods).toEqual([
+      "createProjectFromFolder",
+      "createSection",
       "createSectionForThread",
       "listSections",
       "listState",
@@ -131,6 +133,81 @@ describe("thread stages plugin API", () => {
       threadId: "thr_1",
       sectionId: "section_new",
     });
+  });
+
+  it("creates a standalone section for the filter action", async () => {
+    const create = vi.fn(async () => ({
+      id: "section_new",
+      name: "Waiting",
+      createdAt: 1,
+      updatedAt: 1,
+    }));
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: { threadSections: { create } },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("createSection", { name: "  Waiting  " }),
+    ).resolves.toEqual({
+      section: { id: "section_new", name: "Waiting" },
+    });
+    expect(create).toHaveBeenCalledWith({ name: "Waiting" });
+  });
+
+  it("uses bb's primary-host folder picker to create a project", async () => {
+    const config = vi.fn(async () => ({ primaryHostId: "host_primary" }));
+    const pickFolder = vi.fn(async () => ({ path: "/work/Alpha" }));
+    const create = vi.fn(async () => ({ id: "proj_alpha", name: "Alpha" }));
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: {
+        hosts: { pickFolder },
+        projects: { create },
+        system: { config },
+      },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("createProjectFromFolder", null),
+    ).resolves.toEqual({ project: { id: "proj_alpha", name: "Alpha" } });
+    expect(pickFolder).toHaveBeenCalledWith({
+      hostId: "host_primary",
+      clientHostId: "host_primary",
+    });
+    expect(create).toHaveBeenCalledWith({
+      name: "Alpha",
+      source: {
+        type: "local_path",
+        hostId: "host_primary",
+        path: "/work/Alpha",
+      },
+    });
+  });
+
+  it("does nothing when the New project folder picker is canceled", async () => {
+    const create = vi.fn();
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: {
+        hosts: { pickFolder: vi.fn(async () => ({ path: null })) },
+        projects: { create },
+        system: {
+          config: vi.fn(async () => ({ primaryHostId: "host_primary" })),
+        },
+      },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("createProjectFromFolder", null),
+    ).resolves.toEqual({ project: null });
+    expect(create).not.toHaveBeenCalled();
   });
 
   it("serves persisted state through the schema-validated RPC boundary", async () => {

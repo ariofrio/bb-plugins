@@ -17,9 +17,9 @@ agent-browser --session "$qa_session" open "$qa_server_url" >/dev/null
 agent-browser --session "$qa_session" wait 2000 >/dev/null
 agent-browser --session "$qa_session" set viewport 900 700 >/dev/null
 agent-browser --session "$qa_session" wait 300 >/dev/null
-agent-browser --session "$qa_session" hover 'button[aria-label^="Filter by project"]' >/dev/null
+agent-browser --session "$qa_session" hover 'button[aria-label^="Filter threads"]' >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
-  const control = document.querySelector("button[aria-label^=\"Filter by project\"]");
+  const control = document.querySelector("button[aria-label^=\"Filter threads\"]");
   const tasksLabel = [...document.querySelectorAll("button span")].find(
     (node) => node.textContent?.trim() === "Tasks",
   );
@@ -30,7 +30,7 @@ agent-browser --session "$qa_session" eval '(() => {
     !(tasksRow instanceof HTMLButtonElement) ||
     !(firstStage instanceof HTMLElement)
   ) {
-    throw new Error("Could not find the project filter, Tasks row, and first stage.");
+    throw new Error("Could not find the thread filter, Tasks row, and first stage.");
   }
 
   const controlRect = control.getBoundingClientRect();
@@ -47,13 +47,13 @@ agent-browser --session "$qa_session" eval '(() => {
   const controlToFirstStage = stageRect.top - controlRect.bottom;
   if (Math.abs(controlRect.height - tasksRect.height) > 0.25) {
     throw new Error(
-      `All threads is ${controlRect.height}px tall; the built-in Tasks row is ${tasksRect.height}px.`,
+      `Filter threads is ${controlRect.height}px tall; the built-in Tasks row is ${tasksRect.height}px.`,
     );
   }
   const betweenStages = Number.parseFloat(getComputedStyle(firstSection).marginBottom);
   if (Math.abs(controlToFirstStage - betweenStages) > 0.25) {
     throw new Error(
-      `Project filter gap is ${controlToFirstStage}px; stage gap is ${betweenStages}px.`,
+      `Thread filter gap is ${controlToFirstStage}px; stage gap is ${betweenStages}px.`,
     );
   }
 
@@ -63,7 +63,7 @@ agent-browser --session "$qa_session" eval '(() => {
   const shieldTop = stageRect.top - shieldHeight;
   if (controlRect.bottom > shieldTop + 0.25) {
     throw new Error(
-      `Sticky stage shield overlaps project filter by ${controlRect.bottom - shieldTop}px.`,
+      `Sticky stage shield overlaps thread filter by ${controlRect.bottom - shieldTop}px.`,
     );
   }
 
@@ -181,7 +181,7 @@ agent-browser --session "$qa_session" eval '(() => {
 
 agent-browser --session "$qa_session" click \
   '[data-sidebar-sticky-tier="label"] button[aria-label^="Collapse "]' >/dev/null
-agent-browser --session "$qa_session" hover 'button[aria-label^="Filter by project"]' >/dev/null
+agent-browser --session "$qa_session" hover 'button[aria-label^="Filter threads"]' >/dev/null
 agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const toggle = document.querySelector(
@@ -205,7 +205,7 @@ agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval 'document.querySelector("[data-sidebar=\"content\"]").scrollTop = 120' >/dev/null
 agent-browser --session "$qa_session" wait 200 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
-  const control = document.querySelector("button[aria-label^=\"Filter by project\"]");
+  const control = document.querySelector("button[aria-label^=\"Filter threads\"]");
   const stack = control?.closest("[data-sidebar-sticky-stack]");
   const scrollContent = control?.closest("[data-sidebar=\"content\"]");
   const firstStage = document.querySelector("[data-sidebar-sticky-tier=\"label\"]");
@@ -225,7 +225,7 @@ agent-browser --session "$qa_session" eval '(() => {
   const expectedControlTop = contentRect.top + Number.parseFloat(getComputedStyle(stack).paddingTop);
   if (Math.abs(controlRect.top - expectedControlTop) > 0.25) {
     throw new Error(
-      `Project filter scrolled to ${controlRect.top}px; sticky top is ${expectedControlTop}px.`,
+      `Thread filter scrolled to ${controlRect.top}px; sticky top is ${expectedControlTop}px.`,
     );
   }
 
@@ -234,7 +234,7 @@ agent-browser --session "$qa_session" eval '(() => {
   const expectedStageTop = controlRect.bottom + betweenStages;
   if (Math.abs(stageRect.top - expectedStageTop) > 0.25) {
     throw new Error(
-      `Sticky stage top is ${stageRect.top}px; expected ${expectedStageTop}px below project filter.`,
+      `Sticky stage top is ${stageRect.top}px; expected ${expectedStageTop}px below thread filter.`,
     );
   }
 

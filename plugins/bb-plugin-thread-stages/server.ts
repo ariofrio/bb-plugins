@@ -80,8 +80,22 @@ const searchResultSchema = z
     ),
   })
   .strict();
+const projectSummarySchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+  })
+  .strict();
 
 export const rpcContract = defineRpcContract({
+  createProjectFromFolder: {
+    input: z.null(),
+    output: z.object({ project: projectSummarySchema.nullable() }).strict(),
+  },
+  createSection: {
+    input: z.object({ name: z.string().trim().min(1).max(256) }).strict(),
+    output: z.object({ section: sectionSchema }).strict(),
+  },
   createSectionForThread: {
     input: z
       .object({
@@ -194,6 +208,31 @@ export default function plugin(bb: BbPluginApi) {
   }
 
   bb.rpc.register(rpcContract, {
+    async createProjectFromFolder() {
+      const { primaryHostId } = await bb.sdk.system.config();
+      if (!primaryHostId) throw new Error("No primary host is available.");
+      const { path } = await bb.sdk.hosts.pickFolder({
+        hostId: primaryHostId,
+        clientHostId: primaryHostId,
+      });
+      if (path === null) return { project: null };
+      const trimmedPath = path.replace(/[\\/]+$/u, "");
+      const name = trimmedPath.split(/[\\/]/u).at(-1)?.trim();
+      if (!name) throw new Error("The selected folder has no project name.");
+      const project = await bb.sdk.projects.create({
+        name,
+        source: {
+          type: "local_path",
+          hostId: primaryHostId,
+          path,
+        },
+      });
+      return { project: { id: project.id, name: project.name } };
+    },
+    async createSection({ name }) {
+      const section = await bb.sdk.threadSections.create({ name });
+      return { section: { id: section.id, name: section.name } };
+    },
     async createSectionForThread({ threadId, name }) {
       const section = await bb.sdk.threadSections.create({ name });
       await bb.sdk.threads.update({ threadId, sectionId: section.id });
