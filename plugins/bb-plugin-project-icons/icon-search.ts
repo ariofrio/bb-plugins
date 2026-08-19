@@ -4,22 +4,19 @@ export interface CatalogEntry {
   tags: readonly string[];
 }
 
-const MAX_RESULTS = 240;
-
 function label(name: string): string {
   return name.replace(/-\d+$/, "").replace(/-/g, " ");
 }
 
 /**
  * Ranks name matches above tag matches so searching "book" leads with the
- * book, not with everything a book is a synonym for. Results are capped: the
- * grid stays responsive and a broad query is a signal to keep typing.
+ * book, not with everything a book is a synonym for.
  */
-export function searchIcons(
-  catalog: readonly CatalogEntry[],
+export function searchIcons<T extends CatalogEntry>(
+  catalog: readonly T[],
   query: string,
   category: string | null,
-): { results: CatalogEntry[]; total: number } {
+): { results: T[]; total: number } {
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   const scoped =
     category === null
@@ -27,10 +24,10 @@ export function searchIcons(
       : catalog.filter((entry) => entry.category === category);
 
   if (terms.length === 0) {
-    return { results: scoped.slice(0, MAX_RESULTS), total: scoped.length };
+    return { results: [...scoped], total: scoped.length };
   }
 
-  const scored: Array<{ entry: CatalogEntry; score: number }> = [];
+  const scored: Array<{ entry: T; score: number }> = [];
   for (const entry of scoped) {
     const name = label(entry.name);
     let score = 0;
@@ -56,7 +53,7 @@ export function searchIcons(
   );
 
   return {
-    results: scored.slice(0, MAX_RESULTS).map(({ entry }) => entry),
+    results: scored.map(({ entry }) => entry),
     total: scored.length,
   };
 }

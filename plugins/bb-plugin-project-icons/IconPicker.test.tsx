@@ -111,7 +111,7 @@ describe("IconPicker", () => {
     expect(onPickColor).toHaveBeenCalledWith(null);
   });
 
-  it("browses one grouped catalog and switches to results while searching", () => {
+  it("keeps matching icons grouped by category while searching", () => {
     const scrollIntoView = vi.fn();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
       configurable: true,
@@ -145,13 +145,21 @@ describe("IconPicker", () => {
     expect(scrollIntoView).toHaveBeenCalled();
 
     fireEvent.change(screen.getByRole("searchbox", { name: "Search icons" }), {
-      target: { value: "launch" },
+      target: { value: "l" },
     });
     expect(
       screen.queryByRole("navigation", { name: "Icon categories" }),
     ).toBeNull();
-    screen.getByRole("button", { name: "rocket" });
-    expect(screen.queryByRole("button", { name: "circle" })).toBeNull();
+    const searchResults = screen.getByRole("region", {
+      name: "Icon search results",
+    });
+    within(searchResults).getByRole("heading", { name: "AI" });
+    within(searchResults).getByRole("heading", { name: "Shapes" });
+    within(searchResults).getByRole("heading", { name: "Space" });
+    within(searchResults).getByRole("button", { name: "sparkles" });
+    within(searchResults).getByRole("button", { name: "circle" });
+    within(searchResults).getByRole("button", { name: "rocket" });
+    expect(screen.queryByText(/Showing \d+ of \d+/)).toBeNull();
   });
 
   it("selects the category currently at the top of the scrolling catalog", () => {

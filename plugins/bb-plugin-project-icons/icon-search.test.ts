@@ -39,7 +39,7 @@ describe("searchIcons", () => {
     expect(scoped.total).toBe(1);
   });
 
-  it("reports the full match count when results are capped", () => {
+  it("returns every matching icon", () => {
     const many = Array.from({ length: 400 }, (_, index) => ({
       name: `star-${String(index).padStart(3, "0")}`,
       export: `Star${index}Icon`,
@@ -47,7 +47,7 @@ describe("searchIcons", () => {
       tags: [],
     }));
     const found = searchIcons(many, "star", null);
-    expect(found.results).toHaveLength(240);
+    expect(found.results).toHaveLength(400);
     expect(found.total).toBe(400);
   });
 

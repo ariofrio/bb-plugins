@@ -71,11 +71,12 @@ export function IconPicker({
   const categoryChipRefs = useRef(new Map<string, HTMLButtonElement>());
   const sectionRefs = useRef(new Map<string, HTMLElement>());
   const groups = useMemo(() => groupCatalog(catalog), [catalog]);
-  const { results, total } = useMemo(
+  const { results } = useMemo(
     () => searchIcons(catalog, query, null),
     [catalog, query],
   );
   const searching = query.trim().length > 0;
+  const visibleGroups = searching ? groupCatalog(results) : groups;
 
   useEffect(() => {
     if (
@@ -267,29 +268,13 @@ export function IconPicker({
               <p className="py-8 text-center text-sm text-muted-foreground">
                 Loading icons…
               </p>
-            ) : searching ? (
-              total === 0 ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  No icons match.
-                </p>
-              ) : (
-                <>
-                  <IconGrid
-                    entries={results as CatalogIcon[]}
-                    icon={icon}
-                    color={color}
-                    onPick={onPick}
-                  />
-                  {total > results.length ? (
-                    <p className="pt-2 text-center text-xs text-muted-foreground">
-                      Showing {results.length} of {total}. Keep typing to narrow.
-                    </p>
-                  ) : null}
-                </>
-              )
+            ) : searching && results.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No icons match.
+              </p>
             ) : (
               <div className="space-y-3">
-                {groups.map(({ name, entries }) => {
+                {visibleGroups.map(({ name, entries }) => {
                   const headingId = `${titleId}-${name}`;
                   return (
                     <section
