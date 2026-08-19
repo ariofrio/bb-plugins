@@ -238,7 +238,7 @@ function padBox(box, padding) {
   };
 }
 
-export async function openApp({ browser, stack, theme, viewport }) {
+export async function openApp({ browser, stack, theme, viewport, style }) {
   const context = await browser.newContext({
     viewport: viewport ?? VIEWPORT,
     deviceScaleFactor: 2,
@@ -251,6 +251,15 @@ export async function openApp({ browser, stack, theme, viewport }) {
     (mode) => window.localStorage.setItem("bb.theme", mode),
     theme,
   );
+  if (style !== undefined) {
+    await context.addInitScript((css) => {
+      const sheet = document.createElement("style");
+      sheet.textContent = css;
+      document.addEventListener("DOMContentLoaded", () =>
+        document.head.append(sheet),
+      );
+    }, style);
+  }
   const page = await context.newPage();
   await page.goto(stack.serverUrl, { waitUntil: "networkidle" });
   return { context, page };
@@ -303,81 +312,93 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
   try {
     for (const shot of shots) {
       const files = shotFiles(shot);
-      const write = async (name, take) => {
-        const output = files[name];
-        if (output === undefined) return await take();
-        mkdirSync(dirname(output), { recursive: true });
-        return await take(output);
-      };
       await shot.setup?.({ fixture, stack });
       const frames = { fullWindow: {}, card: {} };
       for (const theme of shot.themes ?? THEMES) {
-        const { context, page } = await openApp({ browser, stack, theme });
-        try {
-          await shot.prepare({ page, fixture, stack, theme });
-          const highlightBoxes = await highlightBoxesFor({ page, shot });
-          let chipBoxes = [];
-          if (highlightBoxes.length > 0) {
-            chipBoxes = await page.evaluate(paintOverlay, {
-              boxes: highlightBoxes,
-              dim: theme === "dark" ? "rgba(0,0,0,0.66)" : "rgba(15,15,15,0.42)",
-              id: OVERLAY_ID,
-              keyStyle: keyChipStyle(theme),
-            });
-          }
-          frames.fullWindow[theme] = await write(
-            FULL_WINDOW_FILE(theme),
-            (path) => page.screenshot({ ...(path ? { path } : {}), clip: { x: 0, y: 0, ...VIEWPORT } }),
-          );
-          // The card frames what the plugin adds; the keys drawn onto the shade
-          // are part of that, and so is anything the shot points at by hand.
-          const focusBoxes = [
-            ...(shot.focus
-              ? await boxesFor(shot.focus(page), { label: `${shot.id} focus` })
-              : highlightBoxes),
-            ...chipBoxes,
-          ];
+        const takeCard = async ({ page, focusBoxes }, viewport) => {
           const clip = cropRectangle({
             box: unionBox(focusBoxes),
             padding: shot.focusPadding ?? 20,
             width: CARD_WIDTH,
             align: shot.focusAlign,
-            viewport: VIEWPORT,
+            viewport,
           });
-          frames.card[theme] = await write(CARD_FILE(theme), (path) =>
-            page.screenshot({ ...(path ? { path } : {}), clip }),
-          );
           frames.card.clip = clip;
-        } finally {
-          await context.close();
+          return await page.screenshot({
+            ...pathFor(files, CARD_FILE(theme)),
+            clip,
+          });
+        };
+        if (shot.card === undefined) {
+          const [fullWindow, card] = await render({
+            browser,
+            stack,
+            fixture,
+            shot,
+            theme,
+            async take(frame) {
+              return [
+                await frame.page.screenshot({
+                  ...pathFor(files, FULL_WINDOW_FILE(theme)),
+                  clip: { x: 0, y: 0, ...VIEWPORT },
+                }),
+                await takeCard(frame, VIEWPORT),
+              ];
+            },
+          });
+          frames.fullWindow[theme] = fullWindow;
+          frames.card[theme] = card;
+          continue;
         }
+        // A shot whose subject is dwarfed by bb's default window asks for a
+        // smaller one for its card. The crop width does not change with it, so
+        // the card still reads at the same zoom as every other card; only the
+        // window around the subject shrinks.
+        frames.fullWindow[theme] = await render({
+          browser,
+          stack,
+          fixture,
+          shot,
+          theme,
+          take: (frame) =>
+            frame.page.screenshot({
+              ...pathFor(files, FULL_WINDOW_FILE(theme)),
+              clip: { x: 0, y: 0, ...VIEWPORT },
+            }),
+        });
+        frames.card[theme] = await render({
+          browser,
+          stack,
+          fixture,
+          shot,
+          theme,
+          viewport: shot.card.viewport,
+          style: shot.card.style,
+          take: (frame) => takeCard(frame, shot.card.viewport),
+        });
       }
       if (shot.split) {
-        await write(SPLIT_FULL_WINDOW_FILE, (path) =>
-          path === undefined
-            ? undefined
-            : writeDiagonalSplit({
-                browser,
-                light: frames.fullWindow.light,
-                dark: frames.fullWindow.dark,
-                output: path,
-                size: VIEWPORT,
-              }),
-        );
-        await write(SPLIT_CARD_FILE, (path) =>
-          path === undefined
-            ? undefined
-            : writeDiagonalSplit({
-                browser,
-                light: frames.card.light,
-                dark: frames.card.dark,
-                output: path,
-                size: {
-                  width: frames.card.clip.width,
-                  height: frames.card.clip.height,
-                },
-              }),
-        );
+        if (files[SPLIT_FULL_WINDOW_FILE] !== undefined) {
+          await writeDiagonalSplit({
+            browser,
+            light: frames.fullWindow.light,
+            dark: frames.fullWindow.dark,
+            output: files[SPLIT_FULL_WINDOW_FILE],
+            size: VIEWPORT,
+          });
+        }
+        if (files[SPLIT_CARD_FILE] !== undefined) {
+          await writeDiagonalSplit({
+            browser,
+            light: frames.card.light,
+            dark: frames.card.dark,
+            output: files[SPLIT_CARD_FILE],
+            size: {
+              width: frames.card.clip.width,
+              height: frames.card.clip.height,
+            },
+          });
+        }
       }
       await shot.teardown?.({ fixture, stack });
       captured.push(shot);
@@ -387,6 +408,45 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
     await browser.close();
   }
   return captured;
+}
+
+function pathFor(files, name) {
+  const output = files[name];
+  if (output === undefined) return {};
+  mkdirSync(dirname(output), { recursive: true });
+  return { path: output };
+}
+
+/**
+ * Arranges the app, shades it, and hands the page to whoever wants a frame of
+ * it. Each frame gets its own window, because a card may want a different one.
+ */
+async function render({ browser, stack, fixture, shot, theme, viewport, style, take }) {
+  const { context, page } = await openApp({ browser, stack, theme, viewport, style });
+  try {
+    await shot.prepare({ page, fixture, stack, theme });
+    const highlightBoxes = await highlightBoxesFor({ page, shot });
+    let chipBoxes = [];
+    if (highlightBoxes.length > 0) {
+      chipBoxes = await page.evaluate(paintOverlay, {
+        boxes: highlightBoxes,
+        dim: theme === "dark" ? "rgba(0,0,0,0.66)" : "rgba(15,15,15,0.42)",
+        id: OVERLAY_ID,
+        keyStyle: keyChipStyle(theme),
+      });
+    }
+    // The card frames what the plugin adds; the keys drawn onto the shade are
+    // part of that, and so is anything the shot points at by hand.
+    const focusBoxes = [
+      ...(shot.focus
+        ? await boxesFor(shot.focus(page), { label: `${shot.id} focus` })
+        : highlightBoxes),
+      ...chipBoxes,
+    ];
+    return await take({ page, focusBoxes });
+  } finally {
+    await context.close();
+  }
 }
 
 /** Measures and pads everything a shot lifts out of the shade. */

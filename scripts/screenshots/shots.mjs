@@ -23,11 +23,19 @@ function sideChatPanel(page) {
     .filter({ has: page.getByRole("textbox", { name: "Reply…" }) });
 }
 
-/** Opens the thread every shot is framed around. */
+/**
+ * Opens the thread every shot is framed around. It follows the sidebar link's
+ * own target rather than clicking it, because clicking scrolls the row into
+ * view, and a scrolled sidebar is not the top of a sidebar.
+ */
 async function openFeaturedThread(page) {
-  await page
+  const href = await page
     .getByRole("link", { name: /^Open Polish analytics dashboard/ })
-    .click();
+    .first()
+    .getAttribute("href");
+  await page.goto(new URL(href, page.url()).toString(), {
+    waitUntil: "networkidle",
+  });
   await page.getByText("Dashboard polish is in place.").waitFor();
   await page.waitForTimeout(600);
 }
@@ -151,5 +159,14 @@ export const SHOTS = [
     // two surfaces to divide.
     focus: (page) => [bbSidebar(page)],
     focusAlign: "start",
+    // A palette covers every surface, so its card should hold as many of them
+    // as it can. bb's default window puts most of a thread's height into empty
+    // space, so the card comes from a smaller window with a narrower sidebar,
+    // which brings the composer into the same frame as the sidebar and the
+    // header without changing how large any of them are drawn.
+    card: {
+      viewport: { width: 900, height: 400 },
+      style: '[data-sidebar="panel"], [data-sidebar="gap"] { --sidebar-width: 220px !important; }',
+    },
   },
 ];
