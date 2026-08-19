@@ -26,7 +26,7 @@
     "name": "Project icons",
     "description": "Give each project an icon and color, shown in the thread header and the task sidebar.",
     "branding": {
-      "icon": "Folder"
+      "icon": "Palette"
     },
     "server": "./server.ts",
     "app": "./app.tsx",
