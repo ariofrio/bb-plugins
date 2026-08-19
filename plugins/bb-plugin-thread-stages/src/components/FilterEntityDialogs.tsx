@@ -15,9 +15,9 @@ interface SharedDialogProps {
 }
 
 const OVERLAY_CLASS =
-  "fixed inset-0 z-[90] bg-black/40 backdrop-blur-[1px]";
+  "fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px]";
 const CONTENT_CLASS =
-  "fixed left-1/2 top-1/2 z-[90] w-full max-w-[32rem] -translate-x-1/2 -translate-y-1/2 border bg-background p-6 shadow-sm sm:rounded-lg max-md:w-[calc(100%_-_2rem)]";
+  "fixed left-1/2 top-1/2 z-50 w-full max-w-[32rem] -translate-x-1/2 -translate-y-1/2 border bg-background p-6 shadow-sm sm:rounded-lg max-md:w-[calc(100%_-_2rem)]";
 
 export function FilterEntityRenameDialog({
   target,
