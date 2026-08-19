@@ -19,7 +19,7 @@
   },
   "engines": {
     "bb": ">=0.35",
-    "bbPluginSdk": "^0.4.1"
+    "bbPluginSdk": "^0.4.8"
   },
   "bb": {
     "name": "Missing keyboard shortcuts",

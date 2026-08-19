@@ -20,7 +20,7 @@
   },
   "engines": {
     "bb": ">=0.36",
-    "bbPluginSdk": "^0.4.1"
+    "bbPluginSdk": "^0.4.8"
   },
   "bb": {
     "name": "Project icons",
