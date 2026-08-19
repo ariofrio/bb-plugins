@@ -2,8 +2,8 @@
 // keeping the categories that describe a project rather than UI chrome, one
 // icon per name variant, and only icons the free package actually exports.
 // The output is committed so builds and CI never touch the network.
-// Usage: npm run build:catalog
-import { writeFileSync } from "node:fs";
+// Usage: npm run build:catalog  (npm run check:catalog reports drift without writing)
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as freeIcons from "@hugeicons/core-free-icons";
@@ -107,8 +107,43 @@ for (const entry of catalog) {
   seen.add(entry.export);
 }
 
+const catalogPath = resolve(root, "src", "icon-catalog.json");
+
+// The index is unversioned and sends no ETag, so the only way to learn that
+// Hugeicons rewrote something is to derive the catalog again and compare. This
+// reports that without touching the committed files, so drift can be reviewed
+// before it is adopted.
+if (process.argv.includes("--check")) {
+  const committed = JSON.parse(readFileSync(catalogPath, "utf8"));
+  const shape = ({ category, tags }) => JSON.stringify({ category, tags });
+  const before = new Map(committed.map((entry) => [entry.name, entry]));
+  const after = new Map(catalog.map((entry) => [entry.name, entry]));
+  const changed = [...after.keys()].filter(
+    (name) =>
+      before.has(name) && shape(before.get(name)) !== shape(after.get(name)),
+  );
+  const added = [...after.keys()].filter((name) => !before.has(name));
+  const removed = [...before.keys()].filter((name) => !after.has(name));
+
+  if (changed.length === 0 && added.length === 0 && removed.length === 0) {
+    console.log(`Catalog matches the index (${catalog.length} icons).`);
+    process.exit(0);
+  }
+  for (const name of changed) {
+    console.log(`changed ${name}`);
+    console.log(`  committed ${JSON.stringify(before.get(name).tags)}`);
+    console.log(`  index     ${JSON.stringify(after.get(name).tags)}`);
+  }
+  for (const name of added) console.log(`added   ${name}`);
+  for (const name of removed) console.log(`removed ${name}`);
+  console.log(
+    `\n${changed.length} changed, ${added.length} added, ${removed.length} removed. Run npm run build:catalog to adopt.`,
+  );
+  process.exit(1);
+}
+
 writeFileSync(
-  resolve(root, "src", "icon-catalog.json"),
+  catalogPath,
   `${JSON.stringify(catalog, null, 1)}\n`,
 );
 

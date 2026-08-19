@@ -23,6 +23,7 @@
   "scripts": {
     "build": "bb plugin build",
     "build:catalog": "node scripts/build-icon-catalog.mjs",
+    "check:catalog": "node scripts/build-icon-catalog.mjs --check",
     "verify:types": "node ../../scripts/verify-types.mjs",
     "verify:package": "node ../../scripts/verify-package.mjs",
     "release:check": "npm test && npm run typecheck && npm run verify:types && npm run build && npm run verify:package",

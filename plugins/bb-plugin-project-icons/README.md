@@ -46,6 +46,13 @@ categories that describe a project rather than interface furniture, collapses
 — 2,532 icons across 32 categories. The result is committed, so builds and CI
 never reach the network.
 
+That index is unversioned and sends no `ETag` or `Last-Modified`, and no
+released package carries the tags, so regenerating silently adopts whatever
+Hugeicons serves that day — it has already rewritten tags for icons this
+catalog ships. `npm run check:catalog` derives the catalog again and reports
+the icons whose tags or category moved, writing nothing, so drift can be read
+before it is adopted.
+
 ## Header placement
 
 bb has no slot before the thread title, so the icon is portaled into the

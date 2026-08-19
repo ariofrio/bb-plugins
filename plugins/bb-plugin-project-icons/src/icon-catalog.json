@@ -1333,14 +1333,8 @@
   "export": "Album01Icon",
   "category": "image-camera",
   "tags": [
-   "photo album",
-   "photos",
-   "gallery",
    "images",
-   "pictures",
-   "photo collection",
-   "stacked photos",
-   "media"
+   "photos"
   ]
  },
  {
@@ -1348,14 +1342,8 @@
   "export": "AlbumNotFound01Icon",
   "category": "image-camera",
   "tags": [
-   "no photos",
-   "album not found",
    "no images",
-   "empty gallery",
-   "missing photos",
-   "photo error",
-   "gallery slash",
-   "image unavailable"
+   "no photos"
   ]
  },
  {
@@ -19279,13 +19267,13 @@
   "category": "home",
   "tags": [
    "house",
-   "building",
+   "main",
+   "hub",
+   "base",
+   "central",
+   "welling",
    "residence",
-   "property",
-   "shelter",
-   "dwelling",
-   "real estate",
-   "place"
+   "primary"
   ]
  },
  {
@@ -19871,14 +19859,8 @@
   "export": "IdeaIcon",
   "category": "business",
   "tags": [
-   "lightbulb",
-   "inspiration",
-   "creativity",
-   "concept",
-   "bright",
-   "thought",
-   "innovation",
-   "brainstorm"
+   "bulb",
+   "light"
   ]
  },
  {
@@ -23022,12 +23004,13 @@
   "category": "devices",
   "tags": [
    "loudspeaker",
-   "announce",
-   "broadcast",
-   "amplify",
-   "horn",
-   "speaker",
-   "communication"
+   "announcement symbol",
+   "amplification tool",
+   "communication horn",
+   "public address device",
+   "voice projection symbol",
+   "broadcast icon",
+   "speaker cone"
   ]
  },
  {
