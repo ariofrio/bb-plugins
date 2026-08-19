@@ -152,7 +152,7 @@ export function IconPicker({
         aria-labelledby={titleId}
         mobileTitle={null}
       >
-        <div className="flex h-[calc(var(--radix-popover-content-available-height)-2rem)] max-h-[32rem] flex-col gap-3 overflow-hidden max-md:h-[calc(85dvh-3rem)] max-md:max-h-none">
+        <div className="flex h-[calc(var(--radix-popover-content-available-height)-2rem)] max-h-[32rem] flex-col gap-3 max-md:h-[calc(85dvh-3rem)] max-md:max-h-none">
           <PopoverTitle id={titleId} className="sr-only">
             Icon for {projectName}
           </PopoverTitle>
