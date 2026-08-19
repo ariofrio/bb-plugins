@@ -31,7 +31,19 @@ The marketplace tracks each plugin's compatible Git release tags, so new
 releases appear without re-adding it. Its catalog is defined in
 [marketplace.json](marketplace.json).
 
-For local development, clone the repository and install every plugin at once:
+To install one plugin directly from `main`, follow its README, or select it
+from the repository's plugin collection:
+
+```sh
+bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin codex-theme
+```
+
+The available collection names are listed in [.bb/plugins.json](.bb/plugins.json).
+Nothing here is published to npm yet.
+
+## Development
+
+Clone the repository and install every plugin at once:
 
 ```sh
 git clone https://github.com/ariofrio/bb-plugins.git
@@ -40,15 +52,7 @@ npm run install:plugins
 ```
 
 Run the same command after a `git pull`: it installs whatever is missing, then
-rebuilds and reloads every plugin. To install one plugin directly from `main`,
-follow its README, or select it from the repository's plugin collection:
-
-```sh
-bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin codex-theme
-```
-
-The available collection names are listed in [.bb/plugins.json](.bb/plugins.json).
-Nothing here is published to npm yet.
+rebuilds and reloads every plugin.
 
 ## Releases
 
