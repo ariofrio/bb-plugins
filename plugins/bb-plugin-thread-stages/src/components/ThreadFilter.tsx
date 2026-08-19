@@ -1,6 +1,8 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
+  createContext,
+  useContext,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -56,15 +58,18 @@ const ITEM_CLASS =
 const ACTION_ITEM_CLASS =
   "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-[0.3125rem] text-xs outline-none transition-colors data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground";
 const ACTIONABLE_ITEM_CLASS =
-  "group relative flex cursor-default select-none items-center pr-1 text-xs outline-none";
+  "relative flex cursor-default select-none items-center pr-1 text-xs outline-none";
 const ACTIONABLE_SELECT_TARGET_CLASS =
-  "relative flex min-w-0 flex-1 items-center gap-2 rounded-sm py-[0.3125rem] pl-7 pr-2 transition-colors group-data-[highlighted]:bg-state-hover group-data-[highlighted]:text-foreground";
+  "relative flex min-w-0 flex-1 items-center gap-2 rounded-sm py-[0.3125rem] pl-7 pr-2 transition-colors data-[active]:bg-state-hover data-[active]:text-foreground";
 const ACTION_CLASS =
   "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none ring-sidebar-ring transition-none hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 max-md:pointer-coarse:size-9";
 const ACTION_TOOLTIP_DELAY_MS = 350;
 const LABEL_CLASS =
   "px-2 py-1.5 text-[11px] font-medium text-muted-foreground";
 const SUB_CONTENT_CLASS = `${CONTENT_CLASS} z-[80]`;
+const SubmenuPointerEnterContext = createContext<(() => void) | undefined>(
+  undefined,
+);
 
 export function ThreadFilter({
   newProjectDisabled = false,
@@ -275,6 +280,7 @@ function ActionableThreadFilterItem({
   selected: boolean;
 }) {
   const [submenuOpen, setSubmenuOpen] = useState(false);
+  const [pointerInside, setPointerInside] = useState(false);
   const suppressSyntheticClick = useRef(false);
 
   function handleClick(event: ReactMouseEvent<HTMLDivElement>): void {
@@ -336,9 +342,20 @@ function ActionableThreadFilterItem({
           setSubmenuOpen(true);
         }}
         onKeyDown={handleKeyDown}
+        onPointerEnter={() => setPointerInside(true)}
+        onPointerLeave={() => setPointerInside(false)}
+        onPointerMove={(event) => {
+          if (
+            event.target instanceof Node &&
+            event.currentTarget.contains(event.target)
+          ) {
+            setPointerInside(true);
+          }
+        }}
       >
         <span
           data-thread-filter-select-target=""
+          data-active={pointerInside ? "" : undefined}
           className={ACTIONABLE_SELECT_TARGET_CLASS}
         >
           {selected ? (
@@ -346,12 +363,17 @@ function ActionableThreadFilterItem({
               <Icon name="Check" className="size-3.5" aria-hidden />
             </span>
           ) : null}
-          {children}
+          <SubmenuPointerEnterContext.Provider
+            value={() => setPointerInside(false)}
+          >
+            {children}
+          </SubmenuPointerEnterContext.Provider>
           <span className="truncate">{label}</span>
         </span>
         <span
           data-thread-filter-submenu-chevron=""
-          className="ml-1 inline-flex size-5 shrink-0 items-center justify-center"
+          data-active={!pointerInside && submenuOpen ? "" : undefined}
+          className="ml-1 inline-flex size-5 shrink-0 items-center justify-center rounded-sm transition-colors data-[active]:bg-state-hover data-[active]:text-foreground"
         >
           <Icon name="ChevronRight" className="size-3.5" aria-hidden />
         </span>
@@ -373,12 +395,15 @@ function ProjectActions({
   onRemove: () => void;
   onRename: () => void;
 }) {
+  const onSubmenuPointerEnter = useContext(SubmenuPointerEnterContext);
+
   return (
     <DropdownMenu.Portal>
       <DropdownMenu.SubContent
         {...portalScopeProps()}
         sideOffset={2}
         className={SUB_CONTENT_CLASS}
+        onPointerEnter={onSubmenuPointerEnter}
       >
         <FilterActionItem
           icon="Settings"
@@ -412,12 +437,15 @@ function SectionActions({
   onRemove: () => void;
   onRename: () => void;
 }) {
+  const onSubmenuPointerEnter = useContext(SubmenuPointerEnterContext);
+
   return (
     <DropdownMenu.Portal>
       <DropdownMenu.SubContent
         {...portalScopeProps()}
         sideOffset={2}
         className={SUB_CONTENT_CLASS}
+        onPointerEnter={onSubmenuPointerEnter}
       >
         <FilterActionItem icon="Edit" label="Rename" onSelect={onRename} />
         <FilterActionItem

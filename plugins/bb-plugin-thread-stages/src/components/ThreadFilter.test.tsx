@@ -353,6 +353,80 @@ describe("ThreadFilter", () => {
     }
   });
 
+  it("moves the hover tile from the item to its chevron while the submenu owns the pointer", () => {
+    render(
+      <ThreadFilter
+        {...actions}
+        projects={projects}
+        sections={sections}
+        value={null}
+        onChange={() => {}}
+        onNewProject={() => {}}
+        onNewSection={() => {}}
+      />,
+    );
+
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Projects and sections" }),
+      { key: "Enter" },
+    );
+    const alpha = screen.getByRole("menuitemradio", { name: "Alpha" });
+    fireEvent.keyDown(alpha, { key: "ArrowRight" });
+    expect(
+      alpha
+        .querySelector("[data-thread-filter-select-target]")
+        ?.hasAttribute("data-active"),
+    ).toBe(false);
+    expect(
+      alpha
+        .querySelector("[data-thread-filter-submenu-chevron]")
+        ?.hasAttribute("data-active"),
+    ).toBe(true);
+
+    fireEvent.pointerEnter(alpha, { pointerType: "mouse" });
+    expect(
+      alpha
+        .querySelector("[data-thread-filter-select-target]")
+        ?.hasAttribute("data-active"),
+    ).toBe(true);
+    expect(
+      alpha
+        .querySelector("[data-thread-filter-submenu-chevron]")
+        ?.hasAttribute("data-active"),
+    ).toBe(false);
+
+    fireEvent.pointerEnter(
+      screen.getByRole("menuitem", { name: "Project settings" }),
+      { pointerType: "mouse" },
+    );
+    fireEvent.pointerMove(
+      screen.getByRole("menuitem", { name: "Project settings" }),
+      { pointerType: "mouse" },
+    );
+    expect(
+      alpha
+        .querySelector("[data-thread-filter-select-target]")
+        ?.hasAttribute("data-active"),
+    ).toBe(false);
+    expect(
+      alpha
+        .querySelector("[data-thread-filter-submenu-chevron]")
+        ?.hasAttribute("data-active"),
+    ).toBe(true);
+
+    fireEvent.pointerMove(alpha, { pointerType: "mouse" });
+    expect(
+      alpha
+        .querySelector("[data-thread-filter-select-target]")
+        ?.hasAttribute("data-active"),
+    ).toBe(true);
+    expect(
+      alpha
+        .querySelector("[data-thread-filter-submenu-chevron]")
+        ?.hasAttribute("data-active"),
+    ).toBe(false);
+  });
+
   it("opens section actions on right click and does not give Personal a submenu", () => {
     render(
       <ThreadFilter
