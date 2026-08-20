@@ -10,6 +10,7 @@ import {
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
+import { afterPluginFrame } from "./after-plugin-frame";
 import { announceIconsChanged } from "./broadcast";
 import { installIconPortal } from "./header-dom";
 import { IconPicker, type CatalogIcon } from "./IconPicker";
@@ -255,21 +256,21 @@ export default definePluginApp((app) => {
        * Breadcrumbs plugin loses its crumbs and bb warns that "icons" tried to
        * move a node out of React's tree. A timeout leaves the window first.
        */
-      let scheduled: ReturnType<typeof setTimeout> | undefined;
+      let cancel: (() => void) | undefined;
       let pending: SidebarAnchor[] = [];
       const draw = (anchors: SidebarAnchor[]) => {
         pending = anchors;
-        if (scheduled !== undefined) return;
-        scheduled = setTimeout(() => {
-          scheduled = undefined;
+        if (cancel !== undefined) return;
+        cancel = afterPluginFrame(() => {
+          cancel = undefined;
           root.render(<SidebarIcons anchors={pending} rpc={rpc} />);
-        }, 0);
+        });
       };
       draw([]);
       const stop = observeSidebarIconAnchors(draw);
 
       const dispose = () => {
-        clearTimeout(scheduled);
+        cancel?.();
         // React owns nodes inside bb's sidebar, so it unmounts before the
         // anchors holding them are taken back out.
         root.unmount();

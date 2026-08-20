@@ -1,6 +1,24 @@
 /** Stamped by `bb plugin build`; undefined in tests and registry copies. */
 declare const __BB_PLUGIN_ID__: string | undefined;
 
+/**
+ * bb's own title container, found by what it holds rather than where it sits.
+ *
+ * Both this plugin and Icons insert a node of their own at the head of the
+ * header, so whichever lands first becomes `center.firstElementChild` and the
+ * other one, looking there for the title, finds a sibling plugin's node with
+ * no <p> in it and gives up. Skipping anything marked as a plugin's root makes
+ * the lookup independent of who arrives first.
+ */
+export function findTitleContainer(center: Element): HTMLElement | null {
+  for (const child of Array.from(center.children)) {
+    if (!(child instanceof HTMLElement)) continue;
+    if (child.dataset.bbPluginRoot !== undefined) continue;
+    if (child.querySelector("p") !== null) return child;
+  }
+  return null;
+}
+
 interface IconPortalMount {
   target: HTMLElement;
   cleanup(): void;
@@ -23,13 +41,14 @@ export function installIconPortal(
     '[data-testid="thread-detail-header-actions-menu"]',
   );
   const center = actionsMenu?.parentElement;
-  const titleContainer = center?.firstElementChild;
+  const titleContainer =
+    center === undefined || center === null ? null : findTitleContainer(center);
   const slotWrapper = marker.closest<HTMLElement>('[role="group"]');
 
   if (
     center === undefined ||
     center === null ||
-    !(titleContainer instanceof HTMLElement) ||
+    titleContainer === null ||
     slotWrapper === null
   ) {
     return null;

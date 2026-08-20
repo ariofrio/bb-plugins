@@ -80,3 +80,30 @@ describe("navigateToProjectSettings", () => {
     expect(popstate).toHaveBeenCalledOnce();
   });
 });
+
+describe("sharing the header with another plugin", () => {
+  it("finds the title even when another plugin already sits ahead of it", () => {
+    document.body.innerHTML = `
+      <header>
+        <div>
+          <span data-icons-root="" data-bb-plugin-root=""></span>
+          <div><p>Thread title</p></div>
+          <span data-testid="thread-detail-header-actions-menu"></span>
+        </div>
+        <span id="slot-wrapper" role="group"><span id="marker"></span></span>
+      </header>
+    `;
+    const marker = document.querySelector<HTMLElement>("#marker")!;
+
+    const mounted = installBreadcrumbPortal(marker);
+
+    // Reading center.firstElementChild would find the icons node, which holds
+    // no title, and the crumbs would never be installed at all.
+    expect(mounted).not.toBeNull();
+    const root = document.querySelector("[data-breadcrumbs-root]");
+    expect(root?.nextElementSibling?.querySelector("p")?.textContent).toBe(
+      "Thread title",
+    );
+    mounted?.cleanup();
+  });
+});
