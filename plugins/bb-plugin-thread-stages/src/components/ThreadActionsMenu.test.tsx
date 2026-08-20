@@ -45,6 +45,11 @@ function thread(): PluginSidebarThread {
 
 afterEach(cleanup);
 
+function expectMenuItemIcon(label: string, iconName: string): void {
+  const item = screen.getByText(label).closest('[role="menuitem"]');
+  expect(item?.querySelector(`[data-icon="${iconName}"]`)).not.toBeNull();
+}
+
 describe("ThreadActionsDropdown", () => {
   it("mirrors the built-in thread actions and adds workflow organization", () => {
     const actions = {
@@ -174,6 +179,9 @@ describe("ThreadActionsDropdown", () => {
     expect(screen.getByText("Uncategorized")).toBeDefined();
     expect(screen.getByText("Now")).toBeDefined();
     expect(screen.getByText("Later")).toBeDefined();
+    expectMenuItemIcon("Uncategorized", "ListViewOff");
+    expectMenuItemIcon("Now", "ListView");
+    expectMenuItemIcon("Later", "ListView");
     const newSectionItem = screen
       .getByText("New section")
       .closest('[role="menuitem"]');
@@ -216,6 +224,43 @@ describe("ThreadActionsDropdown", () => {
     fireEvent.click(screen.getByText("New section"));
     expect(onNewSection).toHaveBeenCalledOnce();
   });
+
+  it("shows the shared stage icons in its stage submenu", () => {
+    const actions = {
+      open: vi.fn(),
+      openNewThread: vi.fn(),
+      setPinned: vi.fn(async () => {}),
+      setRead: vi.fn(async () => {}),
+      rename: vi.fn(async () => {}),
+      archive: vi.fn(),
+      requestDelete: vi.fn(),
+    } satisfies PluginSidebarThreadActions;
+    render(
+      <ThreadActionsDropdown
+        actions={actions}
+        disabled={false}
+        sections={[]}
+        onNewSection={vi.fn()}
+        onOpenChange={vi.fn()}
+        onRename={vi.fn()}
+        onSetSection={vi.fn()}
+        onSetWorkflowStage={vi.fn()}
+        splitAvailable={false}
+        workflowStage="To do"
+        thread={thread()}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
+    fireEvent.click(screen.getByText("Move to stage"));
+
+    expectMenuItemIcon("Backlog", "CircleDashed");
+    expectMenuItemIcon("To do", "Circle");
+    expectMenuItemIcon("Working", "Progress02");
+    expectMenuItemIcon("Blocked", "Ban");
+    expectMenuItemIcon("Done", "CheckmarkCircle");
+    expectMenuItemIcon("Canceled", "CircleX");
+  });
 });
 
 describe("ThreadActionsContextMenu", () => {
@@ -252,6 +297,7 @@ describe("ThreadActionsContextMenu", () => {
     fireEvent.click(screen.getByText("Move to stage"));
 
     expect(parentMenu.contains(screen.getByText("Done"))).toBe(false);
+    expectMenuItemIcon("Done", "CheckmarkCircle");
   });
 
   it("portals the section submenu outside the right-click menu", () => {
@@ -289,6 +335,8 @@ describe("ThreadActionsContextMenu", () => {
     expect(screen.getByText("Uncategorized")).toBeDefined();
     expect(screen.getByText("Later")).toBeDefined();
     expect(screen.getByText("New section")).toBeDefined();
+    expectMenuItemIcon("Uncategorized", "ListViewOff");
+    expectMenuItemIcon("Later", "ListView");
     expect(parentMenu.contains(screen.getByText("New section"))).toBe(false);
   });
 });

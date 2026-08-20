@@ -8,6 +8,7 @@ import type {
 import { WORKFLOW_STAGES, type WorkflowStage } from "../workflow-stage";
 import { portalScopeProps } from "../lib/portal-scope";
 import { Icon, type IconName } from "./Icon";
+import { WorkflowStageIcon } from "./WorkflowStageIcon";
 
 const CONTENT_CLASS =
   "z-[70] min-w-28 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
@@ -149,6 +150,7 @@ function ContextMenuItems(props: CommonMenuProps) {
                       <Icon name="Check" aria-hidden />
                     ) : null}
                   </span>
+                  <WorkflowStageIcon stage={stage} />
                   {stage}
                 </ContextMenu.Item>
               ))}
@@ -178,6 +180,7 @@ function ContextMenuItems(props: CommonMenuProps) {
                   <Icon name="Check" aria-hidden />
                 ) : null}
               </span>
+              <Icon name="ListViewOff" aria-hidden />
               Uncategorized
             </ContextMenu.Item>
             {props.sections.map((section) => (
@@ -195,6 +198,7 @@ function ContextMenuItems(props: CommonMenuProps) {
                     <Icon name="Check" aria-hidden />
                   ) : null}
                 </span>
+                <Icon name="ListView" aria-hidden />
                 {section.name}
               </ContextMenu.Item>
             ))}
@@ -280,6 +284,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
                       <Icon name="Check" aria-hidden />
                     ) : null}
                   </span>
+                  <WorkflowStageIcon stage={stage} />
                   {stage}
                 </DropdownMenu.Item>
               ))}
@@ -309,6 +314,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
                   <Icon name="Check" aria-hidden />
                 ) : null}
               </span>
+              <Icon name="ListViewOff" aria-hidden />
               Uncategorized
             </DropdownMenu.Item>
             {props.sections.map((section) => (
@@ -326,6 +332,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
                     <Icon name="Check" aria-hidden />
                   ) : null}
                 </span>
+                <Icon name="ListView" aria-hidden />
                 {section.name}
               </DropdownMenu.Item>
             ))}
