@@ -31,8 +31,10 @@ does not change stage assignments or synchronization.
 The adjacent actions create a project through bb's native host folder picker
 or open the New section dialog. Stage counts show the number of filtered root
 threads in each unpinned stage; they are enabled by default and can be hidden
-in the plugin's settings. On a client with no saved collapse choices, Backlog,
-Done, and Canceled start collapsed; To do, Working, and Blocked start expanded.
+in the plugin's settings. A collapsed stage keeps its count visible immediately
+to the left of any aggregate activity indicator. On a client with no saved
+collapse choices, Backlog, Done, and Canceled start collapsed; To do, Working,
+and Blocked start expanded.
 
 Drag root threads to reorder or change their stage. Ordering uses
 fractional keys, so a move updates only the moved thread. Root threads enter

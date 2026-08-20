@@ -528,13 +528,15 @@ function SidebarSection({
             />
           </button>
         </span>
-        {count === undefined || activityThread ? null : (
+        {count === undefined ? null : (
           <span
             aria-label={`${count} ${count === 1 ? "thread" : "threads"}`}
             data-sidebar-hover-actions-open={
               optionsOpen ? "true" : undefined
             }
-            className="bb-sidebar-hover-actions-fade pointer-events-none absolute right-0 z-20 inline-flex size-7 items-center justify-center tabular-nums text-xs text-subtle-foreground/60"
+            className={`bb-sidebar-hover-actions-fade pointer-events-none absolute z-20 inline-flex size-7 items-center justify-center tabular-nums text-xs text-subtle-foreground/60 ${
+              activityThread ? "right-7" : "right-0"
+            }`}
           >
             {count}
           </span>
