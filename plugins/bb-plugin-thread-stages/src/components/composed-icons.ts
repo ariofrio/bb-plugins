@@ -35,7 +35,7 @@ export const ListViewOffIcon: IconSvgElement = [
   [
     "path",
     {
-      d: "M3.5 2H20.6C21.7583 2 22 2.24173 22 3.4V4.6C22 5.75827 21.7583 6 20.6 6H7.5M4.5 6H3.4C2.24173 6 2 5.75827 2 4.6V3.5",
+      d: "M2 3.4V4.6C2 5.75827 2.24173 6 3.4 6H6M6 2H20.6C21.7583 2 22 2.24173 22 3.4V4.6C22 5.75827 21.7583 6 20.6 6H10",
       stroke: "currentColor",
       strokeLinecap: "round",
       strokeLinejoin: "round",
@@ -46,7 +46,7 @@ export const ListViewOffIcon: IconSvgElement = [
   [
     "path",
     {
-      d: "M11.5 10H20.6C21.7583 10 22 10.2417 22 11.4V12.6C22 13.7583 21.7583 14 20.6 14H15.5M12.5 14H3.4C2.24173 14 2 13.7583 2 12.6V11.4C2 10.2417 2.24173 10 3.4 10H8.5",
+      d: "M10 10H3.4C2.24173 10 2 10.2417 2 11.4V12.6C2 13.7583 2.24173 14 3.4 14H14M14 10H20.6C21.7583 10 22 10.2417 22 11.4V12.6C22 13.7583 21.7583 14 20.6 14H18",
       stroke: "currentColor",
       strokeLinecap: "round",
       strokeLinejoin: "round",
@@ -57,7 +57,7 @@ export const ListViewOffIcon: IconSvgElement = [
   [
     "path",
     {
-      d: "M19.5 18H20.6C21.7583 18 22 18.2417 22 19.4V20.5M20.5 22H3.4C2.24173 22 2 21.7583 2 20.6V19.4C2 18.2417 2.24173 18 3.4 18H16.5",
+      d: "M18 18H3.4C2.24173 18 2 18.2417 2 19.4V20.6C2 21.7583 2.24173 22 3.4 22H22",
       stroke: "currentColor",
       strokeLinecap: "round",
       strokeLinejoin: "round",
