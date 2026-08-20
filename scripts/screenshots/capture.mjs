@@ -277,22 +277,16 @@ export async function openApp({ browser, stack, theme, viewport, style }) {
  */
 const WINDOW_FRAME = {
   // macOS's own window rounding, so the silhouette matches the app rather than
-  // a card. The margin holds the shadow and nothing else — and none of it goes
-  // at the sides, because a margin there is margin a reader sees: it pushes the
-  // window's edge inward while the text beside it stays flush with the column.
-  // What that clips is the shadow's side tail, which never exceeds 6% opacity.
+  // a card.
+  //
+  // No shadow: a shadow falls to the sides as well as below, and the margin it
+  // needs is margin a reader sees — it holds the window's edge inside the
+  // column the text beside it is flush with. The hairline alone says window,
+  // and it costs one pixel of margin, which is what the ring is drawn in.
   radius: 10,
-  padding: { top: 2, side: 0, bottom: 26 },
-  light: {
-    edge: "rgba(0, 0, 0, 0.16)",
-    shadow:
-      "0 18px 40px -16px rgba(15, 15, 20, 0.55), 0 4px 10px -6px rgba(15, 15, 20, 0.4)",
-  },
-  dark: {
-    edge: "rgba(255, 255, 255, 0.16)",
-    shadow:
-      "0 18px 40px -16px rgba(0, 0, 0, 0.9), 0 4px 10px -6px rgba(0, 0, 0, 0.75)",
-  },
+  padding: { top: 1, side: 1, bottom: 1 },
+  light: { edge: "rgba(0, 0, 0, 0.16)", shadow: null },
+  dark: { edge: "rgba(255, 255, 255, 0.16)", shadow: null },
 };
 
 /**
@@ -304,12 +298,11 @@ const WINDOW_FRAME = {
  */
 const CARD_FRAME = {
   radius: 14,
-  // Sides flush for the same reason as a window's, which matters most here:
-  // a card sits against the right edge of the column with the plugin's name
-  // against the left, and any margin baked into the image breaks that pairing.
-  padding: { top: 0, side: 0, bottom: 10 },
-  light: { edge: null, shadow: "0 8px 20px -10px rgba(15, 15, 20, 0.45)" },
-  dark: { edge: null, shadow: "0 8px 20px -10px rgba(0, 0, 0, 0.85)" },
+  // Nothing is drawn outside a card, so it needs no margin at all: its edges
+  // are the image's edges, flush with the column.
+  padding: { top: 0, side: 0, bottom: 0 },
+  light: { edge: null, shadow: null },
+  dark: { edge: null, shadow: null },
 };
 
 /** Draws an image into its frame's corners, edge, and shadow. */
@@ -333,7 +326,9 @@ async function writeFramed({ browser, frame, image, size, theme, output }) {
          <img src="data:image/png;base64,${image.toString("base64")}"
               style="display:block;width:${size.width}px;height:${size.height}px;
                      border-radius:${radius}px;
-                     box-shadow:${shadow}${edge === null ? "" : `, 0 0 0 1px ${edge}`}">
+                     box-shadow:${[shadow, edge === null ? null : `0 0 0 1px ${edge}`]
+                       .filter((layer) => layer !== null)
+                       .join(", ") || "none"}">
        </div>
      </body>`,
   );
