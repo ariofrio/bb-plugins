@@ -1,7 +1,7 @@
 {
   "name": "bb-plugin-icons",
   "version": "0.3.0",
-  "description": "Give each project an icon and color.",
+  "description": "Give each project and section an icon and color.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -39,7 +39,7 @@
   },
   "bb": {
     "name": "Icons",
-    "description": "Give each project an icon and color.",
+    "description": "Give each project and section an icon and color.",
     "branding": {
       "icon": "./assets/icon.svg"
     },

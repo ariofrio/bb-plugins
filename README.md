@@ -29,7 +29,7 @@
       <td valign="top" align="center">
         <p><a href="plugins/bb-plugin-breadcrumbs#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-breadcrumbs/assets/card-dark.png"><img src="plugins/bb-plugin-breadcrumbs/assets/card-light.png" alt="The Storefront project and its actions menu in a bb thread header" width="100%"></picture></a></p>
         <p><a href="plugins/bb-plugin-breadcrumbs#readme"><img src="plugins/bb-plugin-breadcrumbs/assets/icon.svg" alt="" width="40" height="40"><br><strong>Breadcrumbs</strong></a></p>
-        <p>Show and manage a thread's project from its header.</p>
+        <p>Show a thread's section, project, and ancestors in its header.</p>
         <p></p>
       </td>
       <td valign="top" align="center">
@@ -43,7 +43,7 @@
       <td valign="top" align="center">
         <p><a href="plugins/bb-plugin-icons#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-icons/assets/card-dark.png"><img src="plugins/bb-plugin-icons/assets/card-light.png" alt="The icon picker open on the Storefront project's icon in a bb thread header" width="100%"></picture></a></p>
         <p><a href="plugins/bb-plugin-icons#readme"><img src="plugins/bb-plugin-icons/assets/icon.svg" alt="" width="40" height="40"><br><strong>Icons</strong></a></p>
-        <p>Give each project an icon and color.</p>
+        <p>Give each project and section an icon and color.</p>
         <p></p>
       </td>
       <td valign="top" align="center">

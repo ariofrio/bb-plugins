@@ -1,7 +1,7 @@
 {
   "name": "bb-plugin-breadcrumbs",
   "version": "0.3.0",
-  "description": "Show and manage a thread's project from its header.",
+  "description": "Show a thread's section, project, and ancestors in its header.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -28,7 +28,7 @@
   },
   "bb": {
     "name": "Breadcrumbs",
-    "description": "Show and manage a thread's project from its header.",
+    "description": "Show a thread's section, project, and ancestors in its header.",
     "branding": {
       "icon": "./assets/icon.svg"
     },

@@ -2,48 +2,48 @@
   "bbVersion": "0.39.0",
   "shots": {
     "breadcrumbs": {
-      "inputs": "041dc1d94284ade285deb4edb689ec787b9661ccad93319223cd4e81e7501425",
+      "inputs": "1fed2f07b9fce225b50bada6c406f3203ec177d15f8d4036cd60d22a3298b5c9",
       "files": {
-        "screenshot-light.png": "d49ec57c88f807084459126c55de01811b8a916883e7c07c43064bbd62e373d8",
-        "screenshot-dark.png": "6a7ffd46da4835bddd83b697eccc35a0d8d7714dcfeee01eee1491aed65d3adf",
+        "screenshot-light.png": "8b172fd9c47c8fe44ae3b35a4963d8834e28105a6a137d1fd917f398bcb35ebc",
+        "screenshot-dark.png": "36454304bc4c689a78c690c9898a49b339c7a7c423df90c7731788331b7b8bce",
         "card-light.png": "8fb81f5e10a7833d9951d357f27f26dd195be0e7263061882a24fa49b34ec3b9",
         "card-dark.png": "f5eef72a622acf1be5ba5beaaa8f22bcc7d575a2a1fd5e785f1e03d201b6d7e6"
       }
     },
     "chatgpt-theme": {
-      "inputs": "c387355b13c877dfe2fd1b2d89e9975a072087641a0e1c7763ad84e5d1173d58",
+      "inputs": "e4c3921320fd486441f07c5486f81908144fc3713e676b332e2524687b6969cd",
       "files": {
-        "screenshot-light.png": "2a49491ce85fc489596f6312c6ce95473f6dbdd9d53bd352c15ccac52a719500",
-        "screenshot-dark.png": "8c055799d9f11879f32720870bb30bd9f7c0525f67862005940e17aba85abf81",
+        "screenshot-light.png": "e688eb04c040e0d2f14fcfb5a529739274b60514f9b8fa928a11bb1f6c0f23e9",
+        "screenshot-dark.png": "bf096e920ccfbccff5b0b32169869f632a9e2f608a551bd533d94e7ba4a67430",
         "card-light.png": "e91fd327de4f4b44aec88298e49159a53bb93401dc3e3d0d0f2c0e6b4845a42b",
         "card-dark.png": "03191b81775605a5bc971488fcdbb2baf117a888bdaede84c2f17d756786a67a"
       }
     },
     "icons": {
-      "inputs": "1b00e5fc458351d908fa950e7c831c4b5895d752797c00f7097cb60d8a113dc7",
+      "inputs": "8e773f25229c3d63915f82acda1e9b5b0bc52632c73f8b08b7caa35720ae7f2e",
       "files": {
-        "screenshot-light.png": "dbefafb44170eefbe38aee14eab4aedf872ae90e28f8df9b54d7627a4d354456",
-        "screenshot-dark.png": "875680b2b312234b0a3166b52d56490335bb1493ac88ef27ca66484380756c6c",
+        "screenshot-light.png": "a52a498fb5916c5c7e0ef4115c08e6c3691ef9b6cb11f475cc04519574a37876",
+        "screenshot-dark.png": "3b7367e69b2fe07b048fbb18ceb64563dfde89587c3f49841e985816c34b1b90",
         "card-light.png": "d92c893c867d16224635ca22dca9771bd3ad691585160fb4804e8331888c70fc",
         "card-dark.png": "638be644b0ed31b8e92b6a9c5e942582e92fcadd21887c74383769dfc7598807"
       }
     },
     "missing-keyboard-shortcuts": {
-      "inputs": "2acc141bf98b51fe26df45d564a228e8ccfe8800814472c1345f6f3be920a604",
+      "inputs": "f9e64d7c08cfac41257e28e1496a3d69d1449eb53652dc0ed8de3aeac0572fd2",
       "files": {
-        "screenshot-light.png": "5c5c484d830fe973d77701c1dd69cf16d6dba6f592249b3d0b7ab49338175f6c",
-        "screenshot-dark.png": "a719363dfdebc5e4192ca9b186250653ce6a15268df40239b131867880d6581a",
+        "screenshot-light.png": "23c644ef8d9d4d0df33c55cb7858f1e0009c986cab4a4137ae1c7f8696df1f87",
+        "screenshot-dark.png": "503076f73790b25a6278bf4bc90712907dbb0ffe8696ed390921dbfbb03ee280",
         "card-light.png": "35d2b2dc889f00e813fb34e7fe8e6e64b1b5fb4ba6ae1ee65c3f7d459b7ff9a7",
         "card-dark.png": "57948d15db8caaab63ed198c2c76ad2aca2fdec3e76e29a96333fcccddb4ba1b"
       }
     },
     "thread-stages": {
-      "inputs": "2adcb3c3ec2ca4cf04e831aa09a345e596809789c637719153da1fe38b776f23",
+      "inputs": "2d1d12050b2f4f4a832b4616cc6ed6bf1926e31fb4c31642239522d36971ae93",
       "files": {
-        "screenshot-light.png": "397ac4a47687241e08b061ed6ee0366fbd9a9add1ce480a3a38bd1c7dd82773a",
-        "screenshot-dark.png": "606013b1d958cda023a8ce2bcb99a66e69e1bb1cb32f2c4b479fd05d3fa6857c",
-        "card-light.png": "1931496d3362ee797326087a9f6fe5276f38db597299960e8597f61ae52bd5cf",
-        "card-dark.png": "36387a6d441e7bd8b355c2de8cc6c059c665698de9b31d135f6dd0fe34705836"
+        "screenshot-light.png": "bd5500d1b27b0750992a6d98c20711218bcee02b7089431c7640a2a88278b108",
+        "screenshot-dark.png": "943e34de5869ddafb85d9cdd9721a04e3eb54998fab7cd164b465bcd1110a70b",
+        "card-light.png": "44ec7f47a30eaf5ac267a9782278c3923e4ae29a5c1c6b050c80e26f2e1631b1",
+        "card-dark.png": "43a5a72018eac52fdc9e10c07cec024e825d81af82613faf4e324433b27bc4c6"
       }
     }
   }

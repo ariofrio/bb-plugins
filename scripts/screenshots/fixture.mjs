@@ -232,13 +232,13 @@ export async function applyPluginState({ stack, projects }) {
     const { icon, color } = project.spec;
     const response = await fetch(
       new URL(
-        `/api/v1/plugins/icons/rpc/setProjectIcon`,
+        `/api/v1/plugins/icons/rpc/setIcon`,
         stack.serverUrl,
       ),
       {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ projectId: project.id, icon, color }),
+        body: JSON.stringify({ kind: "project", id: project.id, icon, color }),
       },
     );
     if (!response.ok) {

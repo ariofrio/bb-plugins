@@ -1,10 +1,14 @@
 # Breadcrumbs
 
-Adds the current project to each standard-project thread header:
+Adds a trail to each thread header — the thread's section, its project, and
+every thread it was forked or spawned under:
 
 ```text
-bb-plugins  >  Add project breadcrumbs
+Release  >  bb-plugins  >  Polish the sidebar  >  Trace the timer
 ```
+
+Each part can be turned off on its own in the plugin's settings; all three are
+on by default. A thread with none of them keeps bb's header exactly as it was.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshot-dark.png">
@@ -26,10 +30,20 @@ version-matched bb dialog components and call the plugin backend, which applies
 the mutation through bb's project SDK. The actions do not depend on the
 sidebar or its project menu being mounted.
 
+Clicking the section name opens what bb's own sidebar section header opens —
+Rename and Remove, carrying bb's wording, including that removing a section
+moves its threads back to Unorganized. Sections attach to root threads, so a
+child shows the section its root is in. Clicking an ancestor opens that thread.
+
 ## Implementation
 
-The plugin registers `experimental_threadHeaderAction` to receive the current
-project and read its live name from `experimental_useSidebarThreads()`. Its
+The plugin registers `experimental_threadHeaderAction` and asks its own
+backend for the whole trail at once. It does not read the sidebar's live view:
+that hydrates in pieces, so a header can mount while it still reports no
+projects and no threads, and nothing corrects it — bb publishes no event a
+plugin can hear when a section is created, renamed, or removed. One call
+returns the section, the project, and every ancestor together, so the crumbs
+settle as a unit, and it is asked again on focus and before a menu opens. Its
 otherwise-hidden slot inserts a React portal immediately before bb's existing
 thread-title container. The frontend action dialogs call schema-validated RPC
 handlers registered by `src/server.ts` for project rename and removal.
@@ -38,6 +52,20 @@ This deliberately relies on bb's private thread-header DOM structure because
 the plugin SDK has no title-prefix slot. `src/header-dom.test.ts` documents and
 tests the expected structure so a future bb header change fails locally rather
 than silently changing the thread title.
+
+## Sharing the header with Icons
+
+Both plugins put a node at the head of bb's header, so neither may assume it
+arrives first: each finds bb's title by what it holds rather than by position,
+skipping anything marked as a plugin's root.
+
+The crumbs render in a React root of their own, on an animation frame. bb
+guards its React tree and will not put a React-owned node under a container
+React does not own while any plugin is attributed on its stack — and both
+plugins share bb's root, so a commit begun by one would otherwise carry the
+other's into the block. bb keeps that attribution across `setTimeout` and
+`queueMicrotask`, which are patched to re-enter the plugin's context, and
+leaves `requestAnimationFrame` native, so a frame callback runs unattributed.
 
 Personal-project threads are left unchanged because they do not have the
 standard Project settings/Rename/Remove action set.

@@ -1,12 +1,17 @@
 # Icons
 
-Gives every project an icon and an optional color, shown next to the project
-name in the thread header and on each row of the [Thread
-stages](../bb-plugin-thread-stages#readme) sidebar.
+Gives every project and every thread section an icon and an optional color,
+drawn on bb's own sidebar headers, in the thread header, and on each row of the
+[Thread stages](../bb-plugin-thread-stages#readme) sidebar.
 
-Click the icon in the header to change it: search 2,532 icons by name or
-synonym, filter by category, and pick a color. Changes save as you click and
-appear everywhere at once.
+Click any of them to change it: search 2,532 icons by name or synonym, filter
+by category, and pick a color. Changes save as you click and appear everywhere
+at once.
+
+Projects default to a folder and bb's personal project to a chat bubble,
+because that is what bb draws itself. Sections default to bb's own section
+mark — Hugeicons has none, so the plugin composes it, which is why it is the
+one glyph here that is not from the catalog.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshot-dark.png">
@@ -60,6 +65,21 @@ Hugeicons serves that day — it has already rewritten tags for icons this
 catalog ships. `npm run check:catalog` derives the catalog again and reports
 the icons whose tags or category moved, writing nothing, so drift can be read
 before it is adopted.
+
+## Where the icons appear
+
+**bb's sidebar.** The icon sits at the head of a group's label row, where
+Thread stages puts a stage icon, which is what lines the group name up with the
+New thread, Extensions, and Automations labels above it. bb shows project
+groups under *Organize → By project* and section groups only under *Manually*,
+so which headers exist depends on that setting; the *Unorganized* bucket is not
+a section and gets none.
+
+**The thread header.** Before the project name, as it always has been.
+
+Either placement can be turned off on its own in the plugin's settings, and
+both are on by default. Sidebars other plugins draw are their own; Thread
+stages reads these icons over this plugin's RPC.
 
 ## Header placement
 
