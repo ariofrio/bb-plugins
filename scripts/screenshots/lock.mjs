@@ -36,6 +36,20 @@ function walk(directory, files = []) {
 }
 
 /**
+ * The manifest minus the one field a release changes on its own. Every version
+ * PR rewrites `version` in all five manifests, which would otherwise report
+ * every screenshot stale and ask for a recapture that cannot change a pixel —
+ * and cannot run in CI at all, since capturing is macOS-only. Everything else
+ * stays in: a dependency bump really can move what a plugin draws.
+ */
+function manifestFingerprint(pluginDirectory) {
+  const { version, ...rest } = JSON.parse(
+    readFileSync(join(pluginDirectory, "package.json"), "utf8"),
+  );
+  return JSON.stringify(rest);
+}
+
+/**
  * A screenshot is stale when the plugin it pictures changed, or when the
  * harness that framed it did. Both feed one digest per shot.
  */
@@ -48,7 +62,7 @@ export function inputDigest({ repositoryRoot, pluginDirectory, harnessDirectory 
       hashFile(hash, path);
     }
   }
-  hash.update(readFileSync(join(pluginDirectory, "package.json")));
+  hash.update(manifestFingerprint(pluginDirectory));
   return hash.digest("hex");
 }
 

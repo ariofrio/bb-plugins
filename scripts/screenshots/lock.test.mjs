@@ -70,3 +70,37 @@ test("a lock entry with no shot left is reported", () => {
   });
   assert.deepEqual(problems, ["removed: no longer a shot, but still in the lock"]);
 });
+
+test("a version bump leaves every digest alone", async (t) => {
+  const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { inputDigest } = await import("./lock.mjs");
+
+  const root = mkdtempSync(join(tmpdir(), "bb-plugins-lock-"));
+  const pluginDirectory = join(root, "plugins/bb-plugin-example");
+  const harnessDirectory = join(root, "scripts/screenshots");
+  mkdirSync(join(pluginDirectory, "src"), { recursive: true });
+  mkdirSync(harnessDirectory, { recursive: true });
+  writeFileSync(join(pluginDirectory, "src/app.tsx"), "export default 1;\n");
+  writeFileSync(join(harnessDirectory, "shots.mjs"), "export const SHOTS = [];\n");
+
+  const manifest = (version, extra = {}) =>
+    writeFileSync(
+      join(pluginDirectory, "package.json"),
+      `${JSON.stringify({ name: "bb-plugin-example", version, ...extra }, null, 2)}\n`,
+    );
+  const digest = () =>
+    inputDigest({ repositoryRoot: root, pluginDirectory, harnessDirectory });
+
+  manifest("0.2.1");
+  const before = digest();
+
+  manifest("0.3.0");
+  assert.equal(digest(), before, "a release must not report screenshots stale");
+
+  // Everything else in the manifest still counts: a dependency can move what a
+  // plugin draws.
+  manifest("0.3.0", { dependencies: { "@hugeicons/react": "^2.0.0" } });
+  assert.notEqual(digest(), before);
+});
