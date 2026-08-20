@@ -1,4 +1,3 @@
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   createContext,
@@ -8,8 +7,6 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { portalScopeProps } from "../lib/portal-scope";
-import { DROPDOWN_MENU_MOTION_CLASS } from "../lib/menu-motion";
 import type { ProjectIconView } from "../icons";
 import {
   serializeThreadFilter,
@@ -17,6 +14,21 @@ import {
 } from "../thread-filter";
 import { Icon } from "./Icon";
 import { ThreadFilterOptionsMenu } from "./SidebarOptionsMenu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -54,23 +66,15 @@ interface ThreadFilterProps {
   value: ThreadFilterValue;
 }
 
-const CONTENT_CLASS =
-  `z-50 min-w-[var(--radix-dropdown-menu-trigger-width)] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md ${DROPDOWN_MENU_MOTION_CLASS}`;
-const ITEM_CLASS =
-  "relative flex cursor-default select-none items-center gap-2 rounded-sm py-[0.3125rem] pl-7 pr-2 text-xs outline-none transition-colors data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground";
-const ACTION_ITEM_CLASS =
-  "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-[0.3125rem] text-xs outline-none transition-colors data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground";
+const CONTENT_CLASS = "min-w-[var(--radix-dropdown-menu-trigger-width)]";
+const FILTER_ITEM_CLASS = "gap-2 pl-7";
 const ACTIONABLE_ITEM_CLASS =
-  "relative flex cursor-default select-none items-center pr-1 text-xs outline-none";
+  "relative flex cursor-default select-none items-center gap-0 rounded-none p-0 pr-1 text-xs outline-none transition-none focus:bg-transparent focus:text-inherit data-[state=open]:bg-transparent data-[state=open]:text-inherit data-[last-hovered]:bg-transparent data-[last-hovered]:text-inherit";
 const ACTIONABLE_SELECT_TARGET_CLASS =
   "relative flex min-w-0 flex-1 items-center gap-2 rounded-sm py-[0.3125rem] pl-7 pr-2 transition-colors data-[active]:bg-state-hover data-[active]:text-foreground";
 const ACTION_CLASS =
   "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none ring-sidebar-ring transition-none hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 max-md:pointer-coarse:size-9";
 const ACTION_TOOLTIP_DELAY_MS = 350;
-const LABEL_CLASS =
-  "px-2 py-1.5 text-[11px] font-medium text-muted-foreground";
-const SUB_CONTENT_CLASS =
-  `z-50 min-w-28 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md ${DROPDOWN_MENU_MOTION_CLASS}`;
 const SubmenuPointerEnterContext = createContext<(() => void) | undefined>(
   undefined,
 );
@@ -107,9 +111,9 @@ export function ThreadFilter({
   const activeUncategorized = value?.kind === "uncategorized";
   const activeLabel = activeProject?.isPersonal
     ? "Threads"
-    : activeProject?.name ??
+    : (activeProject?.name ??
       activeSection?.name ??
-      (activeUncategorized ? "Uncategorized" : null);
+      (activeUncategorized ? "Uncategorized" : null));
   const personalProject = projects.find((project) => project.isPersonal);
   const regularProjects = projects.filter((project) => !project.isPersonal);
   const scopeLabel =
@@ -118,8 +122,8 @@ export function ThreadFilter({
     sections.length === 0 ? "All projects" : "All projects and sections";
   return (
     <div className="bb-sidebar-hover-actions-row group/thread-filter sticky top-[var(--bb-sidebar-sticky-stack-padding-top)] z-[70] mb-4 flex min-w-0 items-center gap-1 rounded-md bg-sidebar outline-none ring-sidebar-ring has-[.thread-filter-trigger:focus-visible]:ring-2 before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-sidebar before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-sidebar after:content-['']">
-      <DropdownMenu.Root open={open} onOpenChange={setOpen}>
-        <DropdownMenu.Trigger asChild>
+      <DropdownMenu responsive={false} open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
           <button
             type="button"
             data-thread-filter-trigger=""
@@ -152,133 +156,115 @@ export function ThreadFilter({
             )}
             <span className="truncate">{activeLabel ?? scopeLabel}</span>
           </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            {...portalScopeProps()}
-            align="start"
-            sideOffset={4}
-            className={CONTENT_CLASS}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className={CONTENT_CLASS}>
+          <DropdownMenuRadioGroup
+            value={serializeThreadFilter(value) ?? ""}
+            onValueChange={(nextValue) => {
+              if (!nextValue) {
+                onChange(null);
+                return;
+              }
+              if (nextValue === "uncategorized") {
+                onChange({ kind: "uncategorized" });
+                return;
+              }
+              const [kind, id] = nextValue.split(":", 2);
+              if ((kind === "project" || kind === "section") && id) {
+                onChange({ kind, id });
+              }
+            }}
           >
-            <DropdownMenu.RadioGroup
-              value={serializeThreadFilter(value) ?? ""}
-              onValueChange={(nextValue) => {
-                if (!nextValue) {
-                  onChange(null);
-                  return;
-                }
-                if (nextValue === "uncategorized") {
-                  onChange({ kind: "uncategorized" });
-                  return;
-                }
-                const [kind, id] = nextValue.split(":", 2);
-                if ((kind === "project" || kind === "section") && id) {
-                  onChange({ kind, id });
-                }
-              }}
-            >
-              <ThreadFilterItem label={allLabel} value="">
-                <Icon
-                  name="FolderLibrary"
-                  className="size-4 shrink-0"
-                  aria-hidden
-                />
-              </ThreadFilterItem>
-              {projects.length > 0 ? (
-                <>
-                  <DropdownMenu.Label className={LABEL_CLASS}>
-                    Projects
-                  </DropdownMenu.Label>
-                  <DropdownMenu.Group>
-                    {personalProject ? (
-                      <ThreadFilterItem
-                        label="Threads"
-                        value={`project:${personalProject.id}`}
-                      >
-                        <ProjectFilterIcon
-                          icon={projectIcons.get(personalProject.id)}
-                          personal
-                        />
-                      </ThreadFilterItem>
-                    ) : null}
-                    {regularProjects.map((project) => (
-                      <ActionableThreadFilterItem
-                        key={project.id}
-                        label={project.name}
-                        selected={
-                          value?.kind === "project" && value.id === project.id
-                        }
-                        onSelect={() => {
-                          onChange({ kind: "project", id: project.id });
-                          setOpen(false);
-                        }}
-                      >
-                        <ProjectFilterIcon
-                          icon={projectIcons.get(project.id)}
-                        />
-                        <ProjectActions
-                          canAddLocalPath={
-                            projectActionStates.get(project.id)
-                              ?.canAddLocalPath ?? false
-                          }
-                          onAddLocalPath={() => onAddProjectLocalPath(project)}
-                          onOpenSettings={() =>
-                            onOpenProjectSettings(project)
-                          }
-                          onRemove={() => onRemoveProject(project)}
-                          onRename={() => onRenameProject(project)}
-                        />
-                      </ActionableThreadFilterItem>
-                    ))}
-                  </DropdownMenu.Group>
-                </>
-              ) : null}
-              {sections.length > 0 ? (
-                <>
-                  <DropdownMenu.Label className={LABEL_CLASS}>
-                    Sections
-                  </DropdownMenu.Label>
-                  <DropdownMenu.Group>
+            <ThreadFilterItem label={allLabel} value="">
+              <Icon
+                name="FolderLibrary"
+                className="size-4 shrink-0"
+                aria-hidden
+              />
+            </ThreadFilterItem>
+            {projects.length > 0 ? (
+              <>
+                <DropdownMenuLabel>Projects</DropdownMenuLabel>
+                <DropdownMenuGroup>
+                  {personalProject ? (
                     <ThreadFilterItem
-                      label="Uncategorized"
-                      value="uncategorized"
+                      label="Threads"
+                      value={`project:${personalProject.id}`}
+                    >
+                      <ProjectFilterIcon
+                        icon={projectIcons.get(personalProject.id)}
+                        personal
+                      />
+                    </ThreadFilterItem>
+                  ) : null}
+                  {regularProjects.map((project) => (
+                    <ActionableThreadFilterItem
+                      key={project.id}
+                      label={project.name}
+                      selected={
+                        value?.kind === "project" && value.id === project.id
+                      }
+                      onSelect={() => {
+                        onChange({ kind: "project", id: project.id });
+                        setOpen(false);
+                      }}
+                    >
+                      <ProjectFilterIcon icon={projectIcons.get(project.id)} />
+                      <ProjectActions
+                        canAddLocalPath={
+                          projectActionStates.get(project.id)
+                            ?.canAddLocalPath ?? false
+                        }
+                        onAddLocalPath={() => onAddProjectLocalPath(project)}
+                        onOpenSettings={() => onOpenProjectSettings(project)}
+                        onRemove={() => onRemoveProject(project)}
+                        onRename={() => onRenameProject(project)}
+                      />
+                    </ActionableThreadFilterItem>
+                  ))}
+                </DropdownMenuGroup>
+              </>
+            ) : null}
+            {sections.length > 0 ? (
+              <>
+                <DropdownMenuLabel>Sections</DropdownMenuLabel>
+                <DropdownMenuGroup>
+                  <ThreadFilterItem label="Uncategorized" value="uncategorized">
+                    <Icon
+                      name="ListViewOff"
+                      className="size-4 shrink-0"
+                      aria-hidden
+                    />
+                  </ThreadFilterItem>
+                  {sections.map((section) => (
+                    <ActionableThreadFilterItem
+                      key={section.id}
+                      label={section.name}
+                      selected={
+                        value?.kind === "section" && value.id === section.id
+                      }
+                      onSelect={() => {
+                        onChange({ kind: "section", id: section.id });
+                        setOpen(false);
+                      }}
                     >
                       <Icon
-                        name="ListViewOff"
+                        name="ListView"
                         className="size-4 shrink-0"
                         aria-hidden
                       />
-                    </ThreadFilterItem>
-                    {sections.map((section) => (
-                      <ActionableThreadFilterItem
-                        key={section.id}
-                        label={section.name}
-                        selected={
-                          value?.kind === "section" && value.id === section.id
-                        }
-                        onSelect={() => {
-                          onChange({ kind: "section", id: section.id });
-                          setOpen(false);
-                        }}
-                      >
-                        <Icon
-                          name="ListView"
-                          className="size-4 shrink-0"
-                          aria-hidden
-                        />
-                        <SectionActions
-                          onRemove={() => onRemoveSection(section)}
-                          onRename={() => onRenameSection(section)}
-                        />
-                      </ActionableThreadFilterItem>
-                    ))}
-                  </DropdownMenu.Group>
-                </>
-              ) : null}
-            </DropdownMenu.RadioGroup>
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+                      <SectionActions
+                        onRemove={() => onRemoveSection(section)}
+                        onRename={() => onRenameSection(section)}
+                      />
+                    </ActionableThreadFilterItem>
+                  ))}
+                </DropdownMenuGroup>
+              </>
+            ) : null}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
       {value === null ? null : (
         <span
           aria-label="Threads are filtered"
@@ -293,9 +279,7 @@ export function ThreadFilter({
           data-thread-filter-actions=""
           data-testid="thread-filter-actions"
           data-state={actionsOpen ? "open" : "closed"}
-          data-sidebar-hover-actions-open={
-            actionsOpen ? "true" : undefined
-          }
+          data-sidebar-hover-actions-open={actionsOpen ? "true" : undefined}
           data-sidebar-hover-actions-mobile="always"
           className="bb-sidebar-hover-actions relative z-20 flex shrink-0 items-center gap-1 opacity-0 pointer-events-none group-hover/thread-filter:opacity-100 group-hover/thread-filter:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto max-md:pointer-coarse:opacity-100 max-md:pointer-coarse:pointer-events-auto"
         >
@@ -332,17 +316,16 @@ function ActionableThreadFilterItem({
   selected: boolean;
 }) {
   const [submenuOpen, setSubmenuOpen] = useState(false);
-  const [pointerTarget, setPointerTarget] = useState<
-    "item" | "chevron" | null
-  >(null);
+  const [pointerTarget, setPointerTarget] = useState<"item" | "chevron" | null>(
+    null,
+  );
   const [keyboardFocused, setKeyboardFocused] = useState(false);
   const suppressSyntheticClick = useRef(false);
   const selectTargetActive =
     pointerTarget === "item" ||
     (pointerTarget === null && keyboardFocused && !submenuOpen);
   const chevronActive =
-    pointerTarget === "chevron" ||
-    (pointerTarget === null && submenuOpen);
+    pointerTarget === "chevron" || (pointerTarget === null && submenuOpen);
 
   function handleClick(event: ReactMouseEvent<HTMLDivElement>): void {
     if (
@@ -392,8 +375,9 @@ function ActionableThreadFilterItem({
   }
 
   return (
-    <DropdownMenu.Sub open={submenuOpen} onOpenChange={setSubmenuOpen}>
-      <DropdownMenu.SubTrigger
+    <DropdownMenuSub open={submenuOpen} onOpenChange={setSubmenuOpen}>
+      <DropdownMenuSubTrigger
+        showChevron={false}
         role="menuitemradio"
         aria-checked={selected}
         className={ACTIONABLE_ITEM_CLASS}
@@ -448,8 +432,8 @@ function ActionableThreadFilterItem({
         >
           <Icon name="ChevronRight" className="size-3.5" aria-hidden />
         </span>
-      </DropdownMenu.SubTrigger>
-    </DropdownMenu.Sub>
+      </DropdownMenuSubTrigger>
+    </DropdownMenuSub>
   );
 }
 
@@ -469,11 +453,9 @@ function ProjectActions({
   const onSubmenuPointerEnter = useContext(SubmenuPointerEnterContext);
 
   return (
-    <DropdownMenu.Portal>
-      <DropdownMenu.SubContent
-        {...portalScopeProps()}
+    <DropdownMenuPortal>
+      <DropdownMenuSubContent
         sideOffset={2}
-        className={SUB_CONTENT_CLASS}
         onPointerEnter={onSubmenuPointerEnter}
       >
         <FilterActionItem
@@ -481,7 +463,7 @@ function ProjectActions({
           label="Project settings"
           onSelect={onOpenSettings}
         />
-        <DropdownMenu.Separator className="-mx-1 my-1 h-px bg-border" />
+        <DropdownMenuSeparator />
         <FilterActionItem icon="Edit" label="Rename" onSelect={onRename} />
         {canAddLocalPath ? (
           <FilterActionItem
@@ -496,8 +478,8 @@ function ProjectActions({
           label="Remove"
           onSelect={onRemove}
         />
-      </DropdownMenu.SubContent>
-    </DropdownMenu.Portal>
+      </DropdownMenuSubContent>
+    </DropdownMenuPortal>
   );
 }
 
@@ -511,11 +493,9 @@ function SectionActions({
   const onSubmenuPointerEnter = useContext(SubmenuPointerEnterContext);
 
   return (
-    <DropdownMenu.Portal>
-      <DropdownMenu.SubContent
-        {...portalScopeProps()}
+    <DropdownMenuPortal>
+      <DropdownMenuSubContent
         sideOffset={2}
-        className={SUB_CONTENT_CLASS}
         onPointerEnter={onSubmenuPointerEnter}
       >
         <FilterActionItem icon="Edit" label="Rename" onSelect={onRename} />
@@ -525,8 +505,8 @@ function SectionActions({
           label="Remove"
           onSelect={onRemove}
         />
-      </DropdownMenu.SubContent>
-    </DropdownMenu.Portal>
+      </DropdownMenuSubContent>
+    </DropdownMenuPortal>
   );
 }
 
@@ -542,13 +522,13 @@ function FilterActionItem({
   onSelect: () => void;
 }) {
   return (
-    <DropdownMenu.Item
-      className={`${ACTION_ITEM_CLASS} ${destructive ? "text-destructive focus:text-destructive" : ""}`}
+    <DropdownMenuItem
+      variant={destructive ? "destructive" : "default"}
       onSelect={onSelect}
     >
       <Icon name={icon} className="size-4 shrink-0" aria-hidden />
       <span>{label}</span>
-    </DropdownMenu.Item>
+    </DropdownMenuItem>
   );
 }
 
@@ -630,12 +610,13 @@ function ThreadFilterItem({
   value: string;
 }) {
   return (
-    <DropdownMenu.RadioItem value={value} className={ITEM_CLASS}>
-      <DropdownMenu.ItemIndicator className="absolute left-2 inline-flex size-3.5 items-center justify-center">
-        <Icon name="Check" className="size-3.5" aria-hidden />
-      </DropdownMenu.ItemIndicator>
+    <DropdownMenuRadioItem
+      value={value}
+      indicator="check"
+      className={FILTER_ITEM_CLASS}
+    >
       {children}
       <span className="truncate">{label}</span>
-    </DropdownMenu.RadioItem>
+    </DropdownMenuRadioItem>
   );
 }

@@ -1,13 +1,11 @@
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { useRef } from "react";
-import { portalScopeProps } from "../lib/portal-scope";
-import { DROPDOWN_MENU_MOTION_CLASS } from "../lib/menu-motion";
 import { Icon } from "./Icon";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
-const CONTENT_CLASS =
-  `z-50 min-w-40 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md ${DROPDOWN_MENU_MOTION_CLASS}`;
-const ITEM_CLASS =
-  "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-[0.3125rem] text-xs outline-none transition-colors data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground";
 const TRIGGER_CLASS =
   "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground outline-none ring-sidebar-ring transition-colors focus-visible:ring-2 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-foreground";
 const PANEL_OPTIONS_TRIGGER_CLASS =
@@ -22,19 +20,10 @@ export function ThreadFilterOptionsMenu({
   onHide,
   onOpenChange,
 }: ThreadFilterOptionsMenuProps) {
-  const pointerDismissedRef = useRef(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
   return (
-    <DropdownMenu.Root
-      onOpenChange={(open) => {
-        if (open) pointerDismissedRef.current = false;
-        onOpenChange?.(open);
-      }}
-    >
-      <DropdownMenu.Trigger asChild>
+    <DropdownMenu onOpenChange={onOpenChange}>
+      <DropdownMenuTrigger asChild>
         <button
-          ref={triggerRef}
           type="button"
           aria-label="Projects and sections options"
           className={`${TRIGGER_CLASS} ${PANEL_OPTIONS_TRIGGER_CLASS}`}
@@ -45,29 +34,13 @@ export function ThreadFilterOptionsMenu({
             aria-hidden
           />
         </button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          {...portalScopeProps()}
-          align="end"
-          sideOffset={4}
-          className={CONTENT_CLASS}
-          onPointerDownOutside={() => {
-            pointerDismissedRef.current = true;
-          }}
-          onCloseAutoFocus={(event) => {
-            if (!pointerDismissedRef.current) return;
-            pointerDismissedRef.current = false;
-            event.preventDefault();
-            triggerRef.current?.blur();
-          }}
-        >
-          <DropdownMenu.Item className={ITEM_CLASS} onSelect={onHide}>
-            <Icon name="EyeOff" className="size-4 shrink-0" aria-hidden />
-            Hide from sidebar
-          </DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-40">
+        <DropdownMenuItem onSelect={onHide}>
+          <Icon name="EyeOff" className="size-4 shrink-0" aria-hidden />
+          Hide from sidebar
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

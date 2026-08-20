@@ -10,6 +10,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ThreadFilter } from "./ThreadFilter";
+import { CompactViewportOverrideProvider } from "./ui/hooks/use-compact-viewport";
 
 afterEach(cleanup);
 
@@ -52,12 +53,14 @@ describe("ThreadFilter", () => {
       indicator.querySelector('[data-icon="FilterMailCircle"]'),
     ).not.toBeNull();
     expect(actionsContainer.className).toContain("bb-sidebar-hover-actions");
-    expect(options.querySelector('[data-icon="MoreHorizontal"]')).not.toBeNull();
+    expect(
+      options.querySelector('[data-icon="MoreHorizontal"]'),
+    ).not.toBeNull();
 
     fireEvent.keyDown(options, { key: "Enter" });
-    expect(actionsContainer.getAttribute("data-sidebar-hover-actions-open")).toBe(
-      "true",
-    );
+    expect(
+      actionsContainer.getAttribute("data-sidebar-hover-actions-open"),
+    ).toBe("true");
     expect(indicator.getAttribute("data-sidebar-hover-actions-open")).toBe(
       "true",
     );
@@ -91,9 +94,7 @@ describe("ThreadFilter", () => {
     const trigger = screen.getByRole("button", {
       name: "Projects and sections",
     });
-    expect(
-      trigger.querySelector('[data-icon="FolderLibrary"]'),
-    ).not.toBeNull();
+    expect(trigger.querySelector('[data-icon="FolderLibrary"]')).not.toBeNull();
     expect(
       screen
         .getByRole("button", { name: "New project" })
@@ -114,7 +115,9 @@ describe("ThreadFilter", () => {
     expect(within(menu).getByText("Projects")).toBeDefined();
     expect(within(menu).getByText("Sections")).toBeDefined();
     expect(
-      within(menu).getAllByRole("menuitemradio").map((item) => item.textContent),
+      within(menu)
+        .getAllByRole("menuitemradio")
+        .map((item) => item.textContent),
     ).toEqual([
       "All projects and sections",
       "Threads",
@@ -137,6 +140,36 @@ describe("ThreadFilter", () => {
         .getByRole("menuitemradio", { name: "Uncategorized" })
         .querySelector('[data-icon="ListViewOff"]'),
     ).not.toBeNull();
+  });
+
+  it("keeps project and section filtering available on compact viewports", () => {
+    render(
+      <CompactViewportOverrideProvider isCompactViewport>
+        <ThreadFilter
+          projects={projects}
+          sections={sections}
+          value={null}
+          onChange={() => {}}
+          onNewProject={() => {}}
+          onNewSection={() => {}}
+        />
+      </CompactViewportOverrideProvider>,
+    );
+
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Projects and sections" }),
+      { key: "Enter" },
+    );
+
+    expect(
+      screen.getByRole("menuitemradio", {
+        name: "All projects and sections",
+      }),
+    ).toBeDefined();
+    expect(screen.getByRole("menuitemradio", { name: "Alpha" })).toBeDefined();
+    expect(
+      screen.getByRole("menuitemradio", { name: "Waiting" }),
+    ).toBeDefined();
   });
 
   it("shows the selected project or section icon in the trigger", () => {
@@ -201,7 +234,9 @@ describe("ThreadFilter", () => {
     });
     expect(trigger.querySelector('[data-icon="ListView"]')).not.toBeNull();
 
-    rerender(<ThreadFilter {...sharedProps} value={{ kind: "uncategorized" }} />);
+    rerender(
+      <ThreadFilter {...sharedProps} value={{ kind: "uncategorized" }} />,
+    );
     trigger = screen.getByRole("button", {
       name: "Projects and sections: Uncategorized",
     });
@@ -268,14 +303,15 @@ describe("ThreadFilter", () => {
     expect(screen.queryByText("Projects")).toBeNull();
     expect(screen.getByText("Sections")).toBeDefined();
 
-    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: "Escape",
+    });
     rerender(
       <ThreadFilter {...sharedProps} projects={projects} sections={[]} />,
     );
-    fireEvent.keyDown(
-      screen.getByRole("button", { name: "Projects" }),
-      { key: "Enter" },
-    );
+    fireEvent.keyDown(screen.getByRole("button", { name: "Projects" }), {
+      key: "Enter",
+    });
     const projectsOnlyMenu = screen.getByRole("menu");
     expect(within(projectsOnlyMenu).getByText("Projects")).toBeDefined();
     expect(within(projectsOnlyMenu).queryByText("Sections")).toBeNull();
@@ -285,7 +321,9 @@ describe("ThreadFilter", () => {
       }),
     ).toBeNull();
 
-    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: "Escape",
+    });
     rerender(
       <ThreadFilter
         projects={projects}
@@ -424,7 +462,9 @@ describe("ThreadFilter", () => {
     expect(rootMenu.classList.contains("z-50")).toBe(true);
     expect(submenu.classList.contains("z-50")).toBe(true);
     expect(
-      within(submenu).getAllByRole("menuitem").map((item) => item.textContent),
+      within(submenu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
     ).toEqual(["Project settings", "Rename", "Add local path", "Remove"]);
     const rename = within(submenu).getByRole("menuitem", { name: "Rename" });
     fireEvent.keyDown(rename, { key: "Enter" });
@@ -442,7 +482,10 @@ describe("ThreadFilter", () => {
     fireEvent.click(screen.getByRole("menuitemradio", { name: "Alpha" }), {
       detail: 1,
     });
-    expect(onChange).toHaveBeenCalledWith({ kind: "project", id: "proj_alpha" });
+    expect(onChange).toHaveBeenCalledWith({
+      kind: "project",
+      id: "proj_alpha",
+    });
   });
 
   it("opens project actions after the regular submenu hover delay", async () => {
@@ -469,7 +512,9 @@ describe("ThreadFilter", () => {
       );
       await act(() => vi.advanceTimersByTimeAsync(110));
 
-      expect(screen.getByRole("menuitem", { name: "Project settings" })).toBeDefined();
+      expect(
+        screen.getByRole("menuitem", { name: "Project settings" }),
+      ).toBeDefined();
     } finally {
       vi.useRealTimers();
     }
@@ -625,7 +670,9 @@ describe("ThreadFilter", () => {
     fireEvent.contextMenu(waiting);
     const submenu = screen.getAllByRole("menu")[1];
     expect(
-      within(submenu).getAllByRole("menuitem").map((item) => item.textContent),
+      within(submenu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
     ).toEqual(["Rename", "Remove"]);
   });
 });

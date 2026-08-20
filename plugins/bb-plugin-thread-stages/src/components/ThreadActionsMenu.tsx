@@ -1,27 +1,35 @@
 import type { ReactNode } from "react";
-import * as ContextMenu from "@radix-ui/react-context-menu";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type {
   PluginSidebarThread,
   PluginSidebarThreadActions,
 } from "@get-bb/plugin-sdk/app";
 import { WORKFLOW_STAGES, type WorkflowStage } from "../workflow-stage";
-import {
-  CONTEXT_MENU_MOTION_CLASS,
-  DROPDOWN_MENU_MOTION_CLASS,
-} from "../lib/menu-motion";
-import { portalScopeProps } from "../lib/portal-scope";
 import { Icon, type IconName } from "./Icon";
 import { WorkflowStageIcon } from "./WorkflowStageIcon";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuPortal,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "./ui/context-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
-const MENU_SURFACE_CLASS =
-  "z-[70] min-w-28 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
-const CONTEXT_CONTENT_CLASS = `${MENU_SURFACE_CLASS} ${CONTEXT_MENU_MOTION_CLASS}`;
-const DROPDOWN_CONTENT_CLASS = `${MENU_SURFACE_CLASS} ${DROPDOWN_MENU_MOTION_CLASS}`;
-const ITEM_CLASS =
-  "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-[0.3125rem] text-xs outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground [&>svg]:size-4 [&>svg]:shrink-0";
-const DESTRUCTIVE_ITEM_CLASS = `${ITEM_CLASS} text-destructive data-[highlighted]:bg-destructive/15 data-[highlighted]:text-destructive`;
-const SEPARATOR_CLASS = "-mx-1 my-1 h-px bg-border";
+const DROPDOWN_LAYER_CLASS = "z-[70]";
 
 export interface ThreadSectionOption {
   id: string;
@@ -52,18 +60,12 @@ export function ThreadActionsContextMenu({
   ...props
 }: MenuSurfaceProps) {
   return (
-    <ContextMenu.Root onOpenChange={onOpenChange}>
-      <ContextMenu.Trigger asChild>{children}</ContextMenu.Trigger>
-      <ContextMenu.Portal>
-        <ContextMenu.Content
-          {...portalScopeProps()}
-          aria-label="Thread actions"
-          className={CONTEXT_CONTENT_CLASS}
-        >
-          <ContextMenuItems {...props} />
-        </ContextMenu.Content>
-      </ContextMenu.Portal>
-    </ContextMenu.Root>
+    <ContextMenu onOpenChange={onOpenChange}>
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuContent aria-label="Thread actions">
+        <ContextMenuItems {...props} />
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
@@ -72,8 +74,8 @@ export function ThreadActionsDropdown({
   ...props
 }: CommonMenuProps & { onOpenChange: (open: boolean) => void }) {
   return (
-    <DropdownMenu.Root onOpenChange={onOpenChange}>
-      <DropdownMenu.Trigger asChild>
+    <DropdownMenu responsive={false} onOpenChange={onOpenChange}>
+      <DropdownMenuTrigger asChild>
         <button
           type="button"
           aria-label="Thread actions"
@@ -83,18 +85,11 @@ export function ThreadActionsDropdown({
         >
           <Icon name="MoreHorizontal" className="size-4" aria-hidden />
         </button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          {...portalScopeProps()}
-          align="end"
-          sideOffset={4}
-          className={DROPDOWN_CONTENT_CLASS}
-        >
-          <DropdownMenuItems {...props} />
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className={DROPDOWN_LAYER_CLASS}>
+        <DropdownMenuItems {...props} />
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -110,7 +105,7 @@ function ContextMenuItems(props: CommonMenuProps) {
           >
             Open in split
           </ContextItem>
-          <ContextMenu.Separator className={SEPARATOR_CLASS} />
+          <ContextMenuSeparator />
         </>
       ) : null}
       <ContextItem
@@ -128,25 +123,21 @@ function ContextMenuItems(props: CommonMenuProps) {
       <ContextItem icon="Edit" onSelect={props.onRename}>
         Rename
       </ContextItem>
-      <ContextMenu.Separator className={SEPARATOR_CLASS} />
+      <ContextMenuSeparator />
       {workflowStage === null ? null : (
-        <ContextMenu.Sub>
-          <ContextMenu.SubTrigger disabled={disabled} className={ITEM_CLASS}>
+        <ContextMenuSub>
+          <ContextMenuSubTrigger disabled={disabled}>
             <Icon name="Progress02" aria-hidden />
             Move to stage
-            <Icon name="ChevronRight" className="ml-auto" aria-hidden />
-          </ContextMenu.SubTrigger>
-          <ContextMenu.Portal>
-            <ContextMenu.SubContent
-              {...portalScopeProps()}
-              className={CONTEXT_CONTENT_CLASS}
-            >
+          </ContextMenuSubTrigger>
+          <ContextMenuPortal>
+            <ContextMenuSubContent>
               {WORKFLOW_STAGES.map((stage) => (
-                <ContextMenu.Item
+                <ContextMenuItem
                   key={stage}
-                  className={ITEM_CLASS}
                   onSelect={() => {
-                    if (stage !== workflowStage) props.onSetWorkflowStage(stage);
+                    if (stage !== workflowStage)
+                      props.onSetWorkflowStage(stage);
                   }}
                 >
                   <span className="w-4">
@@ -156,25 +147,20 @@ function ContextMenuItems(props: CommonMenuProps) {
                   </span>
                   <WorkflowStageIcon stage={stage} />
                   {stage}
-                </ContextMenu.Item>
+                </ContextMenuItem>
               ))}
-            </ContextMenu.SubContent>
-          </ContextMenu.Portal>
-        </ContextMenu.Sub>
+            </ContextMenuSubContent>
+          </ContextMenuPortal>
+        </ContextMenuSub>
       )}
-      <ContextMenu.Sub>
-        <ContextMenu.SubTrigger className={ITEM_CLASS}>
+      <ContextMenuSub>
+        <ContextMenuSubTrigger>
           <Icon name="ListView" aria-hidden />
           Move to section
-          <Icon name="ChevronRight" className="ml-auto" aria-hidden />
-        </ContextMenu.SubTrigger>
-        <ContextMenu.Portal>
-          <ContextMenu.SubContent
-            {...portalScopeProps()}
-            className={CONTEXT_CONTENT_CLASS}
-          >
-            <ContextMenu.Item
-              className={ITEM_CLASS}
+        </ContextMenuSubTrigger>
+        <ContextMenuPortal>
+          <ContextMenuSubContent>
+            <ContextMenuItem
               onSelect={() => {
                 if (thread.sectionId !== null) props.onSetSection(null);
               }}
@@ -186,11 +172,10 @@ function ContextMenuItems(props: CommonMenuProps) {
               </span>
               <Icon name="ListViewOff" aria-hidden />
               Uncategorized
-            </ContextMenu.Item>
+            </ContextMenuItem>
             {props.sections.map((section) => (
-              <ContextMenu.Item
+              <ContextMenuItem
                 key={section.id}
-                className={ITEM_CLASS}
                 onSelect={() => {
                   if (section.id !== thread.sectionId) {
                     props.onSetSection(section.id);
@@ -204,20 +189,17 @@ function ContextMenuItems(props: CommonMenuProps) {
                 </span>
                 <Icon name="ListView" aria-hidden />
                 {section.name}
-              </ContextMenu.Item>
+              </ContextMenuItem>
             ))}
-            <ContextMenu.Separator className={SEPARATOR_CLASS} />
-            <ContextMenu.Item
-              className={ITEM_CLASS}
-              onSelect={props.onNewSection}
-            >
+            <ContextMenuSeparator />
+            <ContextMenuItem onSelect={props.onNewSection}>
               <Icon name="SectionAdd" aria-hidden />
               New section
-            </ContextMenu.Item>
-          </ContextMenu.SubContent>
-        </ContextMenu.Portal>
-      </ContextMenu.Sub>
-      <ContextMenu.Separator className={SEPARATOR_CLASS} />
+            </ContextMenuItem>
+          </ContextMenuSubContent>
+        </ContextMenuPortal>
+      </ContextMenuSub>
+      <ContextMenuSeparator />
       <ContextItem icon="Archive" onSelect={() => actions.archive(thread.id)}>
         Archive
       </ContextItem>
@@ -244,7 +226,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
           >
             Open in split
           </DropdownItem>
-          <DropdownMenu.Separator className={SEPARATOR_CLASS} />
+          <DropdownMenuSeparator />
         </>
       ) : null}
       <DropdownItem
@@ -262,25 +244,21 @@ function DropdownMenuItems(props: CommonMenuProps) {
       <DropdownItem icon="Edit" onSelect={props.onRename}>
         Rename
       </DropdownItem>
-      <DropdownMenu.Separator className={SEPARATOR_CLASS} />
+      <DropdownMenuSeparator />
       {workflowStage === null ? null : (
-        <DropdownMenu.Sub>
-          <DropdownMenu.SubTrigger disabled={disabled} className={ITEM_CLASS}>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger disabled={disabled}>
             <Icon name="Progress02" aria-hidden />
             Move to stage
-            <Icon name="ChevronRight" className="ml-auto" aria-hidden />
-          </DropdownMenu.SubTrigger>
-          <DropdownMenu.Portal>
-            <DropdownMenu.SubContent
-              {...portalScopeProps()}
-              className={DROPDOWN_CONTENT_CLASS}
-            >
+          </DropdownMenuSubTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuSubContent className={DROPDOWN_LAYER_CLASS}>
               {WORKFLOW_STAGES.map((stage) => (
-                <DropdownMenu.Item
+                <DropdownMenuItem
                   key={stage}
-                  className={ITEM_CLASS}
                   onSelect={() => {
-                    if (stage !== workflowStage) props.onSetWorkflowStage(stage);
+                    if (stage !== workflowStage)
+                      props.onSetWorkflowStage(stage);
                   }}
                 >
                   <span className="w-4">
@@ -290,25 +268,20 @@ function DropdownMenuItems(props: CommonMenuProps) {
                   </span>
                   <WorkflowStageIcon stage={stage} />
                   {stage}
-                </DropdownMenu.Item>
+                </DropdownMenuItem>
               ))}
-            </DropdownMenu.SubContent>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Sub>
+            </DropdownMenuSubContent>
+          </DropdownMenuPortal>
+        </DropdownMenuSub>
       )}
-      <DropdownMenu.Sub>
-        <DropdownMenu.SubTrigger className={ITEM_CLASS}>
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger>
           <Icon name="ListView" aria-hidden />
           Move to section
-          <Icon name="ChevronRight" className="ml-auto" aria-hidden />
-        </DropdownMenu.SubTrigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.SubContent
-            {...portalScopeProps()}
-            className={DROPDOWN_CONTENT_CLASS}
-          >
-            <DropdownMenu.Item
-              className={ITEM_CLASS}
+        </DropdownMenuSubTrigger>
+        <DropdownMenuPortal>
+          <DropdownMenuSubContent className={DROPDOWN_LAYER_CLASS}>
+            <DropdownMenuItem
               onSelect={() => {
                 if (thread.sectionId !== null) props.onSetSection(null);
               }}
@@ -320,11 +293,10 @@ function DropdownMenuItems(props: CommonMenuProps) {
               </span>
               <Icon name="ListViewOff" aria-hidden />
               Uncategorized
-            </DropdownMenu.Item>
+            </DropdownMenuItem>
             {props.sections.map((section) => (
-              <DropdownMenu.Item
+              <DropdownMenuItem
                 key={section.id}
-                className={ITEM_CLASS}
                 onSelect={() => {
                   if (section.id !== thread.sectionId) {
                     props.onSetSection(section.id);
@@ -338,20 +310,17 @@ function DropdownMenuItems(props: CommonMenuProps) {
                 </span>
                 <Icon name="ListView" aria-hidden />
                 {section.name}
-              </DropdownMenu.Item>
+              </DropdownMenuItem>
             ))}
-            <DropdownMenu.Separator className={SEPARATOR_CLASS} />
-            <DropdownMenu.Item
-              className={ITEM_CLASS}
-              onSelect={props.onNewSection}
-            >
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={props.onNewSection}>
               <Icon name="SectionAdd" aria-hidden />
               New section
-            </DropdownMenu.Item>
-          </DropdownMenu.SubContent>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Sub>
-      <DropdownMenu.Separator className={SEPARATOR_CLASS} />
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuPortal>
+      </DropdownMenuSub>
+      <DropdownMenuSeparator />
       <DropdownItem icon="Archive" onSelect={() => actions.archive(thread.id)}>
         Archive
       </DropdownItem>
@@ -380,14 +349,14 @@ function ContextItem({
   onSelect: () => void;
 }) {
   return (
-    <ContextMenu.Item
+    <ContextMenuItem
       disabled={disabled}
-      className={destructive ? DESTRUCTIVE_ITEM_CLASS : ITEM_CLASS}
+      variant={destructive ? "destructive" : "default"}
       onSelect={onSelect}
     >
       <Icon name={icon} aria-hidden />
       {children}
-    </ContextMenu.Item>
+    </ContextMenuItem>
   );
 }
 
@@ -405,13 +374,13 @@ function DropdownItem({
   onSelect: () => void;
 }) {
   return (
-    <DropdownMenu.Item
+    <DropdownMenuItem
       disabled={disabled}
-      className={destructive ? DESTRUCTIVE_ITEM_CLASS : ITEM_CLASS}
+      variant={destructive ? "destructive" : "default"}
       onSelect={onSelect}
     >
       <Icon name={icon} aria-hidden />
       {children}
-    </DropdownMenu.Item>
+    </DropdownMenuItem>
   );
 }

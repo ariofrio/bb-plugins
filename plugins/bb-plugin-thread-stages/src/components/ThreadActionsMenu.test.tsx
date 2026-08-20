@@ -9,6 +9,7 @@ import {
   ThreadActionsContextMenu,
   ThreadActionsDropdown,
 } from "./ThreadActionsMenu";
+import { CompactViewportOverrideProvider } from "./ui/hooks/use-compact-viewport";
 
 function thread(): PluginSidebarThread {
   return {
@@ -138,8 +139,45 @@ describe("ThreadActionsDropdown", () => {
       />,
     );
 
-    fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByLabelText("Thread actions"), {
+      key: "Enter",
+    });
     expect(screen.queryByText("Move to stage")).toBeNull();
+    expect(screen.getByText("Move to section")).toBeDefined();
+  });
+
+  it("keeps organization submenus available on compact viewports", () => {
+    const actions = {
+      open: vi.fn(),
+      openNewThread: vi.fn(),
+      setPinned: vi.fn(async () => {}),
+      setRead: vi.fn(async () => {}),
+      rename: vi.fn(async () => {}),
+      archive: vi.fn(),
+      requestDelete: vi.fn(),
+    } satisfies PluginSidebarThreadActions;
+    render(
+      <CompactViewportOverrideProvider isCompactViewport>
+        <ThreadActionsDropdown
+          actions={actions}
+          disabled={false}
+          sections={[{ id: "section_1", name: "Later" }]}
+          onNewSection={vi.fn()}
+          onOpenChange={vi.fn()}
+          onRename={vi.fn()}
+          onSetSection={vi.fn()}
+          onSetWorkflowStage={vi.fn()}
+          splitAvailable={false}
+          workflowStage="To do"
+          thread={thread()}
+        />
+      </CompactViewportOverrideProvider>,
+    );
+
+    fireEvent.keyDown(screen.getByLabelText("Thread actions"), {
+      key: "Enter",
+    });
+    expect(screen.getByText("Move to stage")).toBeDefined();
     expect(screen.getByText("Move to section")).toBeDefined();
   });
 
@@ -174,7 +212,9 @@ describe("ThreadActionsDropdown", () => {
       />,
     );
 
-    fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByLabelText("Thread actions"), {
+      key: "Enter",
+    });
     fireEvent.click(screen.getByText("Move to section"));
     expect(screen.getByText("Uncategorized")).toBeDefined();
     expect(screen.getByText("Now")).toBeDefined();
@@ -185,13 +225,15 @@ describe("ThreadActionsDropdown", () => {
     const newSectionItem = screen
       .getByText("New section")
       .closest('[role="menuitem"]');
-    expect(newSectionItem?.querySelector("svg")?.getAttribute("data-icon")).toBe(
-      "SectionAdd",
-    );
+    expect(
+      newSectionItem?.querySelector("svg")?.getAttribute("data-icon"),
+    ).toBe("SectionAdd");
     fireEvent.click(screen.getByText("Later"));
     expect(onSetSection).toHaveBeenCalledWith("section_2");
 
-    fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByLabelText("Thread actions"), {
+      key: "Enter",
+    });
     fireEvent.click(screen.getByText("Move to section"));
     fireEvent.click(screen.getByText("Uncategorized"));
     expect(onSetSection).toHaveBeenCalledWith(null);
@@ -214,12 +256,16 @@ describe("ThreadActionsDropdown", () => {
         thread={thread()}
       />,
     );
-    fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByLabelText("Thread actions"), {
+      key: "Enter",
+    });
     fireEvent.click(screen.getByText("Move to section"));
     fireEvent.click(screen.getByText("Uncategorized"));
     expect(onSetSection).toHaveBeenCalledTimes(2);
 
-    fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByLabelText("Thread actions"), {
+      key: "Enter",
+    });
     fireEvent.click(screen.getByText("Move to section"));
     fireEvent.click(screen.getByText("New section"));
     expect(onNewSection).toHaveBeenCalledOnce();
@@ -251,7 +297,9 @@ describe("ThreadActionsDropdown", () => {
       />,
     );
 
-    fireEvent.keyDown(screen.getByLabelText("Thread actions"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByLabelText("Thread actions"), {
+      key: "Enter",
+    });
     fireEvent.click(screen.getByText("Move to stage"));
 
     expectMenuItemIcon("Backlog", "CircleDashed");
