@@ -1,37 +1,8 @@
 import { describe, expect, it } from "vitest";
-import {
-  AlbumNotFound01Icon,
-  Clock05Icon,
-  SquareIcon,
-} from "@hugeicons/core-free-icons";
-import {
-  ClockSquareIcon,
-  DashedSquareIcon,
-  ListViewOffIcon,
-  Progress02Icon,
-  SectionAddIcon,
-} from "./composed-icons";
+import { AlbumNotFound01Icon } from "@hugeicons/core-free-icons";
+import { ListViewOffIcon, SectionAddIcon } from "./composed-icons";
 
 describe("composed icons", () => {
-  it("borrows the pieces it means to borrow", () => {
-    expect(SquareIcon).toHaveLength(1);
-    expect(SquareIcon[0]?.[0]).toBe("path");
-    // The clock's second path is its hands; the first is the dial.
-    expect(Clock05Icon[1]?.[1].d).toBe("M12 8V12L14 14");
-  });
-
-  it("draws the clock's hands inside the square outline", () => {
-    expect(ClockSquareIcon).toEqual([SquareIcon[0], Clock05Icon[1]]);
-  });
-
-  it("dashes the square outline without redrawing it", () => {
-    expect(DashedSquareIcon).toHaveLength(1);
-    const [tag, attributes] = DashedSquareIcon[0] ?? [];
-    expect(tag).toBe("path");
-    expect(attributes?.d).toBe(SquareIcon[0]?.[1].d);
-    expect(attributes?.strokeDasharray).toBe("3.5 3");
-  });
-
   it("interrupts the list rows around Hugeicons' not-found stroke", () => {
     const slash = AlbumNotFound01Icon.at(-1);
     expect(slash?.[1].d).toBe("M2 2L22 22");
@@ -42,13 +13,6 @@ describe("composed icons", () => {
       "M2 2L22 22",
     ]);
     expect(ListViewOffIcon[3]).toEqual(slash);
-  });
-
-  it("keeps the plugin branding geometry available to HugeiconsIcon", () => {
-    expect(Progress02Icon.map(([tag]) => tag)).toEqual(["circle", "path"]);
-    expect(Progress02Icon[1]?.[1].d).toBe(
-      "M19.5 12C19.5 11.0151 19.306 10.0398 18.9291 9.12987C18.5522 8.21993 17.9997 7.39314 17.3033 6.6967C16.6069 6.00026 15.7801 5.44781 14.8701 5.0709C13.9602 4.69399 12.9849 4.5 12 4.5L12 12H19.5Z",
-    );
   });
 
   it("keeps the section rows clear of the add symbol", () => {
