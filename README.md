@@ -93,27 +93,14 @@ bb plugin install chatgpt-theme@ariofrio
 
 <br clear="all">
 
-## Install
+## Installing and updating
 
-Add this repository as a bb marketplace, then choose any of its plugins in
-Settings → Plugins:
-
-```sh
-bb marketplace add git:github.com/ariofrio/bb-plugins
-```
-
-Or install one of them from the command line:
-
-```sh
-bb plugin install chatgpt-theme@ariofrio
-```
-
-The entry ids are `breadcrumbs`, `chatgpt-theme`, `icons`,
-`missing-keyboard-shortcuts`, and `thread-stages`, and each plugin's
-README repeats its own. Every entry resolves the plugin's highest
+Each command above adds this repository as a bb marketplace and installs one
+plugin from it. Once the marketplace is added, the rest can also be picked in
+Settings → Plugins. Every entry resolves the plugin's highest
 `<entry-id>/vX.Y.Z` release tag, so `bb plugin update <entry-id>` picks up new
-releases and the marketplace never has to be re-added. Its catalog is defined
-in [marketplace.json](marketplace.json). Nothing here is published to npm yet.
+releases and the marketplace never has to be re-added. The catalog is defined in
+[marketplace.json](marketplace.json). Nothing here is published to npm yet.
 
 ## Development
 
