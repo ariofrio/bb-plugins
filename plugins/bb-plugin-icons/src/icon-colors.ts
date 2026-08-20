@@ -1,4 +1,4 @@
-import type { ProjectIconColor } from "./store";
+import type { IconColor } from "./store";
 
 /**
  * A palette designed for this job rather than borrowed from one built for text
@@ -36,7 +36,7 @@ interface ColorAnchor {
   dark: { lightness: number; chroma: number };
 }
 
-const PROJECT_ICON_ANCHORS: Record<ProjectIconColor, ColorAnchor> = {
+const ICON_ANCHORS: Record<IconColor, ColorAnchor> = {
   red: {
     hue: 23.5,
     light: { lightness: 0.531, chroma: 0.212 },
@@ -79,16 +79,16 @@ const PROJECT_ICON_ANCHORS: Record<ProjectIconColor, ColorAnchor> = {
   },
 };
 
-export function projectIconColor(color: ProjectIconColor | null): string | null {
+export function iconColor(color: IconColor | null): string | null {
   if (color === null) return null;
-  const { hue, light, dark } = PROJECT_ICON_ANCHORS[color];
+  const { hue, light, dark } = ICON_ANCHORS[color];
   return `light-dark(oklch(${light.lightness} ${light.chroma} ${hue}), oklch(${dark.lightness} ${dark.chroma} ${hue}))`;
 }
 
 /** Inline so it survives outside the plugin's `@scope` root, such as bb's header. */
-export function projectIconColorStyle(
-  color: ProjectIconColor | null,
+export function iconColorStyle(
+  color: IconColor | null,
 ): { color: string } | undefined {
-  const value = projectIconColor(color);
+  const value = iconColor(color);
   return value === null ? undefined : { color: value };
 }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import { installProjectIconPortal } from "./header-dom";
+import { installIconPortal } from "./header-dom";
 
 /** The bb thread header structure this plugin reaches into. */
 function renderHeader({ withBreadcrumb }: { withBreadcrumb: boolean }): {
@@ -32,11 +32,11 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("installProjectIconPortal", () => {
+describe("installIconPortal", () => {
   it("mounts before the breadcrumb when that plugin is present", () => {
     const { marker, center } = renderHeader({ withBreadcrumb: true });
 
-    const mount = installProjectIconPortal(marker);
+    const mount = installIconPortal(marker);
 
     expect(mount).not.toBeNull();
     expect(
@@ -55,7 +55,7 @@ describe("installProjectIconPortal", () => {
   it("mounts before the title when the breadcrumb is not installed", () => {
     const { marker, center } = renderHeader({ withBreadcrumb: false });
 
-    installProjectIconPortal(marker);
+    installIconPortal(marker);
 
     expect(center.firstElementChild?.hasAttribute("data-icons-root")).toBe(
       true,
@@ -66,7 +66,7 @@ describe("installProjectIconPortal", () => {
     const { marker, center } = renderHeader({ withBreadcrumb: true });
     const slot = marker.closest<HTMLElement>('[role="group"]');
 
-    const mount = installProjectIconPortal(marker);
+    const mount = installIconPortal(marker);
     expect(slot?.hidden).toBe(true);
 
     mount?.cleanup();
@@ -77,7 +77,7 @@ describe("installProjectIconPortal", () => {
   it("carries the plugin's style scope into bb's header", () => {
     const { marker, center } = renderHeader({ withBreadcrumb: true });
 
-    installProjectIconPortal(marker);
+    installIconPortal(marker);
 
     // Plugin CSS is `@scope`d to these attributes; without them every class on
     // this subtree resolves to nothing.
@@ -89,7 +89,7 @@ describe("installProjectIconPortal", () => {
   it("opts its portal out of the desktop window drag region", () => {
     const { marker, center } = renderHeader({ withBreadcrumb: true });
 
-    installProjectIconPortal(marker);
+    installIconPortal(marker);
 
     // Electron treats the header as title bar; without this a left click drags
     // the window instead of reaching the button.
@@ -103,6 +103,6 @@ describe("installProjectIconPortal", () => {
     const marker = document.querySelector<HTMLElement>("[data-marker]");
     if (marker === null) throw new Error("missing marker");
 
-    expect(installProjectIconPortal(marker)).toBeNull();
+    expect(installIconPortal(marker)).toBeNull();
   });
 });

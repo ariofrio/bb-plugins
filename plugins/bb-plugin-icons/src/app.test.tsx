@@ -67,9 +67,9 @@ describe("project icon app registration", () => {
       },
       {
         rpc: {
-          listProjectIcons: () => ({
+          listIcons: () => ({
             icons: [],
-            defaults: { project: CircleIcon, personal: CircleIcon },
+            defaults: { project: CircleIcon, personal: CircleIcon, section: CircleIcon },
           }),
         },
         sidebarThreads: {

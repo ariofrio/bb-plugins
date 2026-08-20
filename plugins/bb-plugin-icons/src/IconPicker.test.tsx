@@ -10,7 +10,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IconPicker } from "./IconPicker";
-import { projectIconColor } from "./project-icon-colors";
+import { iconColor } from "./icon-colors";
 
 const catalog = [
   {
@@ -77,7 +77,7 @@ describe("IconPicker", () => {
         loading={false}
         open
         onOpenChange={vi.fn()}
-        projectName="Example project"
+        ownerName="Example project"
         icon="circle"
         defaultIcon="folder"
         color="red"
@@ -93,7 +93,7 @@ describe("IconPicker", () => {
     expect(swatches[0]).toBe(screen.getByRole("button", { name: "Theme color" }));
     expect(swatches[1]).toBe(screen.getByRole("button", { name: "Red" }));
     expect(screen.getByRole("button", { name: "circle" }).style.color).toBe(
-      projectIconColor("red"),
+      iconColor("red"),
     );
     expect(screen.queryByLabelText("Selected icon: circle")).toBeNull();
   });
@@ -107,7 +107,7 @@ describe("IconPicker", () => {
         loading={false}
         open
         onOpenChange={vi.fn()}
-        projectName="Example project"
+        ownerName="Example project"
         icon="folder"
         defaultIcon="folder"
         color="red"
@@ -138,7 +138,7 @@ describe("IconPicker", () => {
         loading={false}
         open
         onOpenChange={vi.fn()}
-        projectName="Example project"
+        ownerName="Example project"
         icon="circle"
         defaultIcon="folder"
         color={null}
@@ -196,7 +196,7 @@ describe("IconPicker", () => {
         loading={false}
         open
         onOpenChange={vi.fn()}
-        projectName="Example project"
+        ownerName="Example project"
         icon="circle"
         defaultIcon="folder"
         color={null}
@@ -229,7 +229,7 @@ describe("IconPicker", () => {
         loading={false}
         open
         onOpenChange={vi.fn()}
-        projectName="Example project"
+        ownerName="Example project"
         icon="circle"
         defaultIcon="folder"
         color="red"
@@ -269,7 +269,7 @@ describe("IconPicker", () => {
         loading={false}
         open
         onOpenChange={vi.fn()}
-        projectName="Example project"
+        ownerName="Example project"
         icon="circle"
         defaultIcon="folder"
         color={null}
@@ -318,7 +318,7 @@ describe("IconPicker", () => {
         loading={false}
         open
         onOpenChange={vi.fn()}
-        projectName="Example project"
+        ownerName="Example project"
         icon="circle"
         defaultIcon="folder"
         color={null}
@@ -402,7 +402,7 @@ describe("IconPicker", () => {
         loading={false}
         open
         onOpenChange={vi.fn()}
-        projectName="Example project"
+        ownerName="Example project"
         icon="circle"
         defaultIcon="folder"
         color={null}
@@ -460,7 +460,7 @@ describe("IconPicker", () => {
         loading={false}
         open
         onOpenChange={vi.fn()}
-        projectName="Example project"
+        ownerName="Example project"
         icon="Folder"
         defaultIcon="Folder"
         color={null}
@@ -483,7 +483,7 @@ describe("IconPicker", () => {
         loading={false}
         open
         onOpenChange={vi.fn()}
-        projectName="Example project"
+        ownerName="Example project"
         icon="Folder"
         defaultIcon="Folder"
         color={null}

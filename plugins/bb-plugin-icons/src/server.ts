@@ -2,22 +2,30 @@ import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
 import { z } from "zod";
 import catalogMetadata from "./icon-catalog.json";
 import { CATALOG_ICONS } from "./icon-catalog.generated";
+import { SECTION_GLYPH } from "./section-icon";
 import {
   DEFAULT_PROJECT_ICON,
+  DEFAULT_SECTION_ICON,
+  ICON_COLORS,
+  ICON_MIGRATIONS,
+  ICON_OWNER_KINDS,
   PERSONAL_PROJECT_ICON,
-  PROJECT_ICON_COLORS,
-  PROJECT_ICON_MIGRATIONS,
-  createProjectIconStore,
-  isEditableProject,
+  createIconStore,
+  isEditable,
+  type IconOwner,
 } from "./store";
 
-const projectIconSchema = z
+const ownerSchema = z
   .object({
-    projectId: z.string().min(1).max(256),
-    icon: z.string().min(1).max(128),
-    color: z.enum(PROJECT_ICON_COLORS).nullable(),
+    kind: z.enum(ICON_OWNER_KINDS),
+    id: z.string().min(1).max(256),
   })
   .strict();
+
+const iconSchema = ownerSchema.extend({
+  icon: z.string().min(1).max(128),
+  color: z.enum(ICON_COLORS).nullable(),
+});
 
 // Consumers render the glyph without shipping the catalog themselves, so the
 // drawing for each chosen icon travels with it.
@@ -27,9 +35,13 @@ const glyphSchema = z
 
 const iconsSchema = z
   .object({
-    icons: z.array(projectIconSchema.extend({ glyph: glyphSchema })),
+    icons: z.array(iconSchema.extend({ glyph: glyphSchema })),
     defaults: z
-      .object({ project: glyphSchema, personal: glyphSchema })
+      .object({
+        project: glyphSchema,
+        personal: glyphSchema,
+        section: glyphSchema,
+      })
       .strict(),
   })
   .strict();
@@ -58,39 +70,63 @@ export const rpcContract = defineRpcContract({
     input: z.null(),
     output: catalogSchema,
   },
-  listProjectIcons: {
+  listIcons: {
     input: z.null(),
     output: iconsSchema,
   },
-  setProjectIcon: {
-    input: projectIconSchema,
+  setIcon: {
+    input: iconSchema,
     output: iconsSchema,
   },
-  clearProjectIcon: {
-    input: z.object({ projectId: z.string().min(1).max(256) }).strict(),
+  clearIcon: {
+    input: ownerSchema,
     output: iconsSchema,
   },
 });
 
 export default function plugin(bb: BbPluginApi) {
   const db = bb.storage.database();
-  bb.storage.migrate(db, PROJECT_ICON_MIGRATIONS);
-  const store = createProjectIconStore(db);
+  bb.storage.migrate(db, ICON_MIGRATIONS);
+  const store = createIconStore(db);
 
   const glyphOf = (icon: string) =>
-    CATALOG_ICONS[icon] ?? CATALOG_ICONS[DEFAULT_PROJECT_ICON] ?? [];
+    icon === DEFAULT_SECTION_ICON
+      ? SECTION_GLYPH
+      : (CATALOG_ICONS[icon] ?? CATALOG_ICONS[DEFAULT_PROJECT_ICON] ?? []);
 
   const view = () => ({
     icons: store.list().map((icon) => ({ ...icon, glyph: glyphOf(icon.icon) })),
     defaults: {
       project: glyphOf(DEFAULT_PROJECT_ICON),
       personal: glyphOf(PERSONAL_PROJECT_ICON),
+      section: SECTION_GLYPH,
     },
   });
 
-  const publish = (projectId: string) => {
-    bb.realtime.publish("icons-changed", { projectId });
+  // Only the owner: a listener refetches anyway, and the chosen icon is nobody
+  // else's business on a broadcast channel.
+  const publish = ({ kind, id }: IconOwner) => {
+    bb.realtime.publish("icons-changed", { kind, id });
     return view();
+  };
+
+  /**
+   * bb publishes no event for a section, so a removed one leaves its icon
+   * behind. Sweeping on start and after each write keeps the read path free of
+   * an SDK round-trip it would pay on every header mount, and costs nothing in
+   * the meantime: bb never reuses an id, so a leftover row is only bytes.
+   */
+  const pruneSections = async () => {
+    try {
+      const sections = await bb.sdk.threadSections.list();
+      const dropped = store.keepOnly(
+        "section",
+        sections.map((section) => section.id),
+      );
+      if (dropped > 0) bb.realtime.publish("icons-changed", { kind: "section" });
+    } catch {
+      // A hiccup listing sections must never fail the write that triggered it.
+    }
   };
 
   const catalog = {
@@ -115,30 +151,36 @@ export default function plugin(bb: BbPluginApi) {
 
   bb.rpc.register(rpcContract, {
     listIconCatalog: () => catalog,
-    listProjectIcons: () => view(),
-    setProjectIcon(input) {
-      if (!isEditableProject(input.projectId)) {
+    listIcons: () => view(),
+    setIcon(input) {
+      if (!isEditable(input)) {
         throw new Error("The personal project's icon is fixed.");
       }
       store.set(input);
-      return publish(input.projectId);
+      const next = publish(input);
+      if (input.kind === "section") void pruneSections();
+      return next;
     },
-    clearProjectIcon({ projectId }) {
-      store.clear(projectId);
-      return publish(projectId);
+    clearIcon(owner) {
+      store.clear(owner);
+      return publish(owner);
     },
   });
 
   // A deleted project's icon would otherwise linger forever; bb reports
   // deletions through project changes rather than a plugin lifecycle event.
-  bb.background.service("project-icon-cleanup", {
+  bb.background.service("icon-cleanup", {
     async start(signal) {
+      void pruneSections();
       const unsubscribe = bb.sdk.subscribe({
         event: "project:changed",
         callback(event) {
           if (!event.id || !event.changes.includes("project-deleted")) return;
-          if (store.clear(event.id)) {
-            bb.realtime.publish("icons-changed", { projectId: event.id });
+          if (store.clear({ kind: "project", id: event.id })) {
+            bb.realtime.publish("icons-changed", {
+              kind: "project",
+              id: event.id,
+            });
           }
         },
       });

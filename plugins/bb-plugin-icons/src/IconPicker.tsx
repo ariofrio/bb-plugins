@@ -14,10 +14,10 @@ import {
   type CatalogEntry,
 } from "./icon-search";
 import {
-  projectIconColor,
-  projectIconColorStyle,
-} from "./project-icon-colors";
-import { PROJECT_ICON_COLORS, type ProjectIconColor } from "./store";
+  iconColor,
+  iconColorStyle,
+} from "./icon-colors";
+import { ICON_COLORS, type IconColor } from "./store";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";
@@ -37,12 +37,12 @@ export interface IconPickerProps {
   loading: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  projectName: string;
+  ownerName: string;
   icon: string;
   defaultIcon: string;
-  color: ProjectIconColor | null;
+  color: IconColor | null;
   onPick: (icon: string) => void;
-  onPickColor: (color: ProjectIconColor | null) => void;
+  onPickColor: (color: IconColor | null) => void;
   onReset: () => void;
   trigger: ReactElement;
 }
@@ -52,7 +52,7 @@ export function IconPicker({
   loading,
   open,
   onOpenChange,
-  projectName,
+  ownerName,
   icon,
   defaultIcon,
   color,
@@ -201,7 +201,7 @@ export function IconPicker({
       >
         <div className="flex h-[calc(var(--radix-popover-content-available-height)-2rem)] max-h-[32rem] flex-col gap-3 pr-1 max-md:h-[calc(85dvh-3rem)] max-md:max-h-none">
           <PopoverTitle id={titleId} className="sr-only">
-            Icon for {projectName}
+            Icon for {ownerName}
           </PopoverTitle>
 
           <div className="flex items-center gap-2 py-1">
@@ -216,7 +216,7 @@ export function IconPicker({
                 onClick={() => onPickColor(null)}
                 className="bg-muted-foreground"
               />
-              {PROJECT_ICON_COLORS.map((swatch) => {
+              {ICON_COLORS.map((swatch) => {
                 const label = titleCase(swatch);
                 return (
                   <ColorSwatch
@@ -225,7 +225,7 @@ export function IconPicker({
                     selected={color === swatch}
                     onClick={() => onPickColor(swatch)}
                     style={{
-                      backgroundColor: projectIconColor(swatch) ?? undefined,
+                      backgroundColor: iconColor(swatch) ?? undefined,
                     }}
                   />
                 );
@@ -456,7 +456,7 @@ function IconGrid({
 }: {
   entries: readonly CatalogIcon[];
   icon: string;
-  color: ProjectIconColor | null;
+  color: IconColor | null;
   onPick: (icon: string) => void;
 }) {
   return (
@@ -469,7 +469,7 @@ function IconGrid({
           aria-label={iconLabel(entry.name)}
           aria-pressed={entry.name === icon}
           onClick={() => onPick(entry.name)}
-          style={projectIconColorStyle(color)}
+          style={iconColorStyle(color)}
           className={`flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors ${
             entry.name === icon
               ? "bg-state-active"

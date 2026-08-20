@@ -22,16 +22,21 @@ export interface ProjectIconView {
   color: string | null;
 }
 
-interface StoredProjectIcon {
-  projectId: string;
+interface StoredIcon {
+  kind: "project" | "section";
+  id: string;
   icon: string;
   color: string | null;
   glyph: IconSvgElement;
 }
 
-interface ProjectIconsResponse {
-  icons: StoredProjectIcon[];
-  defaults: { project: IconSvgElement; personal: IconSvgElement };
+export interface IconsResponse {
+  icons: StoredIcon[];
+  defaults: {
+    project: IconSvgElement;
+    personal: IconSvgElement;
+    section: IconSvgElement;
+  };
 }
 
 /**
@@ -60,7 +65,7 @@ function iconColor(color: string | null): string | null {
 }
 
 export function buildProjectIconMap(
-  response: ProjectIconsResponse,
+  response: IconsResponse,
   projectIds: readonly string[],
 ): Map<string, ProjectIconView> {
   const byProject = new Map<string, ProjectIconView>();
@@ -73,7 +78,9 @@ export function buildProjectIconMap(
     });
   }
   for (const icon of response.icons) {
-    byProject.set(icon.projectId, {
+    // The plugin also stores section icons; this sidebar draws project rows.
+    if (icon.kind !== "project") continue;
+    byProject.set(icon.id, {
       name: icon.icon,
       glyph: icon.glyph,
       color: iconColor(icon.color),
@@ -87,7 +94,7 @@ export async function fetchProjectIcons(
 ): Promise<Map<string, ProjectIconView>> {
   try {
     const response = await fetch(
-      `/api/v1/plugins/${ICONS_PLUGIN_ID}/rpc/listProjectIcons`,
+      `/api/v1/plugins/${ICONS_PLUGIN_ID}/rpc/listIcons`,
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -97,7 +104,7 @@ export async function fetchProjectIcons(
     );
     if (!response.ok) return new Map();
     const envelope = (await response.json()) as
-      | { ok: true; result: ProjectIconsResponse }
+      | { ok: true; result: IconsResponse }
       | { ok: false };
     if (!envelope.ok) return new Map();
     return buildProjectIconMap(envelope.result, projectIds);

@@ -1,51 +1,115 @@
 import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-  PROJECT_ICON_MIGRATIONS,
-  createProjectIconStore,
-  defaultProjectIcon,
-  isEditableProject,
-  type ProjectIconStore,
+  ICON_MIGRATIONS,
+  createIconStore,
+  defaultIcon,
+  isEditable,
+  type IconStore,
 } from "./store";
 
-describe("project icon store", () => {
+/** How bb applies them: every unapplied statement in one transaction. */
+function migrate(db: Database.Database, upTo = ICON_MIGRATIONS.length) {
+  db.transaction(() => {
+    for (const statement of ICON_MIGRATIONS.slice(0, upTo)) db.exec(statement);
+  })();
+}
+
+describe("icon store", () => {
   let db: Database.Database;
-  let store: ProjectIconStore;
+  let store: IconStore;
 
   beforeEach(() => {
     db = new Database(":memory:");
-    for (const migration of PROJECT_ICON_MIGRATIONS) db.exec(migration);
-    store = createProjectIconStore(db);
+    migrate(db);
+    store = createIconStore(db);
   });
 
   afterEach(() => db.close());
 
-  it("keeps one icon per project", () => {
-    store.set({ projectId: "proj_a", icon: "rocket", color: "purple" });
-    store.set({ projectId: "proj_b", icon: "coffee-01", color: null });
-    store.set({ projectId: "proj_a", icon: "flash", color: null });
+  it("keeps one icon per owner", () => {
+    store.set({ kind: "project", id: "proj_a", icon: "rocket", color: "purple" });
+    store.set({ kind: "project", id: "proj_b", icon: "coffee-01", color: null });
+    store.set({ kind: "project", id: "proj_a", icon: "flash", color: null });
 
     expect(store.list()).toEqual([
-      { projectId: "proj_a", icon: "flash", color: null },
-      { projectId: "proj_b", icon: "coffee-01", color: null },
+      { kind: "project", id: "proj_a", icon: "flash", color: null },
+      { kind: "project", id: "proj_b", icon: "coffee-01", color: null },
     ]);
   });
 
-  it("clears a project back to its default", () => {
-    store.set({ projectId: "proj_a", icon: "rocket", color: "red" });
+  it("tells a section apart from a project that shares its id", () => {
+    store.set({ kind: "project", id: "shared", icon: "rocket", color: null });
+    store.set({ kind: "section", id: "shared", icon: "flash", color: "teal" });
 
-    expect(store.clear("proj_a")).toBe(true);
-    expect(store.clear("proj_a")).toBe(false);
+    expect(store.list()).toEqual([
+      { kind: "project", id: "shared", icon: "rocket", color: null },
+      { kind: "section", id: "shared", icon: "flash", color: "teal" },
+    ]);
+    expect(store.clear({ kind: "section", id: "shared" })).toBe(true);
+    expect(store.list()).toEqual([
+      { kind: "project", id: "shared", icon: "rocket", color: null },
+    ]);
+  });
+
+  it("clears an owner back to its default", () => {
+    store.set({ kind: "project", id: "proj_a", icon: "rocket", color: "red" });
+
+    expect(store.clear({ kind: "project", id: "proj_a" })).toBe(true);
+    expect(store.clear({ kind: "project", id: "proj_a" })).toBe(false);
     expect(store.list()).toEqual([]);
   });
 
-  it("defaults projects to a folder and the personal project to a chat bubble", () => {
-    expect(defaultProjectIcon("proj_6dp2k86nnw")).toBe("folder-01");
-    expect(defaultProjectIcon("proj_personal")).toBe("bubble-chat");
+  it("drops icons whose owner is gone, leaving the other kind alone", () => {
+    store.set({ kind: "section", id: "sec_live", icon: "rocket", color: null });
+    store.set({ kind: "section", id: "sec_gone", icon: "flash", color: null });
+    store.set({ kind: "project", id: "proj_a", icon: "coffee-01", color: null });
+
+    expect(store.keepOnly("section", ["sec_live"])).toBe(1);
+    expect(store.keepOnly("section", ["sec_live"])).toBe(0);
+    expect(store.list()).toEqual([
+      { kind: "project", id: "proj_a", icon: "coffee-01", color: null },
+      { kind: "section", id: "sec_live", icon: "rocket", color: null },
+    ]);
   });
 
-  it("leaves the personal project's icon fixed", () => {
-    expect(isEditableProject("proj_6dp2k86nnw")).toBe(true);
-    expect(isEditableProject("proj_personal")).toBe(false);
+  it("carries icons chosen before sections existed onto the new table", () => {
+    const old = new Database(":memory:");
+    migrate(old, 1);
+    old
+      .prepare(
+        "INSERT INTO project_icon(project_id, icon, color, updated_at) VALUES (?, ?, ?, ?)",
+      )
+      .run("proj_a", "store-01", "blue", 1);
+
+    migrate(old);
+
+    expect(createIconStore(old).list()).toEqual([
+      { kind: "project", id: "proj_a", icon: "store-01", color: "blue" },
+    ]);
+    expect(
+      old
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'project_icon'",
+        )
+        .all(),
+    ).toEqual([]);
+    old.close();
+  });
+
+  it("defaults projects to a folder, the personal project to a chat bubble, and sections to bb's own mark", () => {
+    expect(defaultIcon({ kind: "project", id: "proj_6dp2k86nnw" })).toBe(
+      "folder-01",
+    );
+    expect(defaultIcon({ kind: "project", id: "proj_personal" })).toBe(
+      "bubble-chat",
+    );
+    expect(defaultIcon({ kind: "section", id: "sec_a" })).toBe("section");
+  });
+
+  it("leaves the personal project's icon fixed and every section editable", () => {
+    expect(isEditable({ kind: "project", id: "proj_6dp2k86nnw" })).toBe(true);
+    expect(isEditable({ kind: "project", id: "proj_personal" })).toBe(false);
+    expect(isEditable({ kind: "section", id: "proj_personal" })).toBe(true);
   });
 });

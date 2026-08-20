@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   ICONS_CHANNEL,
   buildProjectIconMap,
+  type IconsResponse,
   subscribeToProjectIconChanges,
 } from "./icons";
 
@@ -10,12 +11,14 @@ const folder = [["path", { d: "M1" }]] as const;
 const bubble = [["path", { d: "M2" }]] as const;
 const rocket = [["path", { d: "M3" }]] as const;
 
-const response = {
+const section = [["path", { d: "M4" }]] as const;
+
+const response: IconsResponse = {
   icons: [
-    { projectId: "proj_a", icon: "rocket", color: "teal", glyph: rocket },
-    { projectId: "proj_b", icon: "coffee-01", color: null, glyph: rocket },
+    { kind: "project", id: "proj_a", icon: "rocket", color: "teal", glyph: rocket },
+    { kind: "project", id: "proj_b", icon: "coffee-01", color: null, glyph: rocket },
   ],
-  defaults: { project: folder, personal: bubble },
+  defaults: { project: folder, personal: bubble, section },
 };
 
 describe("buildProjectIconMap", () => {
@@ -50,7 +53,7 @@ describe("buildProjectIconMap", () => {
       {
         ...response,
         icons: [
-          { projectId: "proj_a", icon: "rocket", color: "chartreuse", glyph: rocket },
+          { kind: "project", id: "proj_a", icon: "rocket", color: "chartreuse", glyph: rocket },
         ],
       },
       ["proj_a"],
@@ -78,5 +81,32 @@ describe("subscribeToProjectIconChanges", () => {
 
   it("names the channel the other plugin broadcasts on", () => {
     expect(ICONS_CHANNEL).toBe("bb.icons");
+  });
+});
+
+describe("section icons", () => {
+  it("leaves a project row alone when a section shares its id", () => {
+    const map = buildProjectIconMap(
+      {
+        ...response,
+        icons: [
+          {
+            kind: "section",
+            id: "proj_a",
+            icon: "rocket",
+            color: "teal",
+            glyph: rocket,
+          },
+        ],
+      },
+      ["proj_a"],
+    );
+
+    // These rows are projects; the Icons plugin stores both kinds in one list.
+    expect(map.get("proj_a")).toEqual({
+      name: "folder-01",
+      glyph: folder,
+      color: null,
+    });
   });
 });

@@ -8,7 +8,7 @@
 // all of them and no two colors collapse into each other, so this scores both:
 // the smallest WCAG contrast ratio anywhere, and the smallest OKLab distance
 // between any two colors anywhere.
-import { projectIconColor } from "../src/project-icon-colors.ts";
+import { iconColor } from "../src/icon-colors.ts";
 
 /** Canvas and ink for each built-in theme; every other surface derives from them. */
 const THEME_TOKENS = {
@@ -159,7 +159,7 @@ export const COLORS = ["red", "orange", "yellow", "green", "teal", "blue", "purp
 function shippedAnchors() {
   const anchors = {};
   for (const color of COLORS) {
-    const css = projectIconColor(color);
+    const css = iconColor(color);
     const m = /light-dark\(oklch\(([^)]+)\),\s*oklch\(([^)]+)\)\)/.exec(css ?? "");
     if (m === null) throw new Error(`cannot read the anchors for ${color}: ${css}`);
     const [light, dark] = [m[1], m[2]].map((part) => part.trim().split(/\s+/).map(Number));

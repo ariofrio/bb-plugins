@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { COLORS, SURFACES, evaluateShipped } from "../scripts/fit-palette.mjs";
-import { projectIconColor, projectIconColorStyle } from "./project-icon-colors";
-import type { ProjectIconColor } from "./store";
+import { iconColor, iconColorStyle } from "./icon-colors";
+import type { IconColor } from "./store";
 
 describe("project icon colors", () => {
   it("gives every color its own lightness per mode", () => {
-    expect(projectIconColor("teal")).toBe(
+    expect(iconColor("teal")).toBe(
       "light-dark(oklch(0.556 0.086 191.6), oklch(0.793 0.136 191.6))",
     );
   });
 
   it("has no color without a color", () => {
-    expect(projectIconColor(null)).toBeNull();
-    expect(projectIconColorStyle(null)).toBeUndefined();
-    expect(projectIconColorStyle("red")).toEqual({ color: projectIconColor("red") });
+    expect(iconColor(null)).toBeNull();
+    expect(iconColorStyle(null)).toBeUndefined();
+    expect(iconColorStyle("red")).toEqual({ color: iconColor("red") });
   });
 
   /**
@@ -38,8 +38,8 @@ describe("project icon colors", () => {
   });
 
   it("covers every color the picker offers", () => {
-    for (const color of COLORS as ProjectIconColor[]) {
-      expect(projectIconColor(color)).toMatch(/^light-dark\(oklch\(/u);
+    for (const color of COLORS as IconColor[]) {
+      expect(iconColor(color)).toMatch(/^light-dark\(oklch\(/u);
     }
   });
 });

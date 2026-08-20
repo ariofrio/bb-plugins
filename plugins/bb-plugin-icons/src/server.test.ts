@@ -15,27 +15,28 @@ function createPluginHarness() {
   return host.harness;
 }
 
-describe("project icon plugin API", () => {
+describe("icon plugin API", () => {
   it("registers its RPC methods and cleanup service", () => {
     const harness = createPluginHarness();
 
     expect(harness.inspection.registrations.rpcMethods).toEqual([
       "listIconCatalog",
-      "listProjectIcons",
-      "setProjectIcon",
-      "clearProjectIcon",
+      "listIcons",
+      "setIcon",
+      "clearIcon",
     ]);
     expect(harness.inspection.registrations.services).toHaveLength(1);
     expect(harness.inspection.registrations.services[0]?.name).toBe(
-      "project-icon-cleanup",
+      "icon-cleanup",
     );
   });
 
-  it("persists an icon through the schema-validated RPC boundary", async () => {
+  it("persists a project icon through the schema-validated RPC boundary", async () => {
     const harness = createPluginHarness();
 
-    const updated = await harness.behavior.callRpc("setProjectIcon", {
-      projectId: "proj_example",
+    const updated = await harness.behavior.callRpc("setIcon", {
+      kind: "project",
+      id: "proj_example",
       icon: "folder-01",
       color: "purple",
     });
@@ -43,27 +44,95 @@ describe("project icon plugin API", () => {
     expect(updated).toMatchObject({
       icons: [
         {
-          projectId: "proj_example",
+          kind: "project",
+          id: "proj_example",
           icon: "folder-01",
           color: "purple",
         },
       ],
     });
     expect(harness.inspection.realtimeSignals).toEqual([
-      { channel: "icons-changed", payload: { projectId: "proj_example" } },
+      {
+        channel: "icons-changed",
+        payload: { kind: "project", id: "proj_example" },
+      },
     ]);
+  });
+
+  it("keeps a section's icon apart from a project's", async () => {
+    const harness = createPluginHarness();
+
+    await harness.behavior.callRpc("setIcon", {
+      kind: "project",
+      id: "shared",
+      icon: "folder-01",
+      color: null,
+    });
+    const updated = (await harness.behavior.callRpc("setIcon", {
+      kind: "section",
+      id: "shared",
+      icon: "rocket",
+      color: "teal",
+    })) as { icons: Array<{ kind: string; id: string; icon: string }> };
+
+    expect(
+      updated.icons.map(({ kind, id, icon }) => ({ kind, id, icon })),
+    ).toEqual([
+      { kind: "project", id: "shared", icon: "folder-01" },
+      { kind: "section", id: "shared", icon: "rocket" },
+    ]);
+  });
+
+  it("ships a drawing for the section default so consumers need no catalog", async () => {
+    const harness = createPluginHarness();
+
+    const view = (await harness.behavior.callRpc("listIcons", null)) as {
+      defaults: { project: unknown[]; personal: unknown[]; section: unknown[] };
+    };
+
+    expect(view.defaults.section.length).toBeGreaterThan(0);
+    expect(view.defaults.section).not.toEqual(view.defaults.project);
   });
 
   it("rejects edits to the personal project's fixed icon", async () => {
     const harness = createPluginHarness();
 
     await expect(
-      harness.behavior.callRpc("setProjectIcon", {
-        projectId: "proj_personal",
+      harness.behavior.callRpc("setIcon", {
+        kind: "project",
+        id: "proj_personal",
         icon: "folder-01",
         color: null,
       }),
     ).rejects.toMatchObject({ code: "handler_error" });
     expect(harness.inspection.realtimeSignals).toEqual([]);
+  });
+
+  it("lets a section named like the personal project keep an icon", async () => {
+    const harness = createPluginHarness();
+
+    await expect(
+      harness.behavior.callRpc("setIcon", {
+        kind: "section",
+        id: "proj_personal",
+        icon: "rocket",
+        color: null,
+      }),
+    ).resolves.toMatchObject({
+      icons: [{ kind: "section", id: "proj_personal", icon: "rocket" }],
+    });
+  });
+
+  it("rejects an owner kind it does not know", async () => {
+    const harness = createPluginHarness();
+
+    await expect(
+      harness.behavior.callRpc("setIcon", {
+        kind: "machine",
+        id: "host_a",
+        icon: "rocket",
+        color: null,
+      }),
+    ).rejects.toMatchObject({ code: "invalid_input" });
   });
 });

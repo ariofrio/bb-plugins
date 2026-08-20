@@ -15,7 +15,7 @@ interface IconPortalMount {
  * header-dom.test.ts pins both shapes so a bb header change fails here rather
  * than silently moving the icon.
  */
-export function installProjectIconPortal(
+export function installIconPortal(
   marker: HTMLElement,
 ): IconPortalMount | null {
   const header = marker.closest("header");
