@@ -3,24 +3,24 @@
 import { cleanup, render } from "@testing-library/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  BanIcon,
   CheckmarkCircle02Icon,
   CircleDashedIcon,
-  CircleIcon,
   CircleXIcon,
+  Progress01Icon,
   Progress02Icon,
 } from "@hugeicons/core-free-icons";
 import { afterEach, describe, expect, it } from "vitest";
 import { WorkflowStageIcon } from "./WorkflowStageIcon";
+import { BlockedCircleIcon } from "./composed-icons";
 
 afterEach(cleanup);
 
 describe("WorkflowStageIcon", () => {
   it.each([
     ["Backlog", "CircleDashed", CircleDashedIcon],
-    ["To do", "Circle", CircleIcon],
+    ["To do", "Progress01", Progress01Icon],
     ["Working", "Progress02", Progress02Icon],
-    ["Blocked", "Ban", BanIcon],
+    ["Blocked", "BlockedCircle", BlockedCircleIcon],
     ["Done", "CheckmarkCircle", CheckmarkCircle02Icon],
     ["Canceled", "CircleX", CircleXIcon],
   ] as const)("renders the requested icon for %s", (stage, iconName, icon) => {

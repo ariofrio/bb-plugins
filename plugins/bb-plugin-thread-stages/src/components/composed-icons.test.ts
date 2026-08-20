@@ -1,8 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { AlbumNotFound01Icon } from "@hugeicons/core-free-icons";
-import { ListViewOffIcon, SectionAddIcon } from "./composed-icons";
+import {
+  AlbumNotFound01Icon,
+  BanIcon,
+  CircleIcon,
+} from "@hugeicons/core-free-icons";
+import {
+  BlockedCircleIcon,
+  ListViewOffIcon,
+  SectionAddIcon,
+} from "./composed-icons";
 
 describe("composed icons", () => {
+  it("expands the Ban icon to the standard stage circle", () => {
+    expect(BlockedCircleIcon[0]).toEqual(CircleIcon[0]);
+    expect(BlockedCircleIcon[1]?.[1]).toEqual({
+      ...BanIcon[1]?.[1],
+      d: "M5 5L19 19",
+    });
+  });
+
   it("interrupts the list rows around Hugeicons' not-found stroke", () => {
     const slash = AlbumNotFound01Icon.at(-1);
     expect(slash?.[1].d).toBe("M2 2L22 22");

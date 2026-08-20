@@ -3,9 +3,9 @@ import { Icon, type IconName } from "./Icon";
 
 const WORKFLOW_STAGE_ICONS: Record<WorkflowStage, IconName> = {
   Backlog: "CircleDashed",
-  "To do": "Circle",
+  "To do": "Progress01",
   Working: "Progress02",
-  Blocked: "Ban",
+  Blocked: "BlockedCircle",
   Done: "CheckmarkCircle",
   Canceled: "CircleX",
 };

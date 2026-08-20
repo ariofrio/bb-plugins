@@ -1,5 +1,23 @@
 import type { IconSvgElement } from "@hugeicons/react";
-import { AlbumNotFound01Icon } from "@hugeicons/core-free-icons";
+import {
+  AlbumNotFound01Icon,
+  BanIcon,
+  CircleIcon,
+} from "@hugeicons/core-free-icons";
+
+const banSlash = BanIcon[1];
+
+/** Ban with the same radius-10 outline as the other stage circles. */
+export const BlockedCircleIcon: IconSvgElement = [
+  CircleIcon[0],
+  [
+    banSlash[0],
+    {
+      ...banSlash[1],
+      d: "M5 5L19 19",
+    },
+  ],
+];
 
 // Hugeicons' no/not-found family interrupts the underlying artwork around a
 // final top-left-to-bottom-right stroke. These list rows use the same gaps.

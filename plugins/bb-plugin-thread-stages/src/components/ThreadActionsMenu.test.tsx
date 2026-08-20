@@ -255,9 +255,9 @@ describe("ThreadActionsDropdown", () => {
     fireEvent.click(screen.getByText("Move to stage"));
 
     expectMenuItemIcon("Backlog", "CircleDashed");
-    expectMenuItemIcon("To do", "Circle");
+    expectMenuItemIcon("To do", "Progress01");
     expectMenuItemIcon("Working", "Progress02");
-    expectMenuItemIcon("Blocked", "Ban");
+    expectMenuItemIcon("Blocked", "BlockedCircle");
     expectMenuItemIcon("Done", "CheckmarkCircle");
     expectMenuItemIcon("Canceled", "CircleX");
   });

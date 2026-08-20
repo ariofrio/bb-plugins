@@ -4,7 +4,6 @@ import {
   AlertCircleIcon,
   ArrowDown01Icon,
   ArrowUp01Icon,
-  BanIcon,
   CancelCircleIcon,
   Cancel01Icon,
   CheckmarkCircle02Icon,
@@ -29,6 +28,7 @@ import {
   MoreHorizontalIcon,
   PinIcon,
   PinOffIcon,
+  Progress01Icon,
   Progress02Icon,
   Search01Icon,
   Settings02Icon,
@@ -40,14 +40,18 @@ import {
   ComputerTerminal01Icon,
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
-import { ListViewOffIcon, SectionAddIcon } from "./composed-icons";
+import {
+  BlockedCircleIcon,
+  ListViewOffIcon,
+  SectionAddIcon,
+} from "./composed-icons";
 
 const ICONS = {
   Archive: ArchiveIcon,
   AlertCircle: AlertCircleIcon,
   ArrowDown: ArrowDown01Icon,
   ArrowUp: ArrowUp01Icon,
-  Ban: BanIcon,
+  BlockedCircle: BlockedCircleIcon,
   CancelCircle: CancelCircleIcon,
   Check: Tick02Icon,
   CheckmarkCircle: CheckmarkCircle02Icon,
@@ -75,6 +79,7 @@ const ICONS = {
   MoreHorizontal: MoreHorizontalIcon,
   Pin: PinIcon,
   PinOff: PinOffIcon,
+  Progress01: Progress01Icon,
   Progress02: Progress02Icon,
   Search: Search01Icon,
   Settings: Settings02Icon,
