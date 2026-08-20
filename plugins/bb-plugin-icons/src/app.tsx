@@ -8,11 +8,15 @@ import {
 } from "@get-bb/plugin-sdk/app";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { announceIconsChanged } from "./broadcast";
 import { installIconPortal } from "./header-dom";
 import { IconPicker, type CatalogIcon } from "./IconPicker";
 import { iconColorStyle } from "./icon-colors";
+import { iconsRpc } from "./icons-client";
 import type { rpcContract } from "./server";
+import { SidebarIcons } from "./SidebarIcons";
+import { observeSidebarIconAnchors, type SidebarAnchor } from "./sidebar-dom";
 import {
   defaultIcon,
   isEditable,
@@ -212,5 +216,36 @@ export default definePluginApp((app) => {
     id: "project-icon",
     title: "Project icon",
     component: IconHeaderAction,
+  });
+
+  // bb has no always-mounted React slot, and a thread-header action only
+  // exists on a thread route, so the sidebar half runs as a content script.
+  // Nothing from the SDK reaches here — no useRpc, no useSettings — which is
+  // why this half talks to its own backend over fetch.
+  app.contentScripts.register({
+    id: "sidebar-icons",
+    mount({ pluginId, signal }) {
+      const host = document.createElement("div");
+      host.style.display = "none";
+      document.body.append(host);
+      const root = createRoot(host);
+      const rpc = iconsRpc(pluginId);
+
+      const draw = (anchors: SidebarAnchor[]) => {
+        root.render(<SidebarIcons anchors={anchors} rpc={rpc} />);
+      };
+      draw([]);
+      const stop = observeSidebarIconAnchors(draw);
+
+      const dispose = () => {
+        // React owns nodes inside bb's sidebar, so it unmounts before the
+        // anchors holding them are taken back out.
+        root.unmount();
+        stop();
+        host.remove();
+      };
+      signal.addEventListener("abort", dispose, { once: true });
+      return dispose;
+    },
   });
 });

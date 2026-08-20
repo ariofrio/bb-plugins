@@ -98,3 +98,11 @@ describe("project icon app registration", () => {
     slot.lifecycle.unmount();
   });
 });
+
+describe("sidebar icon registration", () => {
+  it("registers the content script that draws bb's own group headers", async () => {
+    const app = await loadPluginApp(() => import("./app"));
+
+    expect(app.contentScripts.map(({ id }) => id)).toEqual(["sidebar-icons"]);
+  });
+});
