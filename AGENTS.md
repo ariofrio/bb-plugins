@@ -12,6 +12,10 @@
 - README screenshots live in `assets/` beside the branding icon but are not worth shipping, so follow `"assets"` with `"!assets/screenshot*.png", "!assets/card*.png"`.
 - A `scripts/` helper that imports plugin code reaches into `src/`, and anything it generates belongs in `src/` too.
 
+## UI components
+
+- Prefer vendoring the matching component from bb's release-pinned `@bb` shadcn registry over composing the control directly from Radix or recreating bb's chrome. Layer plugin-specific behavior onto the vendored component; use primitives or a bespoke component only when the registry component cannot support the required interaction, and preserve the native motion, focus, responsive, and portal behavior in that exception.
+
 ## Workflow
 
 - After every atomic plugin change that you are confident works correctly, install or reload it in bb as applicable, verify it with the relevant tests and checks, then commit and push it before moving on.
