@@ -29,28 +29,28 @@ describe("ThreadFilter", () => {
     onRenameSection: vi.fn(),
   };
 
-  it("replaces its configured count with sidebar actions", () => {
-    render(
+  it("replaces sidebar actions with an active-filter indicator", () => {
+    const { rerender } = render(
       <ThreadFilter
         projects={projects}
         sections={sections}
-        value={null}
-        count={3}
-        countMode="Projects"
+        value={{ kind: "project", id: "proj_alpha" }}
         onChange={() => {}}
-        onCountModeChange={() => {}}
         onHide={() => {}}
         onNewProject={() => {}}
         onNewSection={() => {}}
       />,
     );
 
-    const count = screen.getByLabelText("3 projects");
+    const indicator = screen.getByLabelText("Threads are filtered");
     const options = screen.getByRole("button", {
       name: "Projects and sections options",
     });
     const actionsContainer = screen.getByTestId("thread-filter-actions");
-    expect(count.className).toContain("bb-sidebar-hover-actions-fade");
+    expect(indicator.className).toContain("bb-sidebar-hover-actions-fade");
+    expect(
+      indicator.querySelector('[data-icon="FilterMailCircle"]'),
+    ).not.toBeNull();
     expect(actionsContainer.className).toContain("bb-sidebar-hover-actions");
     expect(options.querySelector('[data-icon="MoreHorizontal"]')).not.toBeNull();
 
@@ -58,7 +58,22 @@ describe("ThreadFilter", () => {
     expect(actionsContainer.getAttribute("data-sidebar-hover-actions-open")).toBe(
       "true",
     );
-    expect(count.getAttribute("data-sidebar-hover-actions-open")).toBe("true");
+    expect(indicator.getAttribute("data-sidebar-hover-actions-open")).toBe(
+      "true",
+    );
+
+    rerender(
+      <ThreadFilter
+        projects={projects}
+        sections={sections}
+        value={null}
+        onChange={() => {}}
+        onHide={() => {}}
+        onNewProject={() => {}}
+        onNewSection={() => {}}
+      />,
+    );
+    expect(screen.queryByLabelText("Threads are filtered")).toBeNull();
   });
 
   it("uses a scoped sidebar label while keeping All in the menu option", () => {

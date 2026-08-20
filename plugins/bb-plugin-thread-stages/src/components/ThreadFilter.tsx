@@ -10,7 +10,6 @@ import {
 } from "react";
 import { portalScopeProps } from "../lib/portal-scope";
 import type { ProjectIconView } from "../icons";
-import type { SidebarFilterCountMode } from "../sidebar-settings";
 import {
   serializeThreadFilter,
   type ThreadFilter as ThreadFilterValue,
@@ -36,11 +35,8 @@ interface ThreadFilterSection {
 }
 
 interface ThreadFilterProps {
-  count?: number;
-  countMode?: SidebarFilterCountMode;
   newProjectDisabled?: boolean;
   onChange: (filter: ThreadFilterValue) => void;
-  onCountModeChange?: (mode: SidebarFilterCountMode) => void;
   onHide?: () => void;
   onNewProject: () => void;
   onNewSection: () => void;
@@ -79,11 +75,8 @@ const SubmenuPointerEnterContext = createContext<(() => void) | undefined>(
 );
 
 export function ThreadFilter({
-  count,
-  countMode = "None",
   newProjectDisabled = false,
   onChange,
-  onCountModeChange = () => {},
   onHide = () => {},
   onNewProject,
   onNewSection,
@@ -122,13 +115,6 @@ export function ThreadFilter({
     sections.length === 0 ? "Projects" : "Projects and sections";
   const allLabel =
     sections.length === 0 ? "All projects" : "All projects and sections";
-  const countLabel =
-    countMode === "Projects"
-      ? `${count} projects`
-      : countMode === "Sections"
-        ? `${count} sections`
-        : `${count} projects and sections`;
-
   return (
     <div className="bb-sidebar-hover-actions-row group/thread-filter sticky top-[var(--bb-sidebar-sticky-stack-padding-top)] z-[70] mb-4 flex min-w-0 items-center gap-1 rounded-md bg-sidebar outline-none ring-sidebar-ring has-[.thread-filter-trigger:focus-visible]:ring-2 before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-sidebar before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-sidebar after:content-['']">
       <DropdownMenu.Root open={open} onOpenChange={setOpen}>
@@ -292,13 +278,13 @@ export function ThreadFilter({
           </DropdownMenu.Content>
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
-      {count === undefined ? null : (
+      {value === null ? null : (
         <span
-          aria-label={countLabel}
+          aria-label="Threads are filtered"
           data-sidebar-hover-actions-open={actionsOpen ? "true" : undefined}
-          className="bb-sidebar-hover-actions-fade pointer-events-none absolute right-0 z-10 inline-flex size-7 items-center justify-center tabular-nums text-xs text-subtle-foreground/60"
+          className="bb-sidebar-hover-actions-fade pointer-events-none absolute right-0 z-10 inline-flex size-7 items-center justify-center text-subtle-foreground/60"
         >
-          {count}
+          <Icon name="FilterMailCircle" className="size-4" aria-hidden />
         </span>
       )}
       <TooltipProvider>
@@ -324,8 +310,6 @@ export function ThreadFilter({
             onClick={onNewSection}
           />
           <ThreadFilterOptionsMenu
-            countMode={countMode}
-            onCountModeChange={onCountModeChange}
             onHide={onHide}
             onOpenChange={setOptionsOpen}
           />

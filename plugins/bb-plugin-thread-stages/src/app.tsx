@@ -85,8 +85,6 @@ import {
 } from "./thread-filter";
 import { mountSidebarContentSpacing } from "./sidebar-content-spacing";
 import {
-  countSidebarFilterEntities,
-  normalizeSidebarFilterCountMode,
   updateThreadStagesSettings,
   type ThreadStagesSettingsUpdate,
 } from "./sidebar-settings";
@@ -704,9 +702,6 @@ function WorkflowStageList({
   );
   const showStageCounts = settings.values?.showStageCounts !== false;
   const showSidebarFilter = settings.values?.showSidebarFilter !== false;
-  const sidebarFilterCountMode = normalizeSidebarFilterCountMode(
-    settings.values?.sidebarFilterCount,
-  );
   const [mutationPending, setMutationPending] = useState(false);
   const [pinnedThreadIds, setPinnedThreadIds] = useState<readonly string[]>([]);
   const [storedThreadFilter, setStoredThreadFilter] = useState<string | null>(
@@ -1256,15 +1251,8 @@ function WorkflowStageList({
     [changeThreadFilter, rpc, threadFilter],
   );
 
-  const filterCount = countSidebarFilterEntities(
-    sidebarFilterCountMode,
-    sidebar.projects.length,
-    sections.length,
-  );
   const filterControl = showSidebarFilter ? (
     <ThreadFilter
-      count={filterCount}
-      countMode={sidebarFilterCountMode}
       newProjectDisabled={projectCreatePending}
       projectIcons={projectIcons}
       projectActionStates={projectActionStates}
@@ -1272,9 +1260,6 @@ function WorkflowStageList({
       sections={sections}
       value={threadFilter}
       onChange={changeThreadFilter}
-      onCountModeChange={(mode) =>
-        void saveSettings({ sidebarFilterCount: mode })
-      }
       onHide={() => void saveSettings({ showSidebarFilter: false })}
       onNewProject={() => void createProject()}
       onNewSection={() => setNewSectionOpen(true)}

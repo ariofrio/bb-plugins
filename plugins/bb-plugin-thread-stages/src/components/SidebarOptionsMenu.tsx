@@ -1,10 +1,6 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useRef } from "react";
 import { portalScopeProps } from "../lib/portal-scope";
-import {
-  SIDEBAR_FILTER_COUNT_MODES,
-  type SidebarFilterCountMode,
-} from "../sidebar-settings";
 import type { WorkflowStage } from "../workflow-stage";
 import { Icon } from "./Icon";
 
@@ -20,15 +16,11 @@ const PANEL_OPTIONS_TRIGGER_CLASS =
   "relative m-1 h-5 w-5 p-0 hover:bg-state-hover hover:text-foreground after:absolute after:left-1/2 after:top-1/2 after:h-7 after:w-7 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] max-md:pointer-coarse:m-0 max-md:pointer-coarse:h-9 max-md:pointer-coarse:w-9 max-md:pointer-coarse:after:hidden";
 
 interface ThreadFilterOptionsMenuProps {
-  countMode: SidebarFilterCountMode;
-  onCountModeChange: (mode: SidebarFilterCountMode) => void;
   onHide: () => void;
   onOpenChange?: (open: boolean) => void;
 }
 
 export function ThreadFilterOptionsMenu({
-  countMode,
-  onCountModeChange,
   onHide,
   onOpenChange,
 }: ThreadFilterOptionsMenuProps) {
@@ -72,40 +64,6 @@ export function ThreadFilterOptionsMenu({
             triggerRef.current?.blur();
           }}
         >
-          <DropdownMenu.Sub>
-            <DropdownMenu.SubTrigger className={ITEM_CLASS}>
-              <span className="flex-1">Show count</span>
-              <Icon name="ChevronRight" className="size-3.5" aria-hidden />
-            </DropdownMenu.SubTrigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.SubContent
-                {...portalScopeProps()}
-                sideOffset={2}
-                className={CONTENT_CLASS}
-              >
-                <DropdownMenu.RadioGroup
-                  value={countMode}
-                  onValueChange={(value) =>
-                    onCountModeChange(value as SidebarFilterCountMode)
-                  }
-                >
-                  {SIDEBAR_FILTER_COUNT_MODES.map((mode) => (
-                    <DropdownMenu.RadioItem
-                      key={mode}
-                      value={mode}
-                      className={SELECTABLE_ITEM_CLASS}
-                    >
-                      <DropdownMenu.ItemIndicator className="absolute left-2 inline-flex size-3.5 items-center justify-center">
-                        <Icon name="Check" className="size-3.5" aria-hidden />
-                      </DropdownMenu.ItemIndicator>
-                      {mode}
-                    </DropdownMenu.RadioItem>
-                  ))}
-                </DropdownMenu.RadioGroup>
-              </DropdownMenu.SubContent>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Sub>
-          <DropdownMenu.Separator className="-mx-1 my-1 h-px bg-border" />
           <DropdownMenu.Item className={ITEM_CLASS} onSelect={onHide}>
             <Icon name="EyeOff" className="size-4 shrink-0" aria-hidden />
             Hide from sidebar

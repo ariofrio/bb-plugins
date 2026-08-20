@@ -27,7 +27,6 @@
   "scripts": {
     "build": "bb plugin build",
     "qa:project-filter-hover": "bash scripts/qa-project-filter-hover.sh",
-    "qa:sidebar-count-alignment": "bash scripts/qa-sidebar-count-alignment.sh",
     "verify:lockfile": "npm ci --workspaces=false --ignore-scripts --dry-run --no-audit --no-fund --loglevel=error",
     "verify:types": "node ../../scripts/verify-types.mjs",
     "verify:package": "node ../../scripts/verify-package.mjs",

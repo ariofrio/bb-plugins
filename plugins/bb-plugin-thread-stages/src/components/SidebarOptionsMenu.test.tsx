@@ -5,7 +5,6 @@ import {
   render,
   screen,
   waitFor,
-  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -16,16 +15,9 @@ import {
 afterEach(cleanup);
 
 describe("sidebar options menus", () => {
-  it("offers the filter count choices and built-in-style hide action", () => {
-    const onCountModeChange = vi.fn();
+  it("offers only the built-in-style hide action for the filter", () => {
     const onHide = vi.fn();
-    render(
-      <ThreadFilterOptionsMenu
-        countMode="Projects"
-        onCountModeChange={onCountModeChange}
-        onHide={onHide}
-      />,
-    );
+    render(<ThreadFilterOptionsMenu onHide={onHide} />);
 
     const trigger = screen.getByRole("button", {
       name: "Projects and sections options",
@@ -56,27 +48,8 @@ describe("sidebar options menus", () => {
         .getByRole("menuitem", { name: "Hide from sidebar" })
         .querySelector('[data-icon="EyeOff"]'),
     ).not.toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "Show count" })).toBeNull();
 
-    fireEvent.keyDown(screen.getByRole("menuitem", { name: "Show count" }), {
-      key: "ArrowRight",
-    });
-    const countMenu = screen.getAllByRole("menu")[1];
-    expect(
-      within(countMenu)
-        .getAllByRole("menuitemradio")
-        .map((item) => item.textContent),
-    ).toEqual(["None", "Projects", "Sections", "Projects + sections"]);
-    fireEvent.click(
-      within(countMenu).getByRole("menuitemradio", { name: "Sections" }),
-    );
-    expect(onCountModeChange).toHaveBeenCalledWith("Sections");
-
-    fireEvent.keyDown(
-      screen.getByRole("button", {
-        name: "Projects and sections options",
-      }),
-      { key: "Enter" },
-    );
     fireEvent.click(
       screen.getByRole("menuitem", { name: "Hide from sidebar" }),
     );
@@ -107,11 +80,7 @@ describe("sidebar options menus", () => {
 
   it("does not restore focus to the filter trigger after a pointer dismissal", async () => {
     render(
-      <ThreadFilterOptionsMenu
-        countMode="None"
-        onCountModeChange={() => {}}
-        onHide={() => {}}
-      />,
+      <ThreadFilterOptionsMenu onHide={() => {}} />,
     );
 
     const trigger = screen.getByRole("button", {
