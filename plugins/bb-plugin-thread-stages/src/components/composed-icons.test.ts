@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { Clock05Icon, SquareIcon } from "@hugeicons/core-free-icons";
+import {
+  AlbumNotFound01Icon,
+  Clock05Icon,
+  SquareIcon,
+} from "@hugeicons/core-free-icons";
 import {
   ClockSquareIcon,
   DashedSquareIcon,
+  ListViewOffIcon,
   Progress02Icon,
   SectionAddIcon,
 } from "./composed-icons";
@@ -25,6 +30,18 @@ describe("composed icons", () => {
     expect(tag).toBe("path");
     expect(attributes?.d).toBe(SquareIcon[0]?.[1].d);
     expect(attributes?.strokeDasharray).toBe("3.5 3");
+  });
+
+  it("interrupts the list rows around Hugeicons' not-found stroke", () => {
+    const slash = AlbumNotFound01Icon.at(-1);
+    expect(slash?.[1].d).toBe("M2 2L22 22");
+    expect(ListViewOffIcon.map(([, attributes]) => attributes.d)).toEqual([
+      "M3.5 2H20.6C21.7583 2 22 2.24173 22 3.4V4.6C22 5.75827 21.7583 6 20.6 6H7.5M4.5 6H3.4C2.24173 6 2 5.75827 2 4.6V3.5",
+      "M11.5 10H20.6C21.7583 10 22 10.2417 22 11.4V12.6C22 13.7583 21.7583 14 20.6 14H15.5M12.5 14H3.4C2.24173 14 2 13.7583 2 12.6V11.4C2 10.2417 2.24173 10 3.4 10H8.5",
+      "M19.5 18H20.6C21.7583 18 22 18.2417 22 19.4V20.5M20.5 22H3.4C2.24173 22 2 21.7583 2 20.6V19.4C2 18.2417 2.24173 18 3.4 18H16.5",
+      "M2 2L22 22",
+    ]);
+    expect(ListViewOffIcon[3]).toEqual(slash);
   });
 
   it("keeps the plugin branding geometry available to HugeiconsIcon", () => {

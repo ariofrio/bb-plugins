@@ -1,5 +1,9 @@
 import type { IconSvgElement } from "@hugeicons/react";
-import { Clock05Icon, SquareIcon } from "@hugeicons/core-free-icons";
+import {
+  AlbumNotFound01Icon,
+  Clock05Icon,
+  SquareIcon,
+} from "@hugeicons/core-free-icons";
 
 // Hugeicons has no square counterpart for the dashed circle or the clock, so
 // both are composed from the square outline. composed-icons.test.ts pins the
@@ -20,6 +24,48 @@ export const DashedSquareIcon: IconSvgElement = [
       strokeLinecap: "round",
     },
   ],
+];
+
+// Hugeicons' no/not-found family interrupts the underlying artwork around a
+// final top-left-to-bottom-right stroke. These list rows use the same gaps.
+const notFoundSlash = AlbumNotFound01Icon[3];
+
+/** List view with its row outlines interrupted around the not-found slash. */
+export const ListViewOffIcon: IconSvgElement = [
+  [
+    "path",
+    {
+      d: "M3.5 2H20.6C21.7583 2 22 2.24173 22 3.4V4.6C22 5.75827 21.7583 6 20.6 6H7.5M4.5 6H3.4C2.24173 6 2 5.75827 2 4.6V3.5",
+      stroke: "currentColor",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      strokeWidth: "1.5",
+      key: "0",
+    },
+  ],
+  [
+    "path",
+    {
+      d: "M11.5 10H20.6C21.7583 10 22 10.2417 22 11.4V12.6C22 13.7583 21.7583 14 20.6 14H15.5M12.5 14H3.4C2.24173 14 2 13.7583 2 12.6V11.4C2 10.2417 2.24173 10 3.4 10H8.5",
+      stroke: "currentColor",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      strokeWidth: "1.5",
+      key: "1",
+    },
+  ],
+  [
+    "path",
+    {
+      d: "M19.5 18H20.6C21.7583 18 22 18.2417 22 19.4V20.5M20.5 22H3.4C2.24173 22 2 21.7583 2 20.6V19.4C2 18.2417 2.24173 18 3.4 18H16.5",
+      stroke: "currentColor",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      strokeWidth: "1.5",
+      key: "2",
+    },
+  ],
+  notFoundSlash,
 ];
 
 // Progress02 is the plugin's branding glyph. Hugeicons publishes the artwork,

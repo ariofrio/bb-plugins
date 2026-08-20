@@ -145,8 +145,14 @@ export function ThreadFilter({
           >
             {activeProject ? (
               <ProjectFilterIcon icon={projectIcons.get(activeProject.id)} />
-            ) : activeSection || activeUncategorized ? (
+            ) : activeSection ? (
               <Icon name="ListView" className="size-4 shrink-0" aria-hidden />
+            ) : activeUncategorized ? (
+              <Icon
+                name="ListViewOff"
+                className="size-4 shrink-0"
+                aria-hidden
+              />
             ) : (
               <Icon
                 name="FolderLibrary"
@@ -245,7 +251,13 @@ export function ThreadFilter({
                     <ThreadFilterItem
                       label="Uncategorized"
                       value="uncategorized"
-                    />
+                    >
+                      <Icon
+                        name="ListViewOff"
+                        className="size-4 shrink-0"
+                        aria-hidden
+                      />
+                    </ThreadFilterItem>
                     {sections.map((section) => (
                       <ActionableThreadFilterItem
                         key={section.id}

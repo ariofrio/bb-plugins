@@ -42,6 +42,7 @@ import {
 import {
   ClockSquareIcon,
   DashedSquareIcon,
+  ListViewOffIcon,
   Progress02Icon,
   SectionAddIcon,
 } from "./composed-icons";
@@ -74,6 +75,7 @@ const ICONS = {
   DashedSquare: DashedSquareIcon,
   Diamond: DiamondIcon,
   ListView: ListViewIcon,
+  ListViewOff: ListViewOffIcon,
   Loading: Loading03Icon,
   Mail: Mail01Icon,
   MailOpen: MailOpenIcon,

@@ -115,8 +115,8 @@ describe("ThreadFilter", () => {
     expect(
       within(menu)
         .getByRole("menuitemradio", { name: "Uncategorized" })
-        .querySelector("svg"),
-    ).toBeNull();
+        .querySelector('[data-icon="ListViewOff"]'),
+    ).not.toBeNull();
   });
 
   it("shows the selected project or section icon in the trigger", () => {
@@ -185,7 +185,7 @@ describe("ThreadFilter", () => {
     trigger = screen.getByRole("button", {
       name: "Projects and sections: Uncategorized",
     });
-    expect(trigger.querySelector('[data-icon="ListView"]')).not.toBeNull();
+    expect(trigger.querySelector('[data-icon="ListViewOff"]')).not.toBeNull();
   });
 
   it("reports project, section, uncategorized, and clear selections", () => {
