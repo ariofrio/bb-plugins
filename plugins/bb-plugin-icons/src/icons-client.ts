@@ -62,6 +62,11 @@ export function iconsRpc(pluginId?: string) {
 
   return {
     list: () => call<IconsState>("listIcons", null),
+    listPlacements: () =>
+      call<{ showInThreadHeader: boolean; showInSidebar: boolean }>(
+        "listPlacements",
+        null,
+      ),
     listCatalog: () => call<{ icons: CatalogEntryView[] }>("listIconCatalog", null),
     set: (icon: IconOwner & { icon: string; color: IconColor | null }) =>
       call<IconsState>("setIcon", icon),

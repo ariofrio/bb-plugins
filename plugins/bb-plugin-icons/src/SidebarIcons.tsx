@@ -119,7 +119,6 @@ export function SidebarIcons({
   const [state, setState] = useState<IconsState | null>(null);
   const [catalog, setCatalog] = useState<readonly CatalogEntryView[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
-
   const refresh = useCallback(async () => {
     const next = await rpc.list();
     if (next !== null) setState(next);

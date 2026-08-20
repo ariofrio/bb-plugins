@@ -22,6 +22,7 @@ describe("icon plugin API", () => {
     expect(harness.inspection.registrations.rpcMethods).toEqual([
       "listIconCatalog",
       "listIcons",
+      "listPlacements",
       "setIcon",
       "clearIcon",
     ]);
@@ -134,5 +135,28 @@ describe("icon plugin API", () => {
         color: null,
       }),
     ).rejects.toMatchObject({ code: "invalid_input" });
+  });
+});
+
+describe("icon placements", () => {
+  it("defaults both placements on, so an update never hides an icon", async () => {
+    const harness = createPluginHarness();
+
+    await expect(
+      harness.behavior.callRpc("listPlacements", null),
+    ).resolves.toEqual({ showInThreadHeader: true, showInSidebar: true });
+  });
+
+  it("reports a placement the user turned off", async () => {
+    const host = createFakePluginHost({
+      pluginId: "icons",
+      settings: { showInSidebar: false },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("listPlacements", null),
+    ).resolves.toEqual({ showInThreadHeader: true, showInSidebar: false });
   });
 });

@@ -4,6 +4,7 @@ import {
   experimental_useSidebarThreads,
   useRealtime,
   useRpc,
+  useSettings,
   type PluginThreadHeaderActionProps,
 } from "@get-bb/plugin-sdk/app";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -70,6 +71,7 @@ function IconGlyph({
 function IconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
   const owner: IconOwner = { kind: "project", id: projectId };
   const rpc = useRpc<typeof rpcContract>();
+  const settings = useSettings();
   const sidebar = experimental_useSidebarThreads();
   const markerRef = useRef<HTMLSpanElement>(null);
   const [target, setTarget] = useState<HTMLElement | null>(null);
@@ -105,16 +107,21 @@ function IconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
     announceIconsChanged();
   });
 
+  // Undefined while settings load: the icon has always been here, so it
+  // stays until the user is known to have turned it off, rather than blinking
+  // in on every thread open.
+  const showInHeader = settings.values?.showInThreadHeader !== false;
+
   useLayoutEffect(() => {
     const marker = markerRef.current;
-    if (marker === null) return;
+    if (marker === null || !showInHeader) return;
     const mount = installIconPortal(marker);
     setTarget(mount?.target ?? null);
     return () => {
       setTarget(null);
       mount?.cleanup();
     };
-  }, [projectId]);
+  }, [projectId, showInHeader]);
 
   const chosen = icons.find(
     (item) => item.kind === owner.kind && item.id === owner.id,
@@ -224,12 +231,19 @@ export default definePluginApp((app) => {
   // why this half talks to its own backend over fetch.
   app.contentScripts.register({
     id: "sidebar-icons",
-    mount({ pluginId, signal }) {
+    async mount({ pluginId, signal }) {
+      const rpcEarly = iconsRpc(pluginId);
+      // Asked before a single node is placed: an anchor left in bb's sidebar
+      // would space the group label out even with nothing drawn in it. bb
+      // never applies a settings edit without a reload, so one read holds.
+      const placements = await rpcEarly.listPlacements();
+      if (placements?.showInSidebar === false || signal.aborted) return;
+
       const host = document.createElement("div");
       host.style.display = "none";
       document.body.append(host);
       const root = createRoot(host);
-      const rpc = iconsRpc(pluginId);
+      const rpc = rpcEarly;
 
       const draw = (anchors: SidebarAnchor[]) => {
         root.render(<SidebarIcons anchors={anchors} rpc={rpc} />);

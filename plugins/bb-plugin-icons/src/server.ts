@@ -74,6 +74,16 @@ export const rpcContract = defineRpcContract({
     input: z.null(),
     output: iconsSchema,
   },
+  /**
+   * The sidebar half runs in a content script, where useSettings() does not
+   * reach, so it reads its placement over the same RPC it reads icons on.
+   */
+  listPlacements: {
+    input: z.null(),
+    output: z
+      .object({ showInThreadHeader: z.boolean(), showInSidebar: z.boolean() })
+      .strict(),
+  },
   setIcon: {
     input: iconSchema,
     output: iconsSchema,
@@ -84,7 +94,24 @@ export const rpcContract = defineRpcContract({
   },
 });
 
+export const ICON_PLACEMENTS = {
+  showInThreadHeader: {
+    type: "boolean",
+    label: "Show in the thread header",
+    description: "Draw the icon before the project name above an open thread.",
+    default: true,
+  },
+  showInSidebar: {
+    type: "boolean",
+    label: "Show in the sidebar",
+    description:
+      "Draw the icon on bb's own project and section headers. Sidebars other plugins draw are their own.",
+    default: true,
+  },
+} as const;
+
 export default function plugin(bb: BbPluginApi) {
+  const settings = bb.settings.define(ICON_PLACEMENTS);
   const db = bb.storage.database();
   bb.storage.migrate(db, ICON_MIGRATIONS);
   const store = createIconStore(db);
@@ -152,6 +179,10 @@ export default function plugin(bb: BbPluginApi) {
   bb.rpc.register(rpcContract, {
     listIconCatalog: () => catalog,
     listIcons: () => view(),
+    async listPlacements() {
+      const { showInThreadHeader, showInSidebar } = await settings.get();
+      return { showInThreadHeader, showInSidebar };
+    },
     setIcon(input) {
       if (!isEditable(input)) {
         throw new Error("The personal project's icon is fixed.");
