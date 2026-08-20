@@ -16,7 +16,7 @@ trap cleanup EXIT
 
 agent-browser --session "$qa_session" open "$qa_server_url" >/dev/null
 agent-browser --session "$qa_session" wait 2000 >/dev/null
-agent-browser --session "$qa_session" set viewport 900 700 >/dev/null
+agent-browser --session "$qa_session" set viewport 900 700 2 >/dev/null
 agent-browser --session "$qa_session" wait 300 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const control = document.querySelector("[data-thread-filter-trigger]");
@@ -25,14 +25,14 @@ agent-browser --session "$qa_session" eval '(() => {
   if (
     !(control instanceof HTMLButtonElement) ||
     !(icon instanceof SVGElement) ||
-    (label !== "All projects" && label !== "All projects and sections") ||
-    icon.getAttribute("data-icon") !== "Folders"
+    (label !== "Projects" && label !== "Projects and sections") ||
+    icon.getAttribute("data-icon") !== "FolderLibrary"
   ) {
     throw new Error(
       `Unexpected unfiltered control: ${JSON.stringify({ label, icon: icon?.getAttribute("data-icon") })}.`,
     );
   }
-  return JSON.stringify({ unfilteredControl: { label, icon: "Folders" } });
+  return JSON.stringify({ unfilteredControl: { label, icon: "FolderLibrary" } });
 })()'
 agent-browser --session "$qa_session" hover \
   '[data-sidebar-sticky-tier="label"]' >/dev/null
@@ -268,11 +268,13 @@ agent-browser --session "$qa_session" eval '(() => {
 })()'
 
 agent-browser --session "$qa_session" eval '(() => {
-  const stage = document.querySelector("[data-sidebar-sticky-tier=\"label\"]");
+  const toggle = document.querySelector(
+    "[data-sidebar-sticky-tier=\"label\"] button[aria-label^=\"Collapse \"]",
+  );
+  const stage = toggle?.closest("[data-sidebar-sticky-tier=\"label\"]");
   const section = stage?.closest("section");
   const labelId = section?.getAttribute("aria-labelledby");
   const label = labelId === null ? null : document.getElementById(labelId);
-  const toggle = stage?.querySelector("button[aria-label$=\" section\"]");
   const count = stage?.querySelector(
     "[aria-label$=\"threads\"], [aria-label$=\"thread\"]",
   );
@@ -281,8 +283,9 @@ agent-browser --session "$qa_session" eval '(() => {
     !(label instanceof HTMLElement) ||
     !(toggle instanceof HTMLButtonElement)
   ) {
-    throw new Error("Could not find the first stage label and collapse button.");
+    throw new Error("Could not find an expanded stage label and collapse button.");
   }
+  stage.setAttribute("data-qa-expanded-stage", "");
 
   const labelRect = label.getBoundingClientRect();
   const toggleRect = toggle.getBoundingClientRect();
@@ -340,11 +343,11 @@ agent-browser --session "$qa_session" eval '(() => {
 })()'
 
 agent-browser --session "$qa_session" hover \
-  '[data-sidebar-sticky-tier="label"]' >/dev/null
+  '[data-qa-expanded-stage]' >/dev/null
 agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const toggle = document.querySelector(
-    "[data-sidebar-sticky-tier=\"label\"] button[aria-label^=\"Collapse \"]",
+    "[data-qa-expanded-stage] button[aria-label^=\"Collapse \"]",
   );
   if (!(toggle instanceof HTMLButtonElement)) {
     throw new Error("Could not find the expanded stage toggle on hover.");
@@ -363,12 +366,12 @@ agent-browser --session "$qa_session" eval '(() => {
 })()'
 
 agent-browser --session "$qa_session" click \
-  '[data-sidebar-sticky-tier="label"] button[aria-label^="Collapse "]' >/dev/null
+  '[data-qa-expanded-stage] button[aria-label^="Collapse "]' >/dev/null
 agent-browser --session "$qa_session" hover '[data-thread-filter-trigger]' >/dev/null
 agent-browser --session "$qa_session" wait 100 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
   const toggle = document.querySelector(
-    "[data-sidebar-sticky-tier=\"label\"] button[aria-label^=\"Expand \"]",
+    "[data-qa-expanded-stage] button[aria-label^=\"Expand \"]",
   );
   if (!(toggle instanceof HTMLButtonElement)) {
     throw new Error("Stage did not collapse after a real pointer click.");
@@ -382,7 +385,7 @@ agent-browser --session "$qa_session" eval '(() => {
   return JSON.stringify({ collapsedToggleOpacity: opacity });
 })()'
 agent-browser --session "$qa_session" click \
-  '[data-sidebar-sticky-tier="label"] button[aria-label^="Expand "]' >/dev/null
+  '[data-qa-expanded-stage] button[aria-label^="Expand "]' >/dev/null
 agent-browser --session "$qa_session" wait 100 >/dev/null
 
 agent-browser --session "$qa_session" eval 'document.querySelector("[data-sidebar=\"content\"]").scrollTop = 120' >/dev/null
@@ -391,7 +394,19 @@ agent-browser --session "$qa_session" eval '(() => {
   const control = document.querySelector("[data-thread-filter-trigger]");
   const stack = control?.closest("[data-sidebar-sticky-stack]");
   const scrollContent = control?.closest("[data-sidebar=\"content\"]");
-  const firstStage = document.querySelector("[data-sidebar-sticky-tier=\"label\"]");
+  const controlRect = control?.getBoundingClientRect();
+  const firstStage = [...document.querySelectorAll(
+    "[data-sidebar-sticky-tier=\"label\"]",
+  )]
+    .filter(
+      (stage) =>
+        controlRect !== undefined &&
+        stage.getBoundingClientRect().top >= controlRect.bottom - 0.25,
+    )
+    .sort(
+      (left, right) =>
+        left.getBoundingClientRect().top - right.getBoundingClientRect().top,
+    )[0];
   const firstSection = firstStage?.closest("section");
   if (
     !(control instanceof HTMLElement) ||
@@ -403,18 +418,18 @@ agent-browser --session "$qa_session" eval '(() => {
     throw new Error("Could not find sticky stage layout after scrolling.");
   }
 
-  const controlRect = control.getBoundingClientRect();
+  const renderedControlRect = control.getBoundingClientRect();
   const contentRect = scrollContent.getBoundingClientRect();
   const expectedControlTop = contentRect.top + Number.parseFloat(getComputedStyle(stack).paddingTop);
-  if (Math.abs(controlRect.top - expectedControlTop) > 0.25) {
+  if (Math.abs(renderedControlRect.top - expectedControlTop) > 0.25) {
     throw new Error(
-      `Thread filter scrolled to ${controlRect.top}px; sticky top is ${expectedControlTop}px.`,
+      `Thread filter scrolled to ${renderedControlRect.top}px; sticky top is ${expectedControlTop}px.`,
     );
   }
 
   const stageRect = firstStage.getBoundingClientRect();
   const betweenStages = Number.parseFloat(getComputedStyle(firstSection).marginBottom);
-  const expectedStageTop = controlRect.bottom + betweenStages;
+  const expectedStageTop = renderedControlRect.bottom + betweenStages;
   if (Math.abs(stageRect.top - expectedStageTop) > 0.25) {
     throw new Error(
       `Sticky stage top is ${stageRect.top}px; expected ${expectedStageTop}px below thread filter.`,
@@ -423,7 +438,7 @@ agent-browser --session "$qa_session" eval '(() => {
 
   return JSON.stringify({
     scrollTop: scrollContent.scrollTop,
-    controlTop: controlRect.top,
+    controlTop: renderedControlRect.top,
     stageTop: stageRect.top,
     betweenStages,
   });
@@ -464,8 +479,8 @@ agent-browser --session "$qa_session" eval '(() => {
   if (
     !(control instanceof HTMLButtonElement) ||
     !(icon instanceof SVGElement) ||
-    label === "All projects" ||
-    label === "All projects and sections" ||
+    label === "Projects" ||
+    label === "Projects and sections" ||
     (iconName !== null && iconName !== "Folder")
   ) {
     throw new Error(

@@ -23,10 +23,11 @@ Use **Projects** (or **Projects and sections** when sections exist) above the
 stages to focus the whole sidebar—including pinned and search results—on one
 project or one native thread section. Its menu retains the **All projects** or
 **All projects and sections** choice for clearing the filter. The control shows
-the selected project's Project icons glyph, a folder when that plugin is
-absent, or the section glyph for a selected section. The selection is stored
-only in the current browser and does not change stage assignments or
-synchronization.
+the selected project's Icons glyph, a folder when that plugin is absent, the
+chat glyph for the personal **Threads** project, or the section glyph for a
+selected section. A trailing filter indicator appears while a project or
+section is selected. The selection is stored only in the current browser and
+does not change stage assignments or synchronization.
 The adjacent actions create a project through bb's native host folder picker
 or open the New section dialog. Stage counts show the number of filtered root
 threads in each unpinned stage; they are enabled by default and can be hidden
@@ -126,6 +127,7 @@ thread.
 npm run release:check
 bb plugin reload thread-stages
 npm run qa:project-filter-hover
+npm run qa:sidebar-indicator-alignment
 ```
 
 `release:check` runs the tests and typecheck, checks the committed SDK
@@ -137,6 +139,8 @@ so it can be.
 `qa:project-filter-hover` opens an isolated browser against `BB_SERVER_URL` and
 fails if a sticky stage shield covers the thread filter's rounded bottom edge
 or an empty project filter loses the sidebar's horizontal inset.
+`qa:sidebar-indicator-alignment` verifies that collapsed-stage activity and
+unread indicators share the same trailing alignment as thread indicators.
 
 ## License
 
