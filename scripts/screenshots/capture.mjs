@@ -9,9 +9,9 @@ export const ASPECT_RATIO = 16 / 9;
 /** bb's own default window: DEFAULT_WINDOW_WIDTH x DEFAULT_WINDOW_HEIGHT. */
 export const VIEWPORT = { width: 1280, height: 900 };
 /**
- * Every README-table shot is cropped to this width, so the five cells share one
- * zoom level and the UI reads at the same size in each. Only where each crop
- * sits differs, because each plugin adds something somewhere else.
+ * Every card is cropped to this width, so they share one zoom level and the UI
+ * reads at the same size in each. Only where each crop sits differs, because
+ * each plugin adds something somewhere else.
  */
 export const CARD_WIDTH = 560;
 export const THEMES = ["light", "dark"];
@@ -298,20 +298,28 @@ const WINDOW_FRAME = {
  */
 const CARD_FRAME = {
   radius: 14,
-  // Nothing is drawn outside a card, so it needs no margin at all: its edges
-  // are the image's edges, flush with the column.
-  padding: { top: 0, side: 0, bottom: 0 },
+  // The margin is the layout's, not the shadow's: a card floated beside a
+  // paragraph needs space on the side the text runs into, and a card stacked
+  // above a heading needs space beneath it. Its right edge stays flush with
+  // the column either way.
+  padding: { top: 0, left: 24, right: 0, bottom: 20 },
   light: { edge: null, shadow: null },
   dark: { edge: null, shadow: null },
 };
 
 /** Draws an image into its frame's corners, edge, and shadow. */
 async function writeFramed({ browser, frame, image, size, theme, output }) {
-  const { padding, radius } = frame;
+  const { radius } = frame;
+  const padding = {
+    top: frame.padding.top,
+    bottom: frame.padding.bottom,
+    left: frame.padding.left ?? frame.padding.side,
+    right: frame.padding.right ?? frame.padding.side,
+  };
   const { edge, shadow } = frame[theme];
   const context = await browser.newContext({
     viewport: {
-      width: size.width + padding.side * 2,
+      width: size.width + padding.left + padding.right,
       height: size.height + padding.top + padding.bottom,
     },
     deviceScaleFactor: 2,
@@ -320,8 +328,8 @@ async function writeFramed({ browser, frame, image, size, theme, output }) {
   await sheet.setContent(
     `<body style="margin:0;background:transparent">
        <div id="frame" style="
-         width:${size.width + padding.side * 2}px;
-         padding:${padding.top}px ${padding.side}px ${padding.bottom}px;
+         width:${size.width + padding.left + padding.right}px;
+         padding:${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px;
          box-sizing:border-box">
          <img src="data:image/png;base64,${image.toString("base64")}"
               style="display:block;width:${size.width}px;height:${size.height}px;

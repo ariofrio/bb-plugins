@@ -33,8 +33,10 @@ async function openFeaturedThread(page) {
     .getByRole("link", { name: /^Open Polish analytics dashboard/ })
     .first()
     .getAttribute("href");
+  // Not networkidle: bb holds a socket open, so idleness never arrives
+  // reliably. The wait below is the real proof the thread rendered.
   await page.goto(new URL(href, page.url()).toString(), {
-    waitUntil: "networkidle",
+    waitUntil: "domcontentloaded",
   });
   // Exactly, because the sidebar row previews the same reply, at greater
   // length, and either match would otherwise be ambiguous.
