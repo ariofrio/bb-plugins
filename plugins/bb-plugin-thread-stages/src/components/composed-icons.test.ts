@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AlbumNotFound01Icon,
   BanIcon,
-  CircleIcon,
+  CheckmarkCircle02Icon,
 } from "@hugeicons/core-free-icons";
 import {
   BlockedCircleIcon,
@@ -11,12 +11,24 @@ import {
 } from "./composed-icons";
 
 describe("composed icons", () => {
-  it("expands the Ban icon to the standard stage circle", () => {
-    expect(BlockedCircleIcon[0]).toEqual(CircleIcon[0]);
-    expect(BlockedCircleIcon[1]?.[1]).toEqual({
-      ...BanIcon[1]?.[1],
-      d: "M5 5L19 19",
-    });
+  it("paints the expanded Ban circle and slash as one path", () => {
+    const circle = CheckmarkCircle02Icon[0];
+    const slash = BanIcon[1];
+
+    expect(BlockedCircleIcon).toEqual([
+      [
+        "path",
+        {
+          ...circle?.[1],
+          d: `${circle?.[1].d}M5 5L19 19`,
+          strokeLinecap: slash?.[1].strokeLinecap,
+          strokeLinejoin: slash?.[1].strokeLinejoin,
+        },
+      ],
+    ]);
+    expect(BlockedCircleIcon).toHaveLength(1);
+    expect(BlockedCircleIcon[0]?.[1].strokeWidth).toBe("1.5");
+    expect(BlockedCircleIcon[0]?.[1].stroke).toBe("currentColor");
   });
 
   it("interrupts the list rows around Hugeicons' not-found stroke", () => {

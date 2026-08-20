@@ -2,19 +2,21 @@ import type { IconSvgElement } from "@hugeicons/react";
 import {
   AlbumNotFound01Icon,
   BanIcon,
-  CircleIcon,
+  CheckmarkCircle02Icon,
 } from "@hugeicons/core-free-icons";
 
+const standardCirclePath = CheckmarkCircle02Icon[0];
 const banSlash = BanIcon[1];
 
-/** Ban with the same radius-10 outline as the other stage circles. */
+/** Radius-10 Ban painted as one path so translucent strokes do not compound. */
 export const BlockedCircleIcon: IconSvgElement = [
-  CircleIcon[0],
   [
-    banSlash[0],
+    standardCirclePath[0],
     {
-      ...banSlash[1],
-      d: "M5 5L19 19",
+      ...standardCirclePath[1],
+      d: `${standardCirclePath[1].d}M5 5L19 19`,
+      strokeLinecap: banSlash[1].strokeLinecap,
+      strokeLinejoin: banSlash[1].strokeLinejoin,
     },
   ],
 ];
