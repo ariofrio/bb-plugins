@@ -144,7 +144,10 @@ export function ThreadFilter({
             className="thread-filter-trigger flex h-7 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-2 text-sm text-sidebar-foreground/85 outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-state-active data-[state=open]:text-sidebar-foreground max-md:pointer-coarse:h-9 dark:text-sidebar-foreground"
           >
             {activeProject ? (
-              <ProjectFilterIcon icon={projectIcons.get(activeProject.id)} />
+              <ProjectFilterIcon
+                icon={projectIcons.get(activeProject.id)}
+                personal={activeProject.isPersonal}
+              />
             ) : activeSection ? (
               <Icon name="ListView" className="size-4 shrink-0" aria-hidden />
             ) : activeUncategorized ? (
@@ -207,6 +210,7 @@ export function ThreadFilter({
                       >
                         <ProjectFilterIcon
                           icon={projectIcons.get(personalProject.id)}
+                          personal
                         />
                       </ThreadFilterItem>
                     ) : null}
@@ -563,9 +567,21 @@ function FilterActionItem({
   );
 }
 
-function ProjectFilterIcon({ icon }: { icon?: ProjectIconView }) {
+function ProjectFilterIcon({
+  icon,
+  personal = false,
+}: {
+  icon?: ProjectIconView;
+  personal?: boolean;
+}) {
   if (!icon) {
-    return <Icon name="Folder" className="size-4 shrink-0" aria-hidden />;
+    return (
+      <Icon
+        name={personal ? "BubbleChat" : "Folder"}
+        className="size-4 shrink-0"
+        aria-hidden
+      />
+    );
   }
 
   return (

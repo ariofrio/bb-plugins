@@ -114,6 +114,11 @@ describe("ThreadFilter", () => {
     ).not.toBeNull();
     expect(
       within(menu)
+        .getByRole("menuitemradio", { name: "Threads" })
+        .querySelector('[data-icon="BubbleChat"]'),
+    ).not.toBeNull();
+    expect(
+      within(menu)
         .getByRole("menuitemradio", { name: "Uncategorized" })
         .querySelector('[data-icon="ListViewOff"]'),
     ).not.toBeNull();
@@ -168,7 +173,7 @@ describe("ThreadFilter", () => {
     trigger = screen.getByRole("button", {
       name: "Projects and sections: Threads",
     });
-    expect(trigger.querySelector('[data-icon="Folder"]')).not.toBeNull();
+    expect(trigger.querySelector('[data-icon="BubbleChat"]')).not.toBeNull();
 
     rerender(
       <ThreadFilter
