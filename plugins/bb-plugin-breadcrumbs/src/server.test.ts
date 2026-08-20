@@ -60,3 +60,64 @@ describe("project action RPC", () => {
     expect(update).not.toHaveBeenCalled();
   });
 });
+
+function createSectionHarness() {
+  const list = vi.fn().mockResolvedValue([
+    { id: "sec_a", name: "Example", createdAt: 1, updatedAt: 1 },
+  ]);
+  const update = vi.fn().mockResolvedValue({ id: "sec_a", name: "Renamed", updatedThreadCount: 0 });
+  const remove = vi.fn().mockResolvedValue({ id: "sec_a", name: "Example", updatedThreadCount: 2 });
+  const host = createFakePluginHost({
+    pluginId: "breadcrumbs",
+    sdk: { threadSections: { list, update, delete: remove } },
+  });
+  disposeHosts.push(() => host.harness.lifecycle.dispose());
+  plugin(host.bb);
+  return { ...host, list, update, remove };
+}
+
+describe("section action RPC", () => {
+  it("serves the names bb has no app-side list for", async () => {
+    const { harness } = createSectionHarness();
+
+    await expect(
+      harness.behavior.callRpc("listSections", null),
+    ).resolves.toEqual({ sections: [{ id: "sec_a", name: "Example" }] });
+  });
+
+  it("renames and removes through bb's own section SDK", async () => {
+    const { harness, update, remove } = createSectionHarness();
+
+    await expect(
+      harness.behavior.callRpc("renameSection", {
+        sectionId: "sec_a",
+        name: "Renamed",
+      }),
+    ).resolves.toEqual({ ok: true });
+    expect(update).toHaveBeenCalledWith({ id: "sec_a", name: "Renamed" });
+
+    await expect(
+      harness.behavior.callRpc("removeSection", { sectionId: "sec_a" }),
+    ).resolves.toEqual({ ok: true });
+    expect(remove).toHaveBeenCalledWith({ id: "sec_a" });
+  });
+
+  it("rejects an empty section name before it reaches bb", async () => {
+    const { harness, update } = createSectionHarness();
+
+    await expect(
+      harness.behavior.callRpc("renameSection", { sectionId: "sec_a", name: "  " }),
+    ).rejects.toMatchObject({ code: "invalid_input" });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("defaults every crumb on", async () => {
+    const { harness } = createSectionHarness();
+
+    await expect(harness.behavior.callRpc("listCrumbs", null)).resolves.toEqual({
+      showSection: true,
+      showProject: true,
+      showAncestors: true,
+    });
+  });
+});

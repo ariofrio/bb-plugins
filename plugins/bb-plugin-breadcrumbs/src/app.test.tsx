@@ -30,7 +30,7 @@ describe("project breadcrumb app registration", () => {
     expect(app.threadHeaderActions).toHaveLength(1);
     expect(app.threadHeaderActions[0]).toMatchObject({
       id: "project-breadcrumb",
-      title: "Project breadcrumb",
+      title: "Breadcrumbs",
     });
   });
 
