@@ -302,7 +302,7 @@ const CARD_FRAME = {
   // paragraph needs space on the side the text runs into, and a card stacked
   // above a heading needs space beneath it. Its right edge stays flush with
   // the column either way.
-  padding: { top: 0, left: 24, right: 0, bottom: 20 },
+  padding: { top: 0, left: 24, right: 0, bottom: 28 },
   light: { edge: null, shadow: null },
   dark: { edge: null, shadow: null },
 };
