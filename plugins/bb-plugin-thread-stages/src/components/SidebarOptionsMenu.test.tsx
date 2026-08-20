@@ -7,10 +7,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  StageOptionsMenu,
-  ThreadFilterOptionsMenu,
-} from "./SidebarOptionsMenu";
+import { ThreadFilterOptionsMenu } from "./SidebarOptionsMenu";
 
 afterEach(cleanup);
 
@@ -54,28 +51,6 @@ describe("sidebar options menus", () => {
       screen.getByRole("menuitem", { name: "Hide from sidebar" }),
     );
     expect(onHide).toHaveBeenCalledTimes(1);
-  });
-
-  it("offers one shared stage-count checkbox", () => {
-    const onShowCountsChange = vi.fn();
-    render(
-      <StageOptionsMenu
-        stage="Working"
-        showCounts
-        onShowCountsChange={onShowCountsChange}
-      />,
-    );
-
-    fireEvent.keyDown(
-      screen.getByRole("button", { name: "Working stage options" }),
-      { key: "Enter" },
-    );
-    const checkbox = screen.getByRole("menuitemcheckbox", {
-      name: "Show stage counts",
-    });
-    expect(checkbox.getAttribute("aria-checked")).toBe("true");
-    fireEvent.click(checkbox);
-    expect(onShowCountsChange).toHaveBeenCalledWith(false);
   });
 
   it("does not restore focus to the filter trigger after a pointer dismissal", async () => {

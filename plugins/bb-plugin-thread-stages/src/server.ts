@@ -243,11 +243,12 @@ export default function plugin(bb: BbPluginApi) {
         "Show the Projects and sections filter and management controls in the sidebar.",
       default: true,
     },
-    showStageCounts: {
+    showCollapsedStageIndicators: {
       type: "boolean",
-      label: "Show stage counts",
-      description: "Show the number of root threads in each stage.",
-      default: true,
+      label: "Show collapsed stage indicators (experimental)",
+      description:
+        "Show the highest-priority thread activity indicator in collapsed stage headers.",
+      default: false,
     },
   });
   const db = bb.storage.database();

@@ -33,7 +33,10 @@ describe("sidebar settings", () => {
     );
 
     await expect(
-      updateThreadStagesSettings({ showStageCounts: false }, fetcher),
+      updateThreadStagesSettings(
+        { showCollapsedStageIndicators: true },
+        fetcher,
+      ),
     ).rejects.toThrow("Invalid value");
   });
 });

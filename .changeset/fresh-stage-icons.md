@@ -3,5 +3,5 @@
 ---
 
 Refresh every stage icon, include stage and section icons in thread action
-menus, and align collapsed-stage activity indicators with thread indicators
-without hiding stage counts.
+menus, show nonzero counts only in collapsed stage headers, and add an opt-in
+experimental aggregate activity indicator aligned with thread indicators.

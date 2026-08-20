@@ -27,11 +27,12 @@ describe("thread stages plugin API", () => {
           "Show the Projects and sections filter and management controls in the sidebar.",
         default: true,
       },
-      showStageCounts: {
+      showCollapsedStageIndicators: {
         type: "boolean",
-        label: "Show stage counts",
-        description: "Show the number of root threads in each stage.",
-        default: true,
+        label: "Show collapsed stage indicators (experimental)",
+        description:
+          "Show the highest-priority thread activity indicator in collapsed stage headers.",
+        default: false,
       },
     });
     expect(harness.inspection.registrations.rpcMethods).toEqual([

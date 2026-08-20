@@ -44,9 +44,9 @@ import {
   groupIndicator,
   ThreadIndicator,
 } from "./components/ThreadIndicator";
+import { StageHeaderStatus } from "./components/StageHeaderStatus";
 import { SplitPaneMiniMap } from "./components/SplitPaneMiniMap";
 import { ThreadFilter } from "./components/ThreadFilter";
-import { StageOptionsMenu } from "./components/SidebarOptionsMenu";
 import {
   FilterEntityRemoveDialog,
   FilterEntityRenameDialog,
@@ -459,8 +459,7 @@ interface SidebarSectionProps {
   onDropAtEnd: (event: DragEvent<HTMLElement>) => void;
   onDragOverEnd: (event: DragEvent<HTMLElement>) => void;
   onToggle: () => void;
-  onShowCountsChange?: (show: boolean) => void;
-  showCounts?: boolean;
+  showCollapsedIndicator?: boolean;
   label: SidebarGroup;
   threads: readonly PluginSidebarThread[];
 }
@@ -473,13 +472,12 @@ function SidebarSection({
   onDropAtEnd,
   onDragOverEnd,
   onToggle,
-  onShowCountsChange,
-  showCounts = false,
+  showCollapsedIndicator = false,
   label,
   threads,
 }: SidebarSectionProps) {
-  const [optionsOpen, setOptionsOpen] = useState(false);
-  const activityThread = collapsed ? groupIndicator(threads) : null;
+  const activityThread =
+    collapsed && showCollapsedIndicator ? groupIndicator(threads) : null;
   const id = `thread-stages-group-${label.replace(/\s/g, "-")}`;
   return (
     <section
@@ -528,49 +526,11 @@ function SidebarSection({
             />
           </button>
         </span>
-        {count === undefined ? null : (
-          <span
-            aria-label={`${count} ${count === 1 ? "thread" : "threads"}`}
-            data-sidebar-hover-actions-open={
-              optionsOpen ? "true" : undefined
-            }
-            className={`bb-sidebar-hover-actions-fade pointer-events-none absolute z-20 inline-flex size-7 items-center justify-center tabular-nums text-xs text-subtle-foreground/60 ${
-              activityThread ? "right-7" : "right-0"
-            }`}
-          >
-            {count}
-          </span>
-        )}
-        {activityThread ? (
-          <span
-            data-sidebar-stage-trailing-indicator=""
-            data-sidebar-hover-actions-open={
-              optionsOpen ? "true" : undefined
-            }
-            className="bb-sidebar-hover-actions-fade pointer-events-none absolute right-0 top-1/2 z-20 inline-flex size-7 -translate-y-1/2 items-center justify-center text-subtle-foreground"
-          >
-            <ThreadIndicator
-              indicator={activityThread.indicator}
-              label={activityThread.indicatorLabel}
-            />
-          </span>
-        ) : null}
-        {label === PINNED_SECTION || !onShowCountsChange ? null : (
-          <span
-            data-sidebar-hover-actions-open={
-              optionsOpen ? "true" : undefined
-            }
-            data-sidebar-hover-actions-mobile="always"
-            className="bb-sidebar-hover-actions absolute inset-y-0 right-0 z-30 flex items-center"
-          >
-            <StageOptionsMenu
-              stage={label}
-              showCounts={showCounts}
-              onOpenChange={setOptionsOpen}
-              onShowCountsChange={onShowCountsChange}
-            />
-          </span>
-        )}
+        <StageHeaderStatus
+          activityThread={activityThread}
+          collapsed={collapsed}
+          count={count}
+        />
       </div>
       {collapsed ? null : <div className="mt-1">{children}</div>}
     </section>
@@ -703,7 +663,8 @@ function WorkflowStageList({
   const [collapsedThreads, setCollapsedThreads] = usePersistentStringSet(
     COLLAPSED_THREADS_STORAGE_KEY,
   );
-  const showStageCounts = settings.values?.showStageCounts !== false;
+  const showCollapsedStageIndicators =
+    settings.values?.showCollapsedStageIndicators === true;
   const showSidebarFilter = settings.values?.showSidebarFilter !== false;
   const [mutationPending, setMutationPending] = useState(false);
   const [pinnedThreadIds, setPinnedThreadIds] = useState<readonly string[]>([]);
@@ -1561,17 +1522,14 @@ function WorkflowStageList({
             <SidebarSection
               key={stage}
               label={stage}
-              count={showStageCounts ? rootThreads.length : undefined}
+              count={rootThreads.length}
               threads={shownThreads}
               collapsed={isCollapsed}
               dropTarget={
                 dropGroup === stage && dropBefore === null && dropAfter === null
               }
               onToggle={() => toggleCollapsed(stage)}
-              showCounts={showStageCounts}
-              onShowCountsChange={(show) =>
-                void saveSettings({ showStageCounts: show })
-              }
+              showCollapsedIndicator={showCollapsedStageIndicators}
               onDragOverEnd={(event) => {
                 if (
                   !draggingThreadId ||

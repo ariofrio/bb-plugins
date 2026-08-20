@@ -34,9 +34,16 @@ agent-browser --session "$qa_session" eval '(() => {
     "button[aria-label=\"Collapse Working section\"]",
   );
   const section = button?.closest("section");
+  const label = button?.closest("[data-sidebar-sticky-tier=\"label\"]");
+  const count = [...(label?.querySelectorAll("[aria-label]") ?? [])].find(
+    (node) => /^\d+ threads?$/.test(node.getAttribute("aria-label") ?? ""),
+  );
   const indicator = section?.querySelector(
     "[data-sidebar-thread-trailing-indicator]",
   );
+  if (count) {
+    throw new Error("Expanded Working stage unexpectedly shows a count.");
+  }
   if (!(indicator instanceof HTMLElement)) {
     throw new Error("Working has no visible thread indicator to compare.");
   }
@@ -58,35 +65,26 @@ agent-browser --session "$qa_session" eval '(() => {
   const count = [...(label?.querySelectorAll("[aria-label]") ?? [])].find(
     (node) => /^\d+ threads?$/.test(node.getAttribute("aria-label") ?? ""),
   );
-  if (!(indicator instanceof HTMLElement)) {
-    throw new Error("Working has no collapsed stage indicator to compare.");
+  if (indicator) {
+    throw new Error("Collapsed stage indicators should be disabled by default.");
   }
   if (!(count instanceof HTMLElement)) {
-    throw new Error("Working hides its count behind the collapsed stage indicator.");
+    throw new Error("Collapsed nonempty Working stage has no count.");
   }
-  const rect = indicator.getBoundingClientRect();
   const countRect = count.getBoundingClientRect();
-  const stageCenter = rect.left + rect.width / 2;
   const countCenter = countRect.left + countRect.width / 2;
   const threadCenter = window.__threadStagesThreadIndicatorCenter;
   if (
     typeof threadCenter !== "number" ||
-    Math.abs(stageCenter - threadCenter) > 0.25
+    Math.abs(countCenter - threadCenter) > 0.25
   ) {
     throw new Error(
-      `Stage indicator center ${stageCenter}px does not match thread indicator center ${threadCenter}px.`,
-    );
-  }
-  if (Math.abs(countCenter - (stageCenter - rect.width)) > 0.25) {
-    throw new Error(
-      `Stage count center ${countCenter}px is not one indicator slot left of ${stageCenter}px.`,
+      `Stage count center ${countCenter}px does not match thread indicator center ${threadCenter}px.`,
     );
   }
   return JSON.stringify({
     countCenter,
     countWidth: countRect.width,
-    stageCenter,
     threadCenter,
-    width: rect.width,
   });
 })()'

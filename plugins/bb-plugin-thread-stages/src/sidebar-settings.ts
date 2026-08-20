@@ -1,6 +1,6 @@
 export interface ThreadStagesSettingsUpdate {
   showSidebarFilter?: boolean;
-  showStageCounts?: boolean;
+  showCollapsedStageIndicators?: boolean;
 }
 
 type SettingsFetcher = (
