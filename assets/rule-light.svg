@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1" viewBox="0 0 1120 1" preserveAspectRatio="none">
+  <!-- The divider the root README draws between plugins when its rows stack.
+       GitHub allows no stylesheet, so the rule is an image a picture element
+       swaps in below the width where a row stops floating, and out above it.
+       Its colour is the borderColor-muted GitHub gives a light page. -->
+  <rect width="1120" height="1" fill="#d1d9e0" opacity="0.7"/>
+</svg>

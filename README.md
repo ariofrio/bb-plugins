@@ -31,7 +31,7 @@ bb plugin install thread-stages@ariofrio
 
 <a href="plugins/bb-plugin-thread-stages#readme">Read more &rarr;</a>
 
-<br clear="all">
+<picture><source media="(min-width: 881px)" srcset="assets/blank.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/rule-dark.svg"><img src="assets/rule-light.svg" alt="" width="1120" height="1"></picture><br clear="all">
 
 <a href="plugins/bb-plugin-project-icons#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-icons/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-project-icons/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-icons/assets/card-beside-dark.png"><img src="plugins/bb-plugin-project-icons/assets/card-beside-light.png" alt="The icon picker open on the Storefront project's icon in a bb thread header" align="right" width="45%"></picture></a>
 
@@ -46,7 +46,7 @@ bb plugin install project-icons@ariofrio
 
 <a href="plugins/bb-plugin-project-icons#readme">Read more &rarr;</a>
 
-<br clear="all">
+<picture><source media="(min-width: 881px)" srcset="assets/blank.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/rule-dark.svg"><img src="assets/rule-light.svg" alt="" width="1120" height="1"></picture><br clear="all">
 
 <a href="plugins/bb-plugin-project-breadcrumbs#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/card-beside-dark.png"><img src="plugins/bb-plugin-project-breadcrumbs/assets/card-beside-light.png" alt="The Storefront project and its actions menu in a bb thread header" align="right" width="45%"></picture></a>
 
@@ -61,7 +61,7 @@ bb plugin install project-breadcrumbs@ariofrio
 
 <a href="plugins/bb-plugin-project-breadcrumbs#readme">Read more &rarr;</a>
 
-<br clear="all">
+<picture><source media="(min-width: 881px)" srcset="assets/blank.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/rule-dark.svg"><img src="assets/rule-light.svg" alt="" width="1120" height="1"></picture><br clear="all">
 
 <a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-beside-dark.png"><img src="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-beside-light.png" alt="A bb side chat opened with the ⇧⌘L shortcut" align="right" width="45%"></picture></a>
 
@@ -76,7 +76,7 @@ bb plugin install missing-keyboard-shortcuts@ariofrio
 
 <a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Read more &rarr;</a>
 
-<br clear="all">
+<picture><source media="(min-width: 881px)" srcset="assets/blank.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/rule-dark.svg"><img src="assets/rule-light.svg" alt="" width="1120" height="1"></picture><br clear="all">
 
 <a href="plugins/bb-plugin-chatgpt-theme#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-beside-dark.png"><img src="plugins/bb-plugin-chatgpt-theme/assets/card-beside-light.png" alt="bb wearing the ChatGPT palette, its light and dark halves meeting along the diagonal" align="right" width="45%"></picture></a>
 
