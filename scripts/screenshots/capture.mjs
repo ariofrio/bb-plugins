@@ -420,6 +420,9 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
       // them are framed before they land.
       const outputs = shotFiles(shot);
       await shot.setup?.({ fixture, stack });
+      // bb's default window, unless a shot pictures something that reads
+      // better in a smaller one.
+      const windowSize = shot.viewport ?? VIEWPORT;
       const frames = { fullWindow: {}, card: {} };
       for (const theme of shot.themes ?? THEMES) {
         const takeCard = async ({ page, focusBoxes }, viewport) => {
@@ -434,7 +437,7 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
           return await page.screenshot({ clip });
         };
         const takeFullWindow = ({ page }) =>
-          page.screenshot({ clip: { x: 0, y: 0, ...VIEWPORT } });
+          page.screenshot({ clip: { x: 0, y: 0, ...windowSize } });
         // A shot of the whole collection has no card and nothing to focus on,
         // so it never measures one.
         const wantsCard = outputs[CARD_FILE(theme)] !== undefined;
@@ -445,10 +448,11 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
             fixture,
             shot,
             theme,
+            viewport: windowSize,
             async take(frame) {
               return [
                 await takeFullWindow(frame),
-                wantsCard ? await takeCard(frame, VIEWPORT) : undefined,
+                wantsCard ? await takeCard(frame, windowSize) : undefined,
               ];
             },
           });
@@ -466,6 +470,7 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
           fixture,
           shot,
           theme,
+          viewport: windowSize,
           take: takeFullWindow,
         });
         frames.card[theme] = await render({
@@ -486,7 +491,7 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
             FULL_WINDOW_FILE(theme, shot.fileName),
             WINDOW_FRAME,
             frames.fullWindow,
-            VIEWPORT,
+            windowSize,
           ],
           [CARD_FILE(theme), CARD_FRAME, frames.card, frames.card.clip],
           [

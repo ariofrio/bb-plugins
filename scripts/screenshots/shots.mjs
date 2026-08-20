@@ -60,6 +60,10 @@ export const SHOTS = [
     plugin: null,
     fileName: "hero",
     outputs: ["hero-light.png", "hero-dark.png"],
+    // The hero runs the width of the README, where bb's default window spends
+    // most of its height on an empty conversation. A shorter window fills the
+    // same column with the parts a reader is being shown.
+    viewport: { width: 1080, height: 620 },
     async prepare({ page }) {
       await openFeaturedThread(page);
     },
@@ -110,8 +114,13 @@ export const SHOTS = [
     async prepare({ page }) {
       await openFeaturedThread(page);
       // The plugin mounts its sidebar after bb's own, so the shot waits for the
-      // element it is about rather than for the thread alone.
-      await page.locator("[data-thread-stages-sidebar-root]").waitFor();
+      // element it is about rather than for the thread alone. A freshly seeded
+      // bb is still settling while the first shots are taken, and the plugin
+      // bundle can load well past Playwright's default minute, so the wait is
+      // given room rather than being allowed to fail the run.
+      await page
+        .locator("[data-thread-stages-sidebar-root]")
+        .waitFor({ timeout: 120000 });
     },
     // The plugin owns the whole thread list rather than one control inside it,
     // so the shade lifts its entire sidebar out of the window.
