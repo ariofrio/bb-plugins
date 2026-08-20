@@ -55,7 +55,7 @@ import {
   fetchProjectIcons,
   subscribeToProjectIconChanges,
   type ProjectIconView,
-} from "./project-icons";
+} from "./icons";
 import { shouldSyncThreads } from "./workflow-sync";
 import {
   partitionWorkflowThreads,

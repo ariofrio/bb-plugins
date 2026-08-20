@@ -8,7 +8,7 @@ import {
 } from "@get-bb/plugin-sdk/app";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { announceProjectIconsChanged } from "./broadcast";
+import { announceIconsChanged } from "./broadcast";
 import { installProjectIconPortal } from "./header-dom";
 import { IconPicker, type CatalogIcon } from "./IconPicker";
 import { projectIconColorStyle } from "./project-icon-colors";
@@ -85,7 +85,7 @@ function ProjectIconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
   // plugins that cannot join that channel still see the change.
   useRealtime("icons-changed", () => {
     void refresh();
-    announceProjectIconsChanged();
+    announceIconsChanged();
   });
 
   useLayoutEffect(() => {
@@ -128,7 +128,7 @@ function ProjectIconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
       ...current.filter((item) => item.projectId !== projectId),
       { projectId, icon: nextIcon, color: nextColor, glyph: nextGlyph ?? [] },
     ]);
-    announceProjectIconsChanged();
+    announceIconsChanged();
     void rpc
       .call("setProjectIcon", { projectId, icon: nextIcon, color: nextColor })
       .catch(() => void refresh());
@@ -140,7 +140,7 @@ function ProjectIconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
       color: null,
     };
     setIcons((current) => current.filter((item) => item.projectId !== projectId));
-    announceProjectIconsChanged();
+    announceIconsChanged();
     void rpc.call("clearProjectIcon", { projectId }).catch(() => void refresh());
   };
 

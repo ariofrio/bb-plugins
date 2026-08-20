@@ -1,4 +1,4 @@
-# Project breadcrumbs
+# Breadcrumbs
 
 Adds the current project to each standard-project thread header:
 
@@ -48,7 +48,7 @@ Add this repository as a bb marketplace, then install the plugin from it:
 
 ```sh
 bb marketplace add git:github.com/ariofrio/bb-plugins
-bb plugin install project-breadcrumbs@ariofrio-bb-plugins
+bb plugin install breadcrumbs@ariofrio-bb-plugins
 ```
 
 Skip the first line if you already added the marketplace for another plugin.
@@ -56,14 +56,14 @@ Skip the first line if you already added the marketplace for another plugin.
 Update an installed copy with:
 
 ```sh
-bb plugin update project-breadcrumbs
+bb plugin update breadcrumbs
 ```
 
 ## Development
 
 ```sh
 npm run release:check
-bb plugin reload project-breadcrumbs
+bb plugin reload breadcrumbs
 ```
 
 `release:check` runs the tests and typecheck, checks the committed SDK

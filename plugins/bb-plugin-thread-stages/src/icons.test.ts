@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import {
-  PROJECT_ICONS_CHANNEL,
+  ICONS_CHANNEL,
   buildProjectIconMap,
   subscribeToProjectIconChanges,
-} from "./project-icons";
+} from "./icons";
 
 const folder = [["path", { d: "M1" }]] as const;
 const bubble = [["path", { d: "M2" }]] as const;
@@ -61,10 +61,10 @@ describe("buildProjectIconMap", () => {
 });
 
 describe("subscribeToProjectIconChanges", () => {
-  it("wakes on an announcement from the Project icons plugin", async () => {
+  it("wakes on an announcement from the Icons plugin", async () => {
     const seen = vi.fn();
     const stop = subscribeToProjectIconChanges(seen);
-    const announcer = new BroadcastChannel(PROJECT_ICONS_CHANNEL);
+    const announcer = new BroadcastChannel(ICONS_CHANNEL);
 
     announcer.postMessage({ type: "icons-changed" });
     await vi.waitFor(() => expect(seen).toHaveBeenCalled());
@@ -77,6 +77,6 @@ describe("subscribeToProjectIconChanges", () => {
   });
 
   it("names the channel the other plugin broadcasts on", () => {
-    expect(PROJECT_ICONS_CHANNEL).toBe("bb.project-icons");
+    expect(ICONS_CHANNEL).toBe("bb.icons");
   });
 });

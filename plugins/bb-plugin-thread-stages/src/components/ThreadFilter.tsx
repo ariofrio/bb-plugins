@@ -2,7 +2,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { portalScopeProps } from "../lib/portal-scope";
-import type { ProjectIconView } from "../project-icons";
+import type { ProjectIconView } from "../icons";
 import {
   serializeThreadFilter,
   type ThreadFilter as ThreadFilterValue,

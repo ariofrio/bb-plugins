@@ -2,13 +2,13 @@
  * Plugins cannot subscribe to each other's realtime channels, and the sidebar
  * that draws these icons lives in another plugin, so edits are announced on a
  * broadcast channel that any plugin in the app can listen on. Thread stages
- * mirrors this name in its own project-icons module.
+ * mirrors this name in its own icons module.
  */
-export const PROJECT_ICONS_CHANNEL = "bb.project-icons";
+export const ICONS_CHANNEL = "bb.icons";
 
-export function announceProjectIconsChanged(): void {
+export function announceIconsChanged(): void {
   try {
-    const channel = new BroadcastChannel(PROJECT_ICONS_CHANNEL);
+    const channel = new BroadcastChannel(ICONS_CHANNEL);
     channel.postMessage({ type: "icons-changed" });
     channel.close();
   } catch {

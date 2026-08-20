@@ -1,19 +1,19 @@
 import type { IconSvgElement } from "@hugeicons/react";
 
 /**
- * Project icons come from the Project icons plugin, over its RPC. The sidebar
+ * Project icons come from the Icons plugin, over its RPC. The sidebar
  * degrades to no icons when that plugin is not installed, so this never
  * throws — a missing neighbour is a normal state, not an error.
  */
-const PROJECT_ICONS_PLUGIN_ID = "project-icons";
+const ICONS_PLUGIN_ID = "icons";
 const PERSONAL_PROJECT_ID = "proj_personal";
 /**
- * The Project icons plugin announces edits here. A plugin cannot join another
+ * The Icons plugin announces edits here. A plugin cannot join another
  * plugin's realtime channel, and both run in the same document, so a broadcast
  * channel carries the change: instantly within a window, and to other windows
  * of the same client too.
  */
-export const PROJECT_ICONS_CHANNEL = "bb.project-icons";
+export const ICONS_CHANNEL = "bb.icons";
 
 export interface ProjectIconView {
   name: string;
@@ -35,7 +35,7 @@ interface ProjectIconsResponse {
 }
 
 /**
- * Mirrors the palette the Project icons plugin defines, so a color reads the
+ * Mirrors the palette the Icons plugin defines, so a color reads the
  * same on a row as it does in the header. Each color holds one hue and picks
  * its lightness per mode; see that plugin's project-icon-colors.ts for how the
  * anchors were fitted across bb's themes.
@@ -87,7 +87,7 @@ export async function fetchProjectIcons(
 ): Promise<Map<string, ProjectIconView>> {
   try {
     const response = await fetch(
-      `/api/v1/plugins/${PROJECT_ICONS_PLUGIN_ID}/rpc/listProjectIcons`,
+      `/api/v1/plugins/${ICONS_PLUGIN_ID}/rpc/listProjectIcons`,
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -106,11 +106,11 @@ export async function fetchProjectIcons(
   }
 }
 
-/** Calls back whenever the Project icons plugin reports an edit. */
+/** Calls back whenever the Icons plugin reports an edit. */
 export function subscribeToProjectIconChanges(onChange: () => void): () => void {
   let channel: BroadcastChannel | null = null;
   try {
-    channel = new BroadcastChannel(PROJECT_ICONS_CHANNEL);
+    channel = new BroadcastChannel(ICONS_CHANNEL);
     channel.onmessage = () => onChange();
   } catch {
     // Older clients without BroadcastChannel still refresh on focus.

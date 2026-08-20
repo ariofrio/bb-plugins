@@ -13,20 +13,20 @@ test("plans a BB tag when a plugin version increases", () => {
   assert.deepEqual(
     buildReleasePlan([
       {
-        directory: "plugins/bb-plugin-project-icons",
-        before: plugin("bb-plugin-project-icons", "0.1.0", "Project icons"),
-        after: plugin("bb-plugin-project-icons", "0.1.1", "Project icons"),
+        directory: "plugins/bb-plugin-icons",
+        before: plugin("bb-plugin-icons", "0.1.0", "Icons"),
+        after: plugin("bb-plugin-icons", "0.1.1", "Icons"),
       },
     ]),
     [
       {
-        id: "project-icons",
-        directory: "plugins/bb-plugin-project-icons",
-        packageName: "bb-plugin-project-icons",
+        id: "icons",
+        directory: "plugins/bb-plugin-icons",
+        packageName: "bb-plugin-icons",
         version: "0.1.1",
-        tag: "project-icons/v0.1.1",
-        title: "Project icons v0.1.1",
-        message: "Release Project icons v0.1.1",
+        tag: "icons/v0.1.1",
+        title: "Icons v0.1.1",
+        message: "Release Icons v0.1.1",
       },
     ],
   );
@@ -36,10 +36,10 @@ test("ignores package metadata changes when the version is unchanged", () => {
   assert.deepEqual(
     buildReleasePlan([
       {
-        directory: "plugins/bb-plugin-project-icons",
-        before: plugin("bb-plugin-project-icons", "0.1.0"),
+        directory: "plugins/bb-plugin-icons",
+        before: plugin("bb-plugin-icons", "0.1.0"),
         after: {
-          ...plugin("bb-plugin-project-icons", "0.1.0"),
+          ...plugin("bb-plugin-icons", "0.1.0"),
           description: "Updated description",
         },
       },
@@ -90,9 +90,9 @@ test("rejects prereleases and newly added packages", () => {
     () =>
       buildReleasePlan([
         {
-          directory: "plugins/bb-plugin-project-icons",
-          before: plugin("bb-plugin-project-icons", "0.1.0"),
-          after: plugin("bb-plugin-project-icons", "0.2.0-beta.1"),
+          directory: "plugins/bb-plugin-icons",
+          before: plugin("bb-plugin-icons", "0.1.0"),
+          after: plugin("bb-plugin-icons", "0.2.0-beta.1"),
         },
       ]),
     /stable X\.Y\.Z version/,

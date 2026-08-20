@@ -1,4 +1,4 @@
-# Project icons
+# Icons
 
 Gives every project an icon and an optional color, shown next to the project
 name in the thread header and on each row of the [Thread
@@ -27,7 +27,7 @@ Add this repository as a bb marketplace, then install the plugin from it:
 
 ```sh
 bb marketplace add git:github.com/ariofrio/bb-plugins
-bb plugin install project-icons@ariofrio-bb-plugins
+bb plugin install icons@ariofrio-bb-plugins
 ```
 
 Skip the first line if you already added the marketplace for another plugin.
@@ -35,7 +35,7 @@ Skip the first line if you already added the marketplace for another plugin.
 Update an installed copy with:
 
 ```sh
-bb plugin update project-icons
+bb plugin update icons
 ```
 
 ## Where the catalog lives
@@ -64,17 +64,16 @@ before it is adopted.
 ## Header placement
 
 bb has no slot before the thread title, so the icon is portaled into the
-header the same way [Project
-breadcrumbs](../bb-plugin-project-breadcrumbs#readme) portals the project
-name: immediately before that breadcrumb when it is installed, and before the
-title when it is not. `header-dom.test.ts` pins both shapes so a bb header
+header the same way [Breadcrumbs](../bb-plugin-breadcrumbs#readme) portals
+the project name: immediately before that breadcrumb when it is installed, and
+before the title when it is not. `header-dom.test.ts` pins both shapes so a bb header
 change fails locally rather than moving the icon silently.
 
 ## Development
 
 ```sh
 npm run release:check
-bb plugin reload project-icons
+bb plugin reload icons
 ```
 
 `release:check` runs the tests and typecheck, checks the committed SDK

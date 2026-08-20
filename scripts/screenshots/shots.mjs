@@ -46,8 +46,8 @@ async function openFeaturedThread(page) {
 
 export const SHOTS = [
   {
-    id: "project-breadcrumbs",
-    plugin: "bb-plugin-project-breadcrumbs",
+    id: "breadcrumbs",
+    plugin: "bb-plugin-breadcrumbs",
     outputs: THEME_FILES,
     async prepare({ page }) {
       await openFeaturedThread(page);
@@ -63,8 +63,8 @@ export const SHOTS = [
     ],
   },
   {
-    id: "project-icons",
-    plugin: "bb-plugin-project-icons",
+    id: "icons",
+    plugin: "bb-plugin-icons",
     outputs: THEME_FILES,
     async prepare({ page }) {
       await openFeaturedThread(page);

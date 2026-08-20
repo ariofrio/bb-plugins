@@ -20,7 +20,7 @@ function renderHeader({ withBreadcrumb }: { withBreadcrumb: boolean }): {
   if (center === null) throw new Error("missing center");
   if (withBreadcrumb) {
     const breadcrumb = document.createElement("span");
-    breadcrumb.dataset.projectBreadcrumbsRoot = "";
+    breadcrumb.dataset.breadcrumbsRoot = "";
     center.insertBefore(breadcrumb, center.firstElementChild);
   }
   const marker = document.querySelector<HTMLElement>("[data-marker]");
@@ -41,9 +41,9 @@ describe("installProjectIconPortal", () => {
     expect(mount).not.toBeNull();
     expect(
       Array.from(center.children).map((child) =>
-        child.hasAttribute("data-project-icon-root")
+        child.hasAttribute("data-icons-root")
           ? "icon"
-          : child.hasAttribute("data-project-breadcrumbs-root")
+          : child.hasAttribute("data-breadcrumbs-root")
             ? "breadcrumb"
             : child.hasAttribute("data-title")
               ? "title"
@@ -57,7 +57,7 @@ describe("installProjectIconPortal", () => {
 
     installProjectIconPortal(marker);
 
-    expect(center.firstElementChild?.hasAttribute("data-project-icon-root")).toBe(
+    expect(center.firstElementChild?.hasAttribute("data-icons-root")).toBe(
       true,
     );
   });
@@ -70,7 +70,7 @@ describe("installProjectIconPortal", () => {
     expect(slot?.hidden).toBe(true);
 
     mount?.cleanup();
-    expect(center.querySelector("[data-project-icon-root]")).toBeNull();
+    expect(center.querySelector("[data-icons-root]")).toBeNull();
     expect(slot?.hidden).toBe(false);
   });
 
@@ -81,7 +81,7 @@ describe("installProjectIconPortal", () => {
 
     // Plugin CSS is `@scope`d to these attributes; without them every class on
     // this subtree resolves to nothing.
-    const root = center.querySelector<HTMLElement>("[data-project-icon-root]");
+    const root = center.querySelector<HTMLElement>("[data-icons-root]");
     expect(root?.dataset.bbPluginRoot).toBe("");
     expect(root?.dataset.bbPortaledOverlay).toBe("");
   });
@@ -93,7 +93,7 @@ describe("installProjectIconPortal", () => {
 
     // Electron treats the header as title bar; without this a left click drags
     // the window instead of reaching the button.
-    const root = center.querySelector("[data-project-icon-root]");
+    const root = center.querySelector("[data-icons-root]");
     expect(root?.className).toContain("[app-region:no-drag]");
     expect(root?.className).toContain("[-webkit-app-region:no-drag]");
   });

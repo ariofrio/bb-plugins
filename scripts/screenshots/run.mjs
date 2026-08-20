@@ -1,7 +1,7 @@
 // Regenerates every plugin screenshot from one seeded bb.
 //
 //   npm run screenshots            capture every shot
-//   npm run screenshots -- --only project-icons
+//   npm run screenshots -- --only icons
 //   npm run screenshots -- --keep  leave the seeded bb running for inspection
 //   npm run check:screenshots      report stale screenshots without capturing
 //

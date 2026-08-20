@@ -53,7 +53,7 @@ describe("installBreadcrumbPortal", () => {
     expect(wrapper.hidden).toBe(true);
 
     mounted?.cleanup();
-    expect(document.querySelector("[data-project-breadcrumbs-root]")).toBeNull();
+    expect(document.querySelector("[data-breadcrumbs-root]")).toBeNull();
     expect(wrapper.hidden).toBe(false);
   });
 

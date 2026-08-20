@@ -1,8 +1,8 @@
 ---
 "bb-plugin-chatgpt-theme": patch
 "bb-plugin-missing-keyboard-shortcuts": patch
-"bb-plugin-project-breadcrumbs": patch
-"bb-plugin-project-icons": patch
+"bb-plugin-breadcrumbs": patch
+"bb-plugin-icons": patch
 "bb-plugin-thread-stages": patch
 ---
 

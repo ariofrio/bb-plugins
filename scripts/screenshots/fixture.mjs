@@ -232,7 +232,7 @@ export async function applyPluginState({ stack, projects }) {
     const { icon, color } = project.spec;
     const response = await fetch(
       new URL(
-        `/api/v1/plugins/project-icons/rpc/setProjectIcon`,
+        `/api/v1/plugins/icons/rpc/setProjectIcon`,
         stack.serverUrl,
       ),
       {

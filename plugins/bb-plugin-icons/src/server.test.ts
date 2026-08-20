@@ -9,7 +9,7 @@ afterEach(async () => {
 });
 
 function createPluginHarness() {
-  const host = createFakePluginHost({ pluginId: "project-icons" });
+  const host = createFakePluginHost({ pluginId: "icons" });
   plugin(host.bb);
   disposeHosts.push(() => host.harness.lifecycle.dispose());
   return host.harness;

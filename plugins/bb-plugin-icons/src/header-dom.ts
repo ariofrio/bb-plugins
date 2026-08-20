@@ -8,9 +8,9 @@ interface IconPortalMount {
 
 /**
  * bb has no slot before the thread title, so the icon is portaled into the
- * header the way the Project breadcrumbs plugin portals the project
- * name. When that plugin is installed the icon goes immediately before its
- * breadcrumb; otherwise it sits directly before the title.
+ * header the way the Breadcrumbs plugin portals the project name. When that
+ * plugin is installed the icon goes immediately before its breadcrumb;
+ * otherwise it sits directly before the title.
  *
  * header-dom.test.ts pins both shapes so a bb header change fails here rather
  * than silently moving the icon.
@@ -36,12 +36,12 @@ export function installProjectIconPortal(
   }
 
   const breadcrumb = center.querySelector<HTMLElement>(
-    "[data-project-breadcrumbs-root]",
+    "[data-breadcrumbs-root]",
   );
   const anchor = breadcrumb ?? titleContainer;
 
   const target = marker.ownerDocument.createElement("span");
-  target.dataset.projectIconRoot = "";
+  target.dataset.iconsRoot = "";
   // This node lives in bb's header, outside the plugin's mount, so it has to
   // carry its own scope root or the plugin's own stylesheet never reaches it.
   // Utilities bb uses itself (sizing, muted text, the drag-region opt-out)

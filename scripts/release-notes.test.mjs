@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { extractChangelogEntry } from "./release-notes.mjs";
 
-const changelog = `# bb-plugin-project-icons
+const changelog = `# bb-plugin-icons
 
 ## 0.1.2
 

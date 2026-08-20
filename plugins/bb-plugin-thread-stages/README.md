@@ -14,9 +14,9 @@ Child threads do not have stages or positions of their own. They
 always render beneath their parent, inherit the root parent's stage, and move
 with that parent. Their thread actions therefore omit stage controls.
 
-Each row shows its project's icon when the [Project
-icons](../bb-plugin-project-icons#readme) plugin is installed, so a
-stage-grouped list still tells you what a thread belongs to. Without that
+Each row shows its project's icon when the
+[Icons](../bb-plugin-icons#readme) plugin is installed, so a stage-grouped
+list still tells you what a thread belongs to. Without that
 plugin the rows look as they always have.
 
 Use **Projects and sections** above the stages to focus the whole
