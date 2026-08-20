@@ -93,14 +93,11 @@ bb plugin install chatgpt-theme@ariofrio
 
 <br clear="all">
 
-## Installing and updating
+## Updating
 
-Each command above adds this repository as a bb marketplace and installs one
-plugin from it. Once the marketplace is added, the rest can also be picked in
-Settings → Plugins. Every entry resolves the plugin's highest
-`<entry-id>/vX.Y.Z` release tag, so `bb plugin update <entry-id>` picks up new
-releases and the marketplace never has to be re-added. The catalog is defined in
-[marketplace.json](marketplace.json). Nothing here is published to npm yet.
+`bb plugin update <entry-id>` moves an installed plugin to its newest release.
+Once the marketplace is added, its other plugins can also be picked in
+Settings → Plugins.
 
 ## Development
 
@@ -135,7 +132,8 @@ request validates the affected plugins, creates immutable `<plugin-id>/vX.Y.Z`
 Git tags, and publishes a
 [GitHub release](https://github.com/ariofrio/bb-plugins/releases) per tag
 carrying that version's changelog entry. Every listing accepts any released
-version, so the catalog never changes with a release.
+version, so the catalog never changes with a release. Nothing is published to
+npm yet.
 
 `npm run release:check` runs each plugin's tests, type checks, build, SDK
 declaration verification, and packed artifact verification.
