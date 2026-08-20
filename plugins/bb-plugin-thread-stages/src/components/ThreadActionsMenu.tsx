@@ -6,14 +6,18 @@ import type {
   PluginSidebarThreadActions,
 } from "@get-bb/plugin-sdk/app";
 import { WORKFLOW_STAGES, type WorkflowStage } from "../workflow-stage";
+import {
+  CONTEXT_MENU_MOTION_CLASS,
+  DROPDOWN_MENU_MOTION_CLASS,
+} from "../lib/menu-motion";
 import { portalScopeProps } from "../lib/portal-scope";
 import { Icon, type IconName } from "./Icon";
 import { WorkflowStageIcon } from "./WorkflowStageIcon";
 
-const CONTENT_CLASS =
+const MENU_SURFACE_CLASS =
   "z-[70] min-w-28 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
-const SUB_CONTENT_CLASS =
-  "z-[70] min-w-28 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
+const CONTEXT_CONTENT_CLASS = `${MENU_SURFACE_CLASS} ${CONTEXT_MENU_MOTION_CLASS}`;
+const DROPDOWN_CONTENT_CLASS = `${MENU_SURFACE_CLASS} ${DROPDOWN_MENU_MOTION_CLASS}`;
 const ITEM_CLASS =
   "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-[0.3125rem] text-xs outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground [&>svg]:size-4 [&>svg]:shrink-0";
 const DESTRUCTIVE_ITEM_CLASS = `${ITEM_CLASS} text-destructive data-[highlighted]:bg-destructive/15 data-[highlighted]:text-destructive`;
@@ -54,7 +58,7 @@ export function ThreadActionsContextMenu({
         <ContextMenu.Content
           {...portalScopeProps()}
           aria-label="Thread actions"
-          className={CONTENT_CLASS}
+          className={CONTEXT_CONTENT_CLASS}
         >
           <ContextMenuItems {...props} />
         </ContextMenu.Content>
@@ -85,7 +89,7 @@ export function ThreadActionsDropdown({
           {...portalScopeProps()}
           align="end"
           sideOffset={4}
-          className={CONTENT_CLASS}
+          className={DROPDOWN_CONTENT_CLASS}
         >
           <DropdownMenuItems {...props} />
         </DropdownMenu.Content>
@@ -135,7 +139,7 @@ function ContextMenuItems(props: CommonMenuProps) {
           <ContextMenu.Portal>
             <ContextMenu.SubContent
               {...portalScopeProps()}
-              className={SUB_CONTENT_CLASS}
+              className={CONTEXT_CONTENT_CLASS}
             >
               {WORKFLOW_STAGES.map((stage) => (
                 <ContextMenu.Item
@@ -167,7 +171,7 @@ function ContextMenuItems(props: CommonMenuProps) {
         <ContextMenu.Portal>
           <ContextMenu.SubContent
             {...portalScopeProps()}
-            className={SUB_CONTENT_CLASS}
+            className={CONTEXT_CONTENT_CLASS}
           >
             <ContextMenu.Item
               className={ITEM_CLASS}
@@ -269,7 +273,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
           <DropdownMenu.Portal>
             <DropdownMenu.SubContent
               {...portalScopeProps()}
-              className={SUB_CONTENT_CLASS}
+              className={DROPDOWN_CONTENT_CLASS}
             >
               {WORKFLOW_STAGES.map((stage) => (
                 <DropdownMenu.Item
@@ -301,7 +305,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
         <DropdownMenu.Portal>
           <DropdownMenu.SubContent
             {...portalScopeProps()}
-            className={SUB_CONTENT_CLASS}
+            className={DROPDOWN_CONTENT_CLASS}
           >
             <DropdownMenu.Item
               className={ITEM_CLASS}

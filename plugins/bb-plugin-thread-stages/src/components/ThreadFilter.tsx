@@ -9,6 +9,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { portalScopeProps } from "../lib/portal-scope";
+import { DROPDOWN_MENU_MOTION_CLASS } from "../lib/menu-motion";
 import type { ProjectIconView } from "../icons";
 import {
   serializeThreadFilter,
@@ -54,7 +55,7 @@ interface ThreadFilterProps {
 }
 
 const CONTENT_CLASS =
-  "z-50 min-w-[var(--radix-dropdown-menu-trigger-width)] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
+  `z-50 min-w-[var(--radix-dropdown-menu-trigger-width)] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md ${DROPDOWN_MENU_MOTION_CLASS}`;
 const ITEM_CLASS =
   "relative flex cursor-default select-none items-center gap-2 rounded-sm py-[0.3125rem] pl-7 pr-2 text-xs outline-none transition-colors data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground";
 const ACTION_ITEM_CLASS =
@@ -69,7 +70,7 @@ const ACTION_TOOLTIP_DELAY_MS = 350;
 const LABEL_CLASS =
   "px-2 py-1.5 text-[11px] font-medium text-muted-foreground";
 const SUB_CONTENT_CLASS =
-  "z-50 min-w-28 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
+  `z-50 min-w-28 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md ${DROPDOWN_MENU_MOTION_CLASS}`;
 const SubmenuPointerEnterContext = createContext<(() => void) | undefined>(
   undefined,
 );

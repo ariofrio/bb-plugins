@@ -1,10 +1,11 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useRef } from "react";
 import { portalScopeProps } from "../lib/portal-scope";
+import { DROPDOWN_MENU_MOTION_CLASS } from "../lib/menu-motion";
 import { Icon } from "./Icon";
 
 const CONTENT_CLASS =
-  "z-50 min-w-40 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md";
+  `z-50 min-w-40 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md ${DROPDOWN_MENU_MOTION_CLASS}`;
 const ITEM_CLASS =
   "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-[0.3125rem] text-xs outline-none transition-colors data-[highlighted]:bg-state-hover data-[highlighted]:text-foreground";
 const TRIGGER_CLASS =

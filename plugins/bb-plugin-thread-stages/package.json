@@ -26,6 +26,7 @@
   "type": "module",
   "scripts": {
     "build": "bb plugin build",
+    "qa:menu-animations": "bash scripts/qa-menu-animations.sh",
     "qa:project-filter-hover": "bash scripts/qa-project-filter-hover.sh",
     "qa:sidebar-indicator-alignment": "bash scripts/qa-sidebar-indicator-alignment.sh",
     "verify:lockfile": "npm ci --workspaces=false --ignore-scripts --dry-run --no-audit --no-fund --loglevel=error",
