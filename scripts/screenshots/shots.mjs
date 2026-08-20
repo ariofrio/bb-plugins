@@ -109,6 +109,9 @@ export const SHOTS = [
     outputs: THEME_FILES,
     async prepare({ page }) {
       await openFeaturedThread(page);
+      // The plugin mounts its sidebar after bb's own, so the shot waits for the
+      // element it is about rather than for the thread alone.
+      await page.locator("[data-thread-stages-sidebar-root]").waitFor();
     },
     // The plugin owns the whole thread list rather than one control inside it,
     // so the shade lifts its entire sidebar out of the window.
