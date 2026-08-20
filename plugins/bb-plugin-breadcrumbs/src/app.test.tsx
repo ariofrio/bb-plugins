@@ -34,7 +34,7 @@ describe("project breadcrumb app registration", () => {
     });
   });
 
-  it("renders the current project through the registered action", async () => {
+  it("draws the whole trail from one settled answer", async () => {
     document.body.innerHTML = `
       <header>
         <div><div><p>Thread title</p></div><span data-testid="thread-detail-header-actions-menu"></span></div>
@@ -48,27 +48,62 @@ describe("project breadcrumb app registration", () => {
       action,
       {
         threadId: "thread-1",
-        projectId: "missing-project",
+        projectId: "project-1",
         isCompactViewport: false,
       },
       {
-        sidebarThreads: {
-          projects: [
-            { id: "project-1", name: "Example project", isPersonal: false },
-          ],
+        rpc: {
+          // Deliberately the only source: the sidebar's live view is left
+          // empty, because the crumb must not depend on it having hydrated.
+          trailForThread: () => ({
+            section: { id: "sec_1", name: "Example" },
+            project: { id: "project-1", name: "Example project", isPersonal: false },
+            ancestors: [{ id: "thread-0", title: "Parent thread" }],
+          }),
         },
+        sidebarThreads: { projects: [], threads: [] },
       },
     );
     wrapper.append(slot.container);
-    slot.lifecycle.rerender(
-      createElement(action.component, {
-        threadId: "thread-1",
-        projectId: "project-1",
-        isCompactViewport: false,
-      }),
-    );
 
-    expect(await slot.findByRole("button", { name: "Example project actions" })).toBeTruthy();
+    expect(
+      await slot.findByRole("button", { name: "Example actions" }),
+    ).toBeTruthy();
+    expect(
+      await slot.findByRole("button", { name: "Example project actions" }),
+    ).toBeTruthy();
+    expect(await slot.findByTitle("Parent thread")).toBeTruthy();
+    slot.lifecycle.unmount();
+  });
+
+  it("draws nothing for a personal-project thread with no section or parent", async () => {
+    document.body.innerHTML = `
+      <header>
+        <div><div><p>Thread title</p></div><span data-testid="thread-detail-header-actions-menu"></span></div>
+        <span id="slot-wrapper" role="group"></span>
+      </header>
+    `;
+    const app = await loadPluginApp(() => import("./app"));
+    const action = app.threadHeaderActions[0]!;
+    const wrapper = document.querySelector("#slot-wrapper")!;
+    const slot = renderSlot(
+      action,
+      { threadId: "thread-1", projectId: "proj_personal", isCompactViewport: false },
+      {
+        rpc: {
+          trailForThread: () => ({
+            section: null,
+            project: { id: "proj_personal", name: "Personal", isPersonal: true },
+            ancestors: [],
+          }),
+        },
+        sidebarThreads: { projects: [], threads: [] },
+      },
+    );
+    wrapper.append(slot.container);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(document.querySelector("[data-breadcrumbs-root]")).toBeNull();
     slot.lifecycle.unmount();
   });
 });

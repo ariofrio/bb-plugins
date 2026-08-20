@@ -245,13 +245,31 @@ export default definePluginApp((app) => {
       const root = createRoot(host);
       const rpc = rpcEarly;
 
+      /**
+       * Rendering is pushed out of the call bb is watching.
+       *
+       * bb guards its own React tree: while a plugin's code is on the stack it
+       * blocks any React-owned node from being moved under a parent React does
+       * not own. A render committed straight from the observer lands inside
+       * that window and takes every plugin's portal down with it — the
+       * Breadcrumbs plugin loses its crumbs and bb warns that "icons" tried to
+       * move a node out of React's tree. A timeout leaves the window first.
+       */
+      let scheduled: ReturnType<typeof setTimeout> | undefined;
+      let pending: SidebarAnchor[] = [];
       const draw = (anchors: SidebarAnchor[]) => {
-        root.render(<SidebarIcons anchors={anchors} rpc={rpc} />);
+        pending = anchors;
+        if (scheduled !== undefined) return;
+        scheduled = setTimeout(() => {
+          scheduled = undefined;
+          root.render(<SidebarIcons anchors={pending} rpc={rpc} />);
+        }, 0);
       };
       draw([]);
       const stop = observeSidebarIconAnchors(draw);
 
       const dispose = () => {
+        clearTimeout(scheduled);
         // React owns nodes inside bb's sidebar, so it unmounts before the
         // anchors holding them are taken back out.
         root.unmount();

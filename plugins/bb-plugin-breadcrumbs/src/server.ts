@@ -52,17 +52,29 @@ export const rpcContract = defineRpcContract({
       .strict(),
   },
   /**
-   * The thread's section, resolved here rather than from the sidebar's live
-   * view. That view hydrates a thread's sectionId separately from the thread
-   * itself, so a header could mount beside a root thread still reporting no
-   * section and never hear otherwise — bb publishes no section event.
+   * Everything the crumbs draw, for one thread, from bb's own records.
+   *
+   * The sidebar's live view would answer most of this, but it is the wrong
+   * source: it hydrates in pieces, so a header can mount beside it while it
+   * still reports no projects and no threads, and nothing corrects that for a
+   * plugin — bb publishes no section event, and a plugin cannot subscribe to
+   * bb's own entity events from the app. One call, one settled answer.
    */
-  sectionForThread: {
+  trailForThread: {
     input: z.object({ threadId: z.string().min(1) }).strict(),
     output: z
       .object({
-        sectionId: z.string().nullable(),
-        sectionName: z.string().nullable(),
+        section: z.object({ id: z.string(), name: z.string() }).nullable(),
+        project: z
+          .object({
+            id: z.string(),
+            name: z.string(),
+            isPersonal: z.boolean(),
+          })
+          .nullable(),
+        ancestors: z.array(
+          z.object({ id: z.string(), title: z.string() }).strict(),
+        ),
       })
       .strict(),
   },
@@ -105,28 +117,63 @@ export default function plugin(bb: BbPluginApi) {
         sections: sections.map(({ id, name }) => ({ id, name })),
       };
     },
-    async sectionForThread({ threadId }) {
-      // Sections attach to root threads; a child inherits its root's.
-      const seen = new Set<string>();
-      let current: { parentThreadId?: string | null; sectionId?: string | null } | null =
-        await bb.sdk.threads.get({ threadId }).catch(() => null);
-      let id = threadId;
-      while (
-        current !== null &&
-        (current.parentThreadId ?? null) !== null &&
-        !seen.has(id)
-      ) {
+    async trailForThread({ threadId }) {
+      const read = (id: string) =>
+        bb.sdk.threads.get({ threadId: id }).catch(() => null) as Promise<{
+          parentThreadId?: string | null;
+          sectionId?: string | null;
+          projectId?: string | null;
+          title?: string | null;
+          titleFallback?: string | null;
+        } | null>;
+
+      // Oldest first, excluding the thread itself. A parent bb cannot serve,
+      // or a cycle, stops the walk rather than spinning the header.
+      const seen = new Set<string>([threadId]);
+      const self = await read(threadId);
+      const ancestors: Array<{ id: string; title: string }> = [];
+      let current = self;
+      while (current !== null && typeof current.parentThreadId === "string") {
+        const id: string = current.parentThreadId;
+        if (seen.has(id)) break;
         seen.add(id);
-        id = current.parentThreadId as string;
-        current = await bb.sdk.threads.get({ threadId: id }).catch(() => null);
+        current = await read(id);
+        if (current === null) break;
+        const named = current.title ?? current.titleFallback ?? "";
+        ancestors.unshift({
+          id,
+          title: named.trim() === "" ? "Untitled" : named,
+        });
       }
-      const sectionId = current?.sectionId ?? null;
-      if (sectionId === null) return { sectionId: null, sectionName: null };
-      const sections = await bb.sdk.threadSections.list().catch(() => []);
+
+      // Sections attach to root threads; a child inherits its root's.
+      const rootSectionId = current?.sectionId ?? self?.sectionId ?? null;
+      const sections =
+        rootSectionId === null
+          ? []
+          : await bb.sdk.threadSections.list().catch(() => []);
+      const found = sections.find((section) => section.id === rootSectionId);
+
+      const projectId = self?.projectId ?? null;
+      const project =
+        projectId === null
+          ? null
+          : await bb.sdk.projects.get({ projectId }).catch(() => null);
+
       return {
-        sectionId,
-        sectionName:
-          sections.find((section) => section.id === sectionId)?.name ?? null,
+        section:
+          rootSectionId === null || found === undefined
+            ? null
+            : { id: found.id, name: found.name },
+        project:
+          project === null
+            ? null
+            : {
+                id: projectId as string,
+                name: project.name,
+                isPersonal: project.kind === "personal",
+              },
+        ancestors,
       };
     },
     async renameSection({ sectionId, name }) {
