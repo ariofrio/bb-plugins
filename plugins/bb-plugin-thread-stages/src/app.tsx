@@ -541,10 +541,11 @@ function SidebarSection({
         )}
         {activityThread ? (
           <span
+            data-sidebar-stage-trailing-indicator=""
             data-sidebar-hover-actions-open={
               optionsOpen ? "true" : undefined
             }
-            className="bb-sidebar-hover-actions-fade pointer-events-none absolute right-2 top-1/2 z-20 inline-flex -translate-y-1/2 items-center text-subtle-foreground"
+            className="bb-sidebar-hover-actions-fade pointer-events-none absolute right-0 top-1/2 z-20 inline-flex size-7 -translate-y-1/2 items-center justify-center text-subtle-foreground"
           >
             <ThreadIndicator
               indicator={activityThread.indicator}
