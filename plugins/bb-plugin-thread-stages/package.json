@@ -1,6 +1,6 @@
 {
   "name": "bb-plugin-thread-stages",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Group threads in the sidebar into stages from Backlog to Done, updating as they run.",
   "license": "MIT",
   "repository": {

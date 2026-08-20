@@ -1,5 +1,12 @@
 # bb-plugin-missing-keyboard-shortcuts
 
+## 0.2.2
+
+### Patch Changes
+
+- 31d676c: Reword the plugin description so bb, the marketplace listing, npm, and the
+  repository README all show the same sentence.
+
 ## 0.2.1
 
 ### Patch Changes
