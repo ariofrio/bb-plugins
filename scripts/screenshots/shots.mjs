@@ -7,8 +7,12 @@ import { SIDE_CHAT_QUESTION } from "./fixture.mjs";
 const THEME_FILES = [
   "screenshot-light.png",
   "screenshot-dark.png",
+  // Two cards per mode: the one a row stacks, and the one it floats, which
+  // carries the margin the paragraph beside it needs.
   "card-light.png",
   "card-dark.png",
+  "card-beside-light.png",
+  "card-beside-dark.png",
 ];
 
 /** bb's own sidebar column, which both sidebar cards are framed from. */

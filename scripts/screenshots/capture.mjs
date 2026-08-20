@@ -18,6 +18,7 @@ export const THEMES = ["light", "dark"];
 
 export const FULL_WINDOW_FILE = (theme, name = "screenshot") => `${name}-${theme}.png`;
 export const CARD_FILE = (theme) => `card-${theme}.png`;
+export const CARD_BESIDE_FILE = (theme) => `card-beside-${theme}.png`;
 
 /** The mode a split shot pairs with the one it is named for. */
 const OTHER_THEME = { light: "dark", dark: "light" };
@@ -298,13 +299,22 @@ const WINDOW_FRAME = {
  */
 const CARD_FRAME = {
   radius: 14,
-  // The margin is the layout's, not the shadow's: a card floated beside a
-  // paragraph needs space on the side the text runs into, and a card stacked
-  // above a heading needs space beneath it. Its right edge stays flush with
-  // the column either way.
-  padding: { top: 0, left: 24, right: 0, bottom: 28 },
+  // Stacked above a heading, a card needs space beneath it and none at its
+  // sides: both its edges are the column's.
+  padding: { top: 0, left: 0, right: 0, bottom: 28 },
   light: { edge: null, shadow: null },
   dark: { edge: null, shadow: null },
+};
+
+/**
+ * The same card for the layout that floats it, where the paragraph beside it
+ * runs into its left edge. The margin belongs to that arrangement alone, which
+ * is why it is a second file rather than padding on the only one: stacked, it
+ * would push the picture off the margin the text is flush with.
+ */
+const CARD_BESIDE_FRAME = {
+  ...CARD_FRAME,
+  padding: { top: 0, left: 24, right: 0, bottom: 28 },
 };
 
 /** Draws an image into its frame's corners, edge, and shadow. */
@@ -474,6 +484,12 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
             VIEWPORT,
           ],
           [CARD_FILE(theme), CARD_FRAME, frames.card, frames.card.clip],
+          [
+            CARD_BESIDE_FILE(theme),
+            CARD_BESIDE_FRAME,
+            frames.card,
+            frames.card.clip,
+          ],
         ]) {
           if (outputs[name] === undefined) continue;
           await writeFramed({

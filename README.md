@@ -12,7 +12,7 @@
 
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.png"><img src="assets/hero-light.png" alt="bb with Thread stages, Project icons, and Project breadcrumbs at work"></picture></p>
 
-<a href="plugins/bb-plugin-thread-stages#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-thread-stages/assets/card-dark.png" width="1168"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-thread-stages/assets/card-light.png" width="1168"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-thread-stages/assets/card-dark.png"><img src="plugins/bb-plugin-thread-stages/assets/card-light.png" alt="Thread stages grouping the bb sidebar into Backlog, To do, Working, Blocked, and Done" align="right" width="45%"></picture></a>
+<a href="plugins/bb-plugin-thread-stages#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-thread-stages/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-thread-stages/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-thread-stages/assets/card-beside-dark.png"><img src="plugins/bb-plugin-thread-stages/assets/card-beside-light.png" alt="Thread stages grouping the bb sidebar into Backlog, To do, Working, Blocked, and Done" align="right" width="45%"></picture></a>
 
 ### <img src="assets/icons/thread-stages.svg" alt="" width="26" align="absmiddle"> &nbsp;Thread stages
 
@@ -27,7 +27,7 @@ bb plugin install thread-stages@ariofrio
 
 <br clear="all">
 
-<a href="plugins/bb-plugin-project-icons#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-icons/assets/card-dark.png" width="1168"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-project-icons/assets/card-light.png" width="1168"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-icons/assets/card-dark.png"><img src="plugins/bb-plugin-project-icons/assets/card-light.png" alt="The icon picker open on the Storefront project's icon in a bb thread header" align="right" width="45%"></picture></a>
+<a href="plugins/bb-plugin-project-icons#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-icons/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-project-icons/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-icons/assets/card-beside-dark.png"><img src="plugins/bb-plugin-project-icons/assets/card-beside-light.png" alt="The icon picker open on the Storefront project's icon in a bb thread header" align="right" width="45%"></picture></a>
 
 ### <img src="assets/icons/project-icons.svg" alt="" width="26" align="absmiddle"> &nbsp;Project icons
 
@@ -42,7 +42,7 @@ bb plugin install project-icons@ariofrio
 
 <br clear="all">
 
-<a href="plugins/bb-plugin-project-breadcrumbs#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/card-dark.png" width="1168"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/card-light.png" width="1168"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/card-dark.png"><img src="plugins/bb-plugin-project-breadcrumbs/assets/card-light.png" alt="The Storefront project and its actions menu in a bb thread header" align="right" width="45%"></picture></a>
+<a href="plugins/bb-plugin-project-breadcrumbs#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-project-breadcrumbs/assets/card-beside-dark.png"><img src="plugins/bb-plugin-project-breadcrumbs/assets/card-beside-light.png" alt="The Storefront project and its actions menu in a bb thread header" align="right" width="45%"></picture></a>
 
 ### <img src="assets/icons/project-breadcrumbs.svg" alt="" width="26" align="absmiddle"> &nbsp;Project breadcrumbs
 
@@ -57,7 +57,7 @@ bb plugin install project-breadcrumbs@ariofrio
 
 <br clear="all">
 
-<a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-dark.png" width="1168"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-light.png" width="1168"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-dark.png"><img src="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-light.png" alt="A bb side chat opened with the ⇧⌘L shortcut" align="right" width="45%"></picture></a>
+<a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-beside-dark.png"><img src="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-beside-light.png" alt="A bb side chat opened with the ⇧⌘L shortcut" align="right" width="45%"></picture></a>
 
 ### <img src="assets/icons/missing-keyboard-shortcuts.svg" alt="" width="26" align="absmiddle"> &nbsp;Missing keyboard shortcuts
 
@@ -72,7 +72,7 @@ bb plugin install missing-keyboard-shortcuts@ariofrio
 
 <br clear="all">
 
-<a href="plugins/bb-plugin-chatgpt-theme#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-dark.png" width="1168"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-light.png" width="1168"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-dark.png"><img src="plugins/bb-plugin-chatgpt-theme/assets/card-light.png" alt="bb wearing the ChatGPT palette, its light and dark halves meeting along the diagonal" align="right" width="45%"></picture></a>
+<a href="plugins/bb-plugin-chatgpt-theme#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-beside-dark.png"><img src="plugins/bb-plugin-chatgpt-theme/assets/card-beside-light.png" alt="bb wearing the ChatGPT palette, its light and dark halves meeting along the diagonal" align="right" width="45%"></picture></a>
 
 ### <img src="assets/icons/chatgpt-theme.svg" alt="" width="26" align="absmiddle"> &nbsp;ChatGPT theme
 
