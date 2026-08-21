@@ -58,7 +58,7 @@ agent-browser --session "$qa_session" eval '(() => {
     !(stageHeader instanceof HTMLElement) ||
     groupLabels.length === 0 ||
     groups.length !== groupLabels.length ||
-    separators.length !== groupLabels.length + 1 ||
+    separators.length !== groupLabels.length ||
     createItems.length !== 2
   ) {
     throw new Error(`Unexpected native dropdown structure: ${JSON.stringify({
@@ -66,6 +66,25 @@ agent-browser --session "$qa_session" eval '(() => {
       groups: groups.length,
       separators: separators.length,
       createItems: createItems.map((item) => item.textContent),
+    })}.`);
+  }
+  const projectGroup = groups.find((group) => group.getAttribute("aria-labelledby") === "thread-filter-projects-label");
+  const sectionGroup = groups.find((group) => group.getAttribute("aria-labelledby") === "thread-filter-sections-label");
+  const itemText = (group) => group === undefined
+    ? []
+    : [...group.querySelectorAll(":scope [role=menuitemradio], :scope [role=menuitem]")]
+        .map((item) => item.textContent);
+  const projectItems = itemText(projectGroup);
+  const sectionItems = itemText(sectionGroup);
+  if (
+    projectItems.at(-2) !== "Threads" ||
+    projectItems.at(-1) !== "New project" ||
+    sectionItems.at(-2) !== "Uncategorized" ||
+    sectionItems.at(-1) !== "New section"
+  ) {
+    throw new Error(`Unexpected dropdown item order: ${JSON.stringify({
+      projectItems,
+      sectionItems,
     })}.`);
   }
   const reference = getComputedStyle(stageHeader);
@@ -85,6 +104,8 @@ agent-browser --session "$qa_session" eval '(() => {
       groups: groups.length,
       separators: separators.length,
       createItems: createItems.map((item) => item.textContent),
+      projectItems,
+      sectionItems,
     },
   });
 })()'

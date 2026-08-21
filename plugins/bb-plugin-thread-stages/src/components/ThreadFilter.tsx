@@ -208,108 +208,55 @@ export function ThreadFilter({
               />
             </ThreadFilterItem>
           </DropdownMenuRadioGroup>
-          {projects.length > 0 ? (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel
-                id="thread-filter-projects-label"
-                className={CHROME_SECTION_LABEL_CLASS}
-              >
-                Projects
-              </DropdownMenuLabel>
-              <DropdownMenuRadioGroup
-                aria-labelledby="thread-filter-projects-label"
-                value={serializeThreadFilter(value) ?? ""}
-                onValueChange={handleFilterChange}
-              >
-                {personalProject ? (
-                  <ThreadFilterItem
-                    label="Threads"
-                    value={`project:${personalProject.id}`}
-                  >
-                    <ProjectFilterIcon
-                      icon={projectIcons.get(personalProject.id)}
-                      personal
-                    />
-                  </ThreadFilterItem>
-                ) : null}
-                {regularProjects.map((project) => (
-                  <ActionableThreadFilterItem
-                    key={project.id}
-                    label={project.name}
-                    selected={
-                      value?.kind === "project" && value.id === project.id
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup aria-labelledby="thread-filter-projects-label">
+            <DropdownMenuLabel
+              id="thread-filter-projects-label"
+              className={CHROME_SECTION_LABEL_CLASS}
+            >
+              Projects
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={serializeThreadFilter(value) ?? ""}
+              onValueChange={handleFilterChange}
+            >
+              {regularProjects.map((project) => (
+                <ActionableThreadFilterItem
+                  key={project.id}
+                  label={project.name}
+                  selected={
+                    value?.kind === "project" && value.id === project.id
+                  }
+                  onSelect={() => {
+                    onChange({ kind: "project", id: project.id });
+                    setOpen(false);
+                  }}
+                >
+                  <ProjectFilterIcon icon={projectIcons.get(project.id)} />
+                  <ProjectActions
+                    canAddLocalPath={
+                      projectActionStates.get(project.id)?.canAddLocalPath ??
+                      false
                     }
-                    onSelect={() => {
-                      onChange({ kind: "project", id: project.id });
-                      setOpen(false);
-                    }}
-                  >
-                    <ProjectFilterIcon icon={projectIcons.get(project.id)} />
-                    <ProjectActions
-                      canAddLocalPath={
-                        projectActionStates.get(project.id)?.canAddLocalPath ??
-                        false
-                      }
-                      onAddLocalPath={() => onAddProjectLocalPath(project)}
-                      onOpenSettings={() => onOpenProjectSettings(project)}
-                      onRemove={() => onRemoveProject(project)}
-                      onRename={() => onRenameProject(project)}
-                    />
-                  </ActionableThreadFilterItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </>
-          ) : null}
-          {sections.length > 0 ? (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel
-                id="thread-filter-sections-label"
-                className={CHROME_SECTION_LABEL_CLASS}
-              >
-                Sections
-              </DropdownMenuLabel>
-              <DropdownMenuRadioGroup
-                aria-labelledby="thread-filter-sections-label"
-                value={serializeThreadFilter(value) ?? ""}
-                onValueChange={handleFilterChange}
-              >
-                <ThreadFilterItem label="Uncategorized" value="uncategorized">
-                  <Icon
-                    name="ListViewOff"
-                    className="size-4 shrink-0"
-                    aria-hidden
+                    onAddLocalPath={() => onAddProjectLocalPath(project)}
+                    onOpenSettings={() => onOpenProjectSettings(project)}
+                    onRemove={() => onRemoveProject(project)}
+                    onRename={() => onRenameProject(project)}
+                  />
+                </ActionableThreadFilterItem>
+              ))}
+              {personalProject ? (
+                <ThreadFilterItem
+                  label="Threads"
+                  value={`project:${personalProject.id}`}
+                >
+                  <ProjectFilterIcon
+                    icon={projectIcons.get(personalProject.id)}
+                    personal
                   />
                 </ThreadFilterItem>
-                {sections.map((section) => (
-                  <ActionableThreadFilterItem
-                    key={section.id}
-                    label={section.name}
-                    selected={
-                      value?.kind === "section" && value.id === section.id
-                    }
-                    onSelect={() => {
-                      onChange({ kind: "section", id: section.id });
-                      setOpen(false);
-                    }}
-                  >
-                    <Icon
-                      name="ListView"
-                      className="size-4 shrink-0"
-                      aria-hidden
-                    />
-                    <SectionActions
-                      onRemove={() => onRemoveSection(section)}
-                      onRename={() => onRenameSection(section)}
-                    />
-                  </ActionableThreadFilterItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </>
-          ) : null}
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup aria-label="Create">
+              ) : null}
+            </DropdownMenuRadioGroup>
             <DropdownMenuItem
               disabled={newProjectDisabled}
               onSelect={onNewProject}
@@ -317,6 +264,52 @@ export function ThreadFilter({
               <Icon name="FolderPlus" className="size-4 shrink-0" aria-hidden />
               <span>New project</span>
             </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup aria-labelledby="thread-filter-sections-label">
+            <DropdownMenuLabel
+              id="thread-filter-sections-label"
+              className={CHROME_SECTION_LABEL_CLASS}
+            >
+              Sections
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={serializeThreadFilter(value) ?? ""}
+              onValueChange={handleFilterChange}
+            >
+              {sections.map((section) => (
+                <ActionableThreadFilterItem
+                  key={section.id}
+                  label={section.name}
+                  selected={
+                    value?.kind === "section" && value.id === section.id
+                  }
+                  onSelect={() => {
+                    onChange({ kind: "section", id: section.id });
+                    setOpen(false);
+                  }}
+                >
+                  <Icon
+                    name="ListView"
+                    className="size-4 shrink-0"
+                    aria-hidden
+                  />
+                  <SectionActions
+                    onRemove={() => onRemoveSection(section)}
+                    onRename={() => onRenameSection(section)}
+                  />
+                </ActionableThreadFilterItem>
+              ))}
+              {sections.length > 0 ? (
+                <ThreadFilterItem label="Uncategorized" value="uncategorized">
+                  <Icon
+                    name="ListViewOff"
+                    className="size-4 shrink-0"
+                    aria-hidden
+                  />
+                </ThreadFilterItem>
+              ) : null}
+            </DropdownMenuRadioGroup>
             <DropdownMenuItem onSelect={onNewSection}>
               <Icon name="SectionAdd" className="size-4 shrink-0" aria-hidden />
               <span>New section</span>

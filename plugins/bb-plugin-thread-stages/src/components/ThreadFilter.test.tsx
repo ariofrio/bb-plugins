@@ -117,19 +117,33 @@ describe("ThreadFilter", () => {
     );
     expect(within(menu).getByText("Projects")).toBeDefined();
     expect(within(menu).getByText("Sections")).toBeDefined();
-    expect(within(menu).getAllByRole("separator")).toHaveLength(3);
-    expect(within(menu).getByRole("group", { name: "Projects" })).toBeDefined();
-    expect(within(menu).getByRole("group", { name: "Sections" })).toBeDefined();
+    expect(within(menu).getAllByRole("separator")).toHaveLength(2);
+    const projectsGroup = within(menu).getByRole("group", {
+      name: "Projects",
+    });
+    const sectionsGroup = within(menu).getByRole("group", {
+      name: "Sections",
+    });
+    expect(projectsGroup.textContent).toBe("ProjectsAlphaThreadsNew project");
+    expect(sectionsGroup.textContent).toBe(
+      "SectionsWaitingUncategorizedNew section",
+    );
+    expect(
+      within(projectsGroup).getByRole("menuitem", { name: "New project" }),
+    ).toBeDefined();
+    expect(
+      within(sectionsGroup).getByRole("menuitem", { name: "New section" }),
+    ).toBeDefined();
     expect(
       within(menu)
         .getAllByRole("menuitemradio")
         .map((item) => item.textContent),
     ).toEqual([
       "All projects and sections",
-      "Threads",
       "Alpha",
-      "Uncategorized",
+      "Threads",
       "Waiting",
+      "Uncategorized",
     ]);
     expect(
       within(menu)
@@ -291,7 +305,7 @@ describe("ThreadFilter", () => {
     expect(onChange).toHaveBeenNthCalledWith(3, null);
   });
 
-  it("omits project and section groups independently when they are empty", () => {
+  it("keeps each creation action in its group when no choices exist", () => {
     const sharedProps = {
       value: null,
       onChange: () => {},
@@ -306,8 +320,14 @@ describe("ThreadFilter", () => {
       screen.getByRole("button", { name: "Projects and sections" }),
       { key: "Enter" },
     );
-    expect(screen.queryByText("Projects")).toBeNull();
+    expect(screen.getByText("Projects")).toBeDefined();
     expect(screen.getByText("Sections")).toBeDefined();
+    expect(
+      within(screen.getByRole("group", { name: "Projects" })).getByRole(
+        "menuitem",
+        { name: "New project" },
+      ),
+    ).toBeDefined();
 
     fireEvent.keyDown(document.activeElement ?? document.body, {
       key: "Escape",
@@ -320,12 +340,17 @@ describe("ThreadFilter", () => {
     });
     const projectsOnlyMenu = screen.getByRole("menu");
     expect(within(projectsOnlyMenu).getByText("Projects")).toBeDefined();
-    expect(within(projectsOnlyMenu).queryByText("Sections")).toBeNull();
+    expect(within(projectsOnlyMenu).getByText("Sections")).toBeDefined();
     expect(
       within(projectsOnlyMenu).queryByRole("menuitemradio", {
         name: "Uncategorized",
       }),
     ).toBeNull();
+    expect(
+      within(
+        within(projectsOnlyMenu).getByRole("group", { name: "Sections" }),
+      ).getByRole("menuitem", { name: "New section" }),
+    ).toBeDefined();
 
     fireEvent.keyDown(document.activeElement ?? document.body, {
       key: "Escape",

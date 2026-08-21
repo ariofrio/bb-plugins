@@ -7,9 +7,10 @@
 - Replace Backlog, To do, Working, Blocked, Done, and Canceled with Deferred,
   Idle, Active, Blocked, and Completed. Existing assignments and saved collapse
   choices migrate, with Done and Canceled combined in Completed.
-- Add New project and New section to the filter dropdown, place the active
-  filter marker beside its label, and match BB's native dropdown group labels
-  and dividers.
+- Add New project and New section to their respective filter-dropdown groups,
+  after the regular choices and the Threads or Uncategorized fallback. Place
+  the active filter marker beside its label, and match BB's native dropdown
+  group labels and dividers.
 - Bring Blocked into the progress-ring icon family with a diagonally divided,
   filled upper-right semicircle.
 
