@@ -5,7 +5,7 @@ const WORKFLOW_STAGE_ICONS: Record<WorkflowStage, IconName> = {
   Deferred: "CircleDashed",
   "Idle": "Progress01",
   Active: "Progress02",
-  Blocked: "BlockedCircle",
+  Blocked: "BlockedProgress",
   Completed: "CompletedProgress",
 };
 

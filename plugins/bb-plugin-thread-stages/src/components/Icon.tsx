@@ -43,7 +43,7 @@ import {
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
 import {
-  BlockedCircleIcon,
+  BlockedProgressIcon,
   CompletedProgressIcon,
   ListViewOffIcon,
   SectionAddIcon,
@@ -54,7 +54,7 @@ const ICONS = {
   AlertCircle: AlertCircleIcon,
   ArrowDown: ArrowDown01Icon,
   ArrowUp: ArrowUp01Icon,
-  BlockedCircle: BlockedCircleIcon,
+  BlockedProgress: BlockedProgressIcon,
   CompletedProgress: CompletedProgressIcon,
   BubbleChat: BubbleChatIcon,
   CancelCircle: CancelCircleIcon,

@@ -305,7 +305,7 @@ describe("ThreadActionsDropdown", () => {
     expectMenuItemIcon("Deferred", "CircleDashed");
     expectMenuItemIcon("Idle", "Progress01");
     expectMenuItemIcon("Active", "Progress02");
-    expectMenuItemIcon("Blocked", "BlockedCircle");
+    expectMenuItemIcon("Blocked", "BlockedProgress");
     expectMenuItemIcon("Completed", "CompletedProgress");
   });
 });

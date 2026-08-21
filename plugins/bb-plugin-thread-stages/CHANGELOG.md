@@ -10,6 +10,8 @@
 - Add New project and New section to the filter dropdown, place the active
   filter marker beside its label, and match BB's native dropdown group labels
   and dividers.
+- Bring Blocked into the progress-ring icon family with a diagonally divided,
+  filled upper-right semicircle.
 
 ## 0.6.3
 

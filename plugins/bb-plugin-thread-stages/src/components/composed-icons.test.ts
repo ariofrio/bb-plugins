@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   AlbumNotFound01Icon,
-  BanIcon,
-  CheckmarkCircle02Icon,
   Progress02Icon,
 } from "@hugeicons/core-free-icons";
 import {
-  BlockedCircleIcon,
+  BlockedProgressIcon,
   CompletedProgressIcon,
   ListViewOffIcon,
   SectionAddIcon,
@@ -27,24 +25,18 @@ describe("composed icons", () => {
     ]);
   });
 
-  it("paints the expanded Ban circle and slash as one path", () => {
-    const circle = CheckmarkCircle02Icon[0];
-    const slash = BanIcon[1];
-
-    expect(BlockedCircleIcon).toEqual([
+  it("fills the upper-right half of Active's progress circle for Blocked", () => {
+    expect(BlockedProgressIcon).toEqual([
+      Progress02Icon[0],
       [
         "path",
         {
-          ...circle?.[1],
-          d: `${circle?.[1].d}M5 5L19 19`,
-          strokeLinecap: slash?.[1].strokeLinecap,
-          strokeLinejoin: slash?.[1].strokeLinejoin,
+          d: "M6.6967 6.6967A7.5 7.5 0 1 1 17.3033 17.3033Z",
+          fill: "currentColor",
+          key: "1",
         },
       ],
     ]);
-    expect(BlockedCircleIcon).toHaveLength(1);
-    expect(BlockedCircleIcon[0]?.[1].strokeWidth).toBe("1.5");
-    expect(BlockedCircleIcon[0]?.[1].stroke).toBe("currentColor");
   });
 
   it("interrupts the list rows around Hugeicons' not-found stroke", () => {

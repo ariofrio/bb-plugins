@@ -1,13 +1,8 @@
 import type { IconSvgElement } from "@hugeicons/react";
 import {
   AlbumNotFound01Icon,
-  BanIcon,
-  CheckmarkCircle02Icon,
   Progress02Icon,
 } from "@hugeicons/core-free-icons";
-
-const standardCirclePath = CheckmarkCircle02Icon[0];
-const banSlash = BanIcon[1];
 
 /** Active's progress ring with its inner progress circle fully filled. */
 export const CompletedProgressIcon: IconSvgElement = [
@@ -24,15 +19,15 @@ export const CompletedProgressIcon: IconSvgElement = [
   ],
 ];
 
-/** Radius-10 Ban painted as one path so translucent strokes do not compound. */
-export const BlockedCircleIcon: IconSvgElement = [
+/** Active's progress ring with its inner circle split diagonally for Blocked. */
+export const BlockedProgressIcon: IconSvgElement = [
+  Progress02Icon[0],
   [
-    standardCirclePath[0],
+    "path",
     {
-      ...standardCirclePath[1],
-      d: `${standardCirclePath[1].d}M5 5L19 19`,
-      strokeLinecap: banSlash[1].strokeLinecap,
-      strokeLinejoin: banSlash[1].strokeLinejoin,
+      d: "M6.6967 6.6967A7.5 7.5 0 1 1 17.3033 17.3033Z",
+      fill: "currentColor",
+      key: "1",
     },
   ],
 ];

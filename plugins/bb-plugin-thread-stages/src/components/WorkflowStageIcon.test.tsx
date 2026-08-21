@@ -9,7 +9,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { afterEach, describe, expect, it } from "vitest";
 import { WorkflowStageIcon } from "./WorkflowStageIcon";
-import { BlockedCircleIcon, CompletedProgressIcon } from "./composed-icons";
+import { BlockedProgressIcon, CompletedProgressIcon } from "./composed-icons";
 
 afterEach(cleanup);
 
@@ -18,7 +18,7 @@ describe("WorkflowStageIcon", () => {
     ["Deferred", "CircleDashed", CircleDashedIcon],
     ["Idle", "Progress01", Progress01Icon],
     ["Active", "Progress02", Progress02Icon],
-    ["Blocked", "BlockedCircle", BlockedCircleIcon],
+    ["Blocked", "BlockedProgress", BlockedProgressIcon],
     ["Completed", "CompletedProgress", CompletedProgressIcon],
   ] as const)("renders the requested icon for %s", (stage, iconName, icon) => {
     const { container } = render(<WorkflowStageIcon stage={stage} />);
