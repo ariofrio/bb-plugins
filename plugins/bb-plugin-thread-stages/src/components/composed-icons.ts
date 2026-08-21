@@ -25,9 +25,10 @@ export const BlockedProgressIcon: IconSvgElement = [
   [
     "path",
     {
-      d: "M6.6967 6.6967A7.5 7.5 0 1 1 17.3033 17.3033Z",
+      d: "M12 4.5A7.5 7.5 0 0 1 12 19.5Z",
       fill: "currentColor",
       key: "1",
+      transform: "rotate(-45 12 12)",
     },
   ],
 ];
