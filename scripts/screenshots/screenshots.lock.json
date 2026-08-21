@@ -2,7 +2,7 @@
   "bbVersion": "0.39.0",
   "shots": {
     "thread-stages": {
-      "inputs": "2b642e0b58fd86fd5ef750281c067c807f689e4b5fc17251d9774b4f97e24cd3",
+      "inputs": "0ff05d4c552ec95789da101a7bf1755827081aeeed79ec7a74e9b6ce9c7a3fed",
       "files": {
         "screenshot-light.png": "7cc7730862054e407ddef50d73c619be1cf48c5a3b9ec8a3792fd75c9440a99e",
         "screenshot-dark.png": "81ca8e102672734169ec36e65dada53a6b3b511fb01584351d518ca99aaecd42",
@@ -35,9 +35,9 @@
       }
     },
     "collection": {
-      "inputs": "f55a2958f68d18b44774f368d9f3d86bd23885922ddd17632de2183ef3b6af08",
+      "inputs": "748d1cdcf319be3f26e489677a11a37aeeaccf30cc7c28863e0f2a9830f4a1e7",
       "files": {
-        "hero-light.png": "022c8d11611f389a7acf3d7eea0ea7ae3f166bc58e9126bd294bf5772122e256",
+        "hero-light.png": "db20dad8418b7d7ebfe493afbba4e27526712a4b5f88055b77950e2417fada62",
         "hero-dark.png": "e95869c7610b1f8200faaf138cb35afbbd2f16792a23b43a63abe82384225056"
       }
     },

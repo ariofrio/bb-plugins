@@ -160,19 +160,6 @@ function ContextMenuItems(props: CommonMenuProps) {
         </ContextMenuSubTrigger>
         <ContextMenuPortal>
           <ContextMenuSubContent>
-            <ContextMenuItem
-              onSelect={() => {
-                if (thread.sectionId !== null) props.onSetSection(null);
-              }}
-            >
-              <span className="w-4">
-                {thread.sectionId === null ? (
-                  <Icon name="Check" aria-hidden />
-                ) : null}
-              </span>
-              <Icon name="ListViewOff" aria-hidden />
-              Uncategorized
-            </ContextMenuItem>
             {props.sections.map((section) => (
               <ContextMenuItem
                 key={section.id}
@@ -191,8 +178,20 @@ function ContextMenuItems(props: CommonMenuProps) {
                 {section.name}
               </ContextMenuItem>
             ))}
-            <ContextMenuSeparator />
-            <ContextMenuItem onSelect={props.onNewSection}>
+            <ContextMenuItem
+              onSelect={() => {
+                if (thread.sectionId !== null) props.onSetSection(null);
+              }}
+            >
+              <span className="w-4">
+                {thread.sectionId === null ? (
+                  <Icon name="Check" aria-hidden />
+                ) : null}
+              </span>
+              <Icon name="ListViewOff" aria-hidden />
+              Uncategorized
+            </ContextMenuItem>
+            <ContextMenuItem inset onSelect={props.onNewSection}>
               <Icon name="SectionAdd" aria-hidden />
               New section
             </ContextMenuItem>
@@ -281,19 +280,6 @@ function DropdownMenuItems(props: CommonMenuProps) {
         </DropdownMenuSubTrigger>
         <DropdownMenuPortal>
           <DropdownMenuSubContent className={DROPDOWN_LAYER_CLASS}>
-            <DropdownMenuItem
-              onSelect={() => {
-                if (thread.sectionId !== null) props.onSetSection(null);
-              }}
-            >
-              <span className="w-4">
-                {thread.sectionId === null ? (
-                  <Icon name="Check" aria-hidden />
-                ) : null}
-              </span>
-              <Icon name="ListViewOff" aria-hidden />
-              Uncategorized
-            </DropdownMenuItem>
             {props.sections.map((section) => (
               <DropdownMenuItem
                 key={section.id}
@@ -312,8 +298,20 @@ function DropdownMenuItems(props: CommonMenuProps) {
                 {section.name}
               </DropdownMenuItem>
             ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={props.onNewSection}>
+            <DropdownMenuItem
+              onSelect={() => {
+                if (thread.sectionId !== null) props.onSetSection(null);
+              }}
+            >
+              <span className="w-4">
+                {thread.sectionId === null ? (
+                  <Icon name="Check" aria-hidden />
+                ) : null}
+              </span>
+              <Icon name="ListViewOff" aria-hidden />
+              Uncategorized
+            </DropdownMenuItem>
+            <DropdownMenuItem inset onSelect={props.onNewSection}>
               <Icon name="SectionAdd" aria-hidden />
               New section
             </DropdownMenuItem>

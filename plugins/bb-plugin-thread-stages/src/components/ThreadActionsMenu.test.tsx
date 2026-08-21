@@ -216,6 +216,13 @@ describe("ThreadActionsDropdown", () => {
       key: "Enter",
     });
     fireEvent.click(screen.getByText("Move to section"));
+    const sectionMenu = screen.getByText("New section").closest('[role="menu"]');
+    expect(
+      Array.from(sectionMenu?.querySelectorAll('[role="menuitem"]') ?? []).map(
+        (item) => item.textContent,
+      ),
+    ).toEqual(["Now", "Later", "Uncategorized", "New section"]);
+    expect(sectionMenu?.querySelectorAll('[role="separator"]')).toHaveLength(0);
     expect(screen.getByText("Uncategorized")).toBeDefined();
     expect(screen.getByText("Now")).toBeDefined();
     expect(screen.getByText("Later")).toBeDefined();
@@ -225,6 +232,7 @@ describe("ThreadActionsDropdown", () => {
     const newSectionItem = screen
       .getByText("New section")
       .closest('[role="menuitem"]');
+    expect(newSectionItem?.className).toContain("pl-8");
     expect(
       newSectionItem?.querySelector("svg")?.getAttribute("data-icon"),
     ).toBe("SectionAdd");
@@ -378,6 +386,17 @@ describe("ThreadActionsContextMenu", () => {
     fireEvent.contextMenu(screen.getByRole("button", { name: "Thread row" }));
     const parentMenu = screen.getByRole("menu", { name: "Thread actions" });
     fireEvent.click(screen.getByText("Move to section"));
+
+    const sectionMenu = screen.getByText("New section").closest('[role="menu"]');
+    expect(
+      Array.from(sectionMenu?.querySelectorAll('[role="menuitem"]') ?? []).map(
+        (item) => item.textContent,
+      ),
+    ).toEqual(["Later", "Uncategorized", "New section"]);
+    expect(sectionMenu?.querySelectorAll('[role="separator"]')).toHaveLength(0);
+    expect(
+      screen.getByText("New section").closest('[role="menuitem"]')?.className,
+    ).toContain("pl-8");
 
     expect(screen.getByText("Uncategorized")).toBeDefined();
     expect(screen.getByText("Later")).toBeDefined();

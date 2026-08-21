@@ -10,7 +10,8 @@
 - Add New project and New section to their respective filter-dropdown groups,
   after the regular choices and the Threads or Uncategorized fallback. Place
   the active filter marker beside its label, and match BB's native dropdown
-  group labels and dividers.
+  group labels, dividers, and selectable-row indentation. Keep Move to section
+  in the same order, without separating Uncategorized from New section.
 - Bring Blocked into the progress-ring icon family with a diagonally divided,
   filled upper-right semicircle.
 

@@ -87,6 +87,29 @@ agent-browser --session "$qa_session" eval '(() => {
       sectionItems,
     })}.`);
   }
+  const assertCreationIconAligned = (group, referenceLabel, creationLabel) => {
+    const choiceIcon = [...(group?.querySelectorAll("[role=menuitemradio]") ?? [])]
+      .find((item) => item.textContent === referenceLabel)
+      ?.querySelector("svg");
+    const creationIcon = [...(group?.querySelectorAll("[role=menuitem]") ?? [])]
+      .find((item) => item.textContent === creationLabel)
+      ?.querySelector("svg[data-icon]");
+    if (!(choiceIcon instanceof SVGElement) || !(creationIcon instanceof SVGElement)) {
+      throw new Error(`Could not measure ${creationLabel} alignment.`);
+    }
+    const choiceLeft = choiceIcon.getBoundingClientRect().left;
+    const creationLeft = creationIcon.getBoundingClientRect().left;
+    if (Math.abs(choiceLeft - creationLeft) > 0.5) {
+      throw new Error(
+        `${creationLabel} starts at ${creationLeft}px; selectable items start at ${choiceLeft}px.`,
+      );
+    }
+    return { choiceLeft, creationLeft };
+  };
+  const creationAlignment = {
+    project: assertCreationIconAligned(projectGroup, "Threads", "New project"),
+    section: assertCreationIconAligned(sectionGroup, "Uncategorized", "New section"),
+  };
   const reference = getComputedStyle(stageHeader);
   for (const label of groupLabels) {
     const style = getComputedStyle(label);
@@ -106,6 +129,7 @@ agent-browser --session "$qa_session" eval '(() => {
       createItems: createItems.map((item) => item.textContent),
       projectItems,
       sectionItems,
+      creationAlignment,
     },
   });
 })()'

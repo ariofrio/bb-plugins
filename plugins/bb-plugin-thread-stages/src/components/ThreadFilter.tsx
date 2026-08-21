@@ -258,6 +258,8 @@ export function ThreadFilter({
               ) : null}
             </DropdownMenuRadioGroup>
             <DropdownMenuItem
+              inset
+              className="pl-7"
               disabled={newProjectDisabled}
               onSelect={onNewProject}
             >
@@ -310,7 +312,7 @@ export function ThreadFilter({
                 </ThreadFilterItem>
               ) : null}
             </DropdownMenuRadioGroup>
-            <DropdownMenuItem onSelect={onNewSection}>
+            <DropdownMenuItem inset className="pl-7" onSelect={onNewSection}>
               <Icon name="SectionAdd" className="size-4 shrink-0" aria-hidden />
               <span>New section</span>
             </DropdownMenuItem>
