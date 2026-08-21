@@ -1,14 +1,16 @@
 # Breadcrumbs
 
-Adds a trail to each thread header — the thread's section, its project, and
-every thread it was spawned under:
+Adds a trail to each thread header — the thread's section, its project, and its
+parent and ancestor threads:
 
 ```text
 Release  >  bb-plugins  >  Polish the sidebar  >  Trace the timer
 ```
 
-Each part can be turned off on its own in the plugin's settings; all three are
-on by default. A thread with none of them keeps bb's header exactly as it was.
+Each part is turned on and off on its own in the plugin's settings. The section
+and the project start on; the ancestors start off, because most threads have
+none and the ones that do are already nested in the sidebar. A thread with none
+of them keeps bb's header exactly as it was.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/screenshot-dark.png">

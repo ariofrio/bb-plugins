@@ -20,10 +20,10 @@ export const CRUMBS = {
   },
   showAncestors: {
     type: "boolean",
-    label: "Show the threads it came from",
+    label: "Show the parent and ancestor threads",
     description:
-      "Put every thread this one was spawned under before its title. A fork is not one of them; bb shows where a fork came from elsewhere.",
-    default: true,
+      "Put the thread's parent and every ancestor above it before its title.",
+    default: false,
   },
 } as const;
 

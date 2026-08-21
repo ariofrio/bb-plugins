@@ -35,7 +35,9 @@ function BreadcrumbsBridge({ threadId }: PluginThreadHeaderActionProps) {
 
   const showSection = settings.values?.showSection !== false;
   const showProject = settings.values?.showProject !== false;
-  const showAncestors = settings.values?.showAncestors !== false;
+  // Off until asked for, so an unread setting draws no crumb rather than one
+  // that vanishes a moment later.
+  const showAncestors = settings.values?.showAncestors === true;
 
   const refresh = useCallback(async () => {
     const next = await rpc

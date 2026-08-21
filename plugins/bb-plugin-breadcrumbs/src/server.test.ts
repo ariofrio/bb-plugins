@@ -111,13 +111,13 @@ describe("section action RPC", () => {
     expect(update).not.toHaveBeenCalled();
   });
 
-  it("defaults every crumb on", async () => {
+  it("defaults the place crumbs on and the ancestors off", async () => {
     const { harness } = createSectionHarness();
 
     await expect(harness.behavior.callRpc("listCrumbs", null)).resolves.toEqual({
       showSection: true,
       showProject: true,
-      showAncestors: true,
+      showAncestors: false,
     });
   });
 });

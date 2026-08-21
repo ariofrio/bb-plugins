@@ -54,6 +54,12 @@ async function openFeaturedThread(page) {
     .getByRole("button", { name: "Permission mode" })
     .filter({ hasText: "Accept Edits" })
     .waitFor();
+  // The crumbs arrive later still: their backend is asked for the trail after
+  // the header has already painted, and they mount into a React root of their
+  // own on an animation frame. Only the breadcrumbs shot clicks the crumb, so
+  // every other shot framing this header would otherwise race it and capture
+  // whichever title won — with the project before it, or bare.
+  await page.locator('[aria-label="Storefront actions"]').waitFor();
   await page.waitForTimeout(600);
 }
 

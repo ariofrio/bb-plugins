@@ -62,6 +62,7 @@ describe("project breadcrumb app registration", () => {
           }),
         },
         sidebarThreads: { projects: [], threads: [] },
+        settings: { showAncestors: true },
       },
     );
     wrapper.append(slot.container);
@@ -104,6 +105,41 @@ describe("project breadcrumb app registration", () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(document.querySelector("[data-breadcrumbs-root]")).toBeNull();
+    slot.lifecycle.unmount();
+  });
+
+  it("leaves the ancestors out until the setting asks for them", async () => {
+    document.body.innerHTML = `
+      <header>
+        <div><div><p>Thread title</p></div><span data-testid="thread-detail-header-actions-menu"></span></div>
+        <span id="slot-wrapper" role="group"></span>
+      </header>
+    `;
+    const app = await loadPluginApp(() => import("./app"));
+    const action = app.threadHeaderActions[0]!;
+    const wrapper = document.querySelector("#slot-wrapper")!;
+    // No settings at all, which is what the header sees while they load and
+    // what an untouched install settles on, since the ancestors default off.
+    const slot = renderSlot(
+      action,
+      { threadId: "thread-1", projectId: "project-1", isCompactViewport: false },
+      {
+        rpc: {
+          trailForThread: () => ({
+            section: null,
+            project: { id: "project-1", name: "Example project", isPersonal: false },
+            ancestors: [{ id: "thread-0", title: "Parent thread" }],
+          }),
+        },
+        sidebarThreads: { projects: [], threads: [] },
+      },
+    );
+    wrapper.append(slot.container);
+
+    expect(
+      await slot.findByRole("button", { name: "Example project actions" }),
+    ).toBeTruthy();
+    expect(slot.queryByTitle("Parent thread")).toBeNull();
     slot.lifecycle.unmount();
   });
 });
