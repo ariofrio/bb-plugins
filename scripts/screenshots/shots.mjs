@@ -7,8 +7,12 @@ import { SIDE_CHAT_QUESTION } from "./fixture.mjs";
 const THEME_FILES = [
   "screenshot-light.png",
   "screenshot-dark.png",
+  // Two cards per mode: the one a row stacks, and the one it floats, which
+  // carries the margin the paragraph beside it needs.
   "card-light.png",
   "card-dark.png",
+  "card-beside-light.png",
+  "card-beside-dark.png",
 ];
 
 /** bb's own sidebar column, which both sidebar cards are framed from. */
@@ -33,18 +37,45 @@ async function openFeaturedThread(page) {
     .getByRole("link", { name: /^Open Polish analytics dashboard/ })
     .first()
     .getAttribute("href");
+  // Not networkidle: bb holds a socket open, so idleness never arrives
+  // reliably. The wait below is the real proof the thread rendered.
   await page.goto(new URL(href, page.url()).toString(), {
-    waitUntil: "networkidle",
+    waitUntil: "domcontentloaded",
   });
   // Exactly, because the sidebar row previews the same reply, at greater
   // length, and either match would otherwise be ambiguous.
   await page
     .getByText("Dashboard polish is in place.", { exact: true })
     .waitFor();
+  // The composer resolves its permission mode after the thread itself, and a
+  // shot taken in between differs from the same shot taken after, in a corner
+  // no plugin here owns.
+  await page
+    .getByRole("button", { name: "Permission mode" })
+    .filter({ hasText: "Accept Edits" })
+    .waitFor();
   await page.waitForTimeout(600);
 }
 
 export const SHOTS = [
+  {
+    // The collection, not a plugin: one window with four of the five at work —
+    // the stage sidebar, a project icon on every row and in the header, and the
+    // project the thread belongs to before its title. Nothing is shaded here,
+    // because nothing is being pointed at.
+    id: "collection",
+    plugin: null,
+    fileName: "hero",
+    outputs: ["hero-light.png", "hero-dark.png"],
+    // The hero runs the width of the README, where bb's default window spends
+    // most of its height on an empty conversation. A shorter window fills the
+    // same column with the parts a reader is being shown.
+    viewport: { width: 1080, height: 620 },
+    async prepare({ page }) {
+      await openFeaturedThread(page);
+    },
+    highlights: () => [],
+  },
   {
     id: "breadcrumbs",
     plugin: "bb-plugin-breadcrumbs",
@@ -89,6 +120,14 @@ export const SHOTS = [
     outputs: THEME_FILES,
     async prepare({ page }) {
       await openFeaturedThread(page);
+      // The plugin mounts its sidebar after bb's own, so the shot waits for the
+      // element it is about rather than for the thread alone. A freshly seeded
+      // bb is still settling while the first shots are taken, and the plugin
+      // bundle can load well past Playwright's default minute, so the wait is
+      // given room rather than being allowed to fail the run.
+      await page
+        .locator("[data-thread-stages-sidebar-root]")
+        .waitFor({ timeout: 120000 });
     },
     // The plugin owns the whole thread list rather than one control inside it,
     // so the shade lifts its entire sidebar out of the window.

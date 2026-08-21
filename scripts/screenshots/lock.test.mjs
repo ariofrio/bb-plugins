@@ -91,7 +91,11 @@ test("a version bump leaves every digest alone", async (t) => {
       `${JSON.stringify({ name: "bb-plugin-example", version, ...extra }, null, 2)}\n`,
     );
   const digest = () =>
-    inputDigest({ repositoryRoot: root, pluginDirectory, harnessDirectory });
+    inputDigest({
+      repositoryRoot: root,
+      pluginDirectories: [pluginDirectory],
+      harnessDirectory,
+    });
 
   manifest("0.2.1");
   const before = digest();

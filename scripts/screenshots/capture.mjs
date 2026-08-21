@@ -9,15 +9,16 @@ export const ASPECT_RATIO = 16 / 9;
 /** bb's own default window: DEFAULT_WINDOW_WIDTH x DEFAULT_WINDOW_HEIGHT. */
 export const VIEWPORT = { width: 1280, height: 900 };
 /**
- * Every README-table shot is cropped to this width, so the five cells share one
- * zoom level and the UI reads at the same size in each. Only where each crop
- * sits differs, because each plugin adds something somewhere else.
+ * Every card is cropped to this width, so they share one zoom level and the UI
+ * reads at the same size in each. Only where each crop sits differs, because
+ * each plugin adds something somewhere else.
  */
 export const CARD_WIDTH = 560;
 export const THEMES = ["light", "dark"];
 
-export const FULL_WINDOW_FILE = (theme) => `screenshot-${theme}.png`;
+export const FULL_WINDOW_FILE = (theme, name = "screenshot") => `${name}-${theme}.png`;
 export const CARD_FILE = (theme) => `card-${theme}.png`;
+export const CARD_BESIDE_FILE = (theme) => `card-beside-${theme}.png`;
 
 /** The mode a split shot pairs with the one it is named for. */
 const OTHER_THEME = { light: "dark", dark: "light" };
@@ -239,6 +240,16 @@ function padBox(box, padding) {
   };
 }
 
+/**
+ * State the capturing machine brings with it. bb's sidebar footer carries an
+ * update chip for everything waiting on this host — bb itself, and each agent
+ * CLI it found — so the same shot taken on two machines differs in the corner
+ * for reasons no plugin here is responsible for. These shots are about the
+ * plugins, so the chips stay out of them.
+ */
+const HOST_STATE_STYLE =
+  '[data-sidebar="footer"] a[href="/settings/updates"] { display: none !important; }';
+
 export async function openApp({ browser, stack, theme, viewport, style }) {
   const context = await browser.newContext({
     viewport: viewport ?? VIEWPORT,
@@ -252,15 +263,16 @@ export async function openApp({ browser, stack, theme, viewport, style }) {
     (mode) => window.localStorage.setItem("bb.theme", mode),
     theme,
   );
-  if (style !== undefined) {
-    await context.addInitScript((css) => {
+  await context.addInitScript(
+    (css) => {
       const sheet = document.createElement("style");
       sheet.textContent = css;
       document.addEventListener("DOMContentLoaded", () =>
         document.head.append(sheet),
       );
-    }, style);
-  }
+    },
+    style === undefined ? HOST_STATE_STYLE : `${HOST_STATE_STYLE}\n${style}`,
+  );
   const page = await context.newPage();
   await page.goto(stack.serverUrl, { waitUntil: "networkidle" });
   return { context, page };
@@ -277,19 +289,16 @@ export async function openApp({ browser, stack, theme, viewport, style }) {
  */
 const WINDOW_FRAME = {
   // macOS's own window rounding, so the silhouette matches the app rather than
-  // a card. The margin holds the shadow and nothing else.
+  // a card.
+  //
+  // No shadow: a shadow falls to the sides as well as below, and the margin it
+  // needs is margin a reader sees — it holds the window's edge inside the
+  // column the text beside it is flush with. The hairline alone says window,
+  // and it costs one pixel of margin, which is what the ring is drawn in.
   radius: 10,
-  padding: { top: 32, side: 40, bottom: 48 },
-  light: {
-    edge: "rgba(0, 0, 0, 0.16)",
-    shadow:
-      "0 18px 40px -16px rgba(15, 15, 20, 0.55), 0 4px 10px -6px rgba(15, 15, 20, 0.4)",
-  },
-  dark: {
-    edge: "rgba(255, 255, 255, 0.16)",
-    shadow:
-      "0 18px 40px -16px rgba(0, 0, 0, 0.9), 0 4px 10px -6px rgba(0, 0, 0, 0.75)",
-  },
+  padding: { top: 1, side: 1, bottom: 1 },
+  light: { edge: "rgba(0, 0, 0, 0.16)", shadow: null },
+  dark: { edge: "rgba(255, 255, 255, 0.16)", shadow: null },
 };
 
 /**
@@ -301,18 +310,42 @@ const WINDOW_FRAME = {
  */
 const CARD_FRAME = {
   radius: 14,
-  padding: { top: 14, side: 14, bottom: 14 },
-  light: { edge: null, shadow: "0 8px 20px -10px rgba(15, 15, 20, 0.45)" },
-  dark: { edge: null, shadow: "0 8px 20px -10px rgba(0, 0, 0, 0.85)" },
+  // Stacked above a heading, a card needs space beneath it and none at its
+  // sides: both its edges are the column's.
+  padding: { top: 0, left: 0, right: 0, bottom: 28 },
+  light: { edge: null, shadow: null },
+  dark: { edge: null, shadow: null },
+};
+
+/**
+ * The same card for the layout that floats it, where the paragraph beside it
+ * runs into its left edge. The margin belongs to that arrangement alone, which
+ * is why it is a second file rather than padding on the only one: stacked, it
+ * would push the picture off the margin the text is flush with.
+ */
+const CARD_BESIDE_FRAME = {
+  ...CARD_FRAME,
+  // The top margin is the heading's. A float starts level with the row while
+  // the title beside it begins below its own 24px margin, so the picture rides
+  // 26px high — and GitHub strips vspace, which is the attribute that would
+  // have said so. 40 units of the picture's own width is that 26px where the
+  // column is widest, and close to it everywhere the card still floats.
+  padding: { top: 40, left: 24, right: 0, bottom: 0 },
 };
 
 /** Draws an image into its frame's corners, edge, and shadow. */
 async function writeFramed({ browser, frame, image, size, theme, output }) {
-  const { padding, radius } = frame;
+  const { radius } = frame;
+  const padding = {
+    top: frame.padding.top,
+    bottom: frame.padding.bottom,
+    left: frame.padding.left ?? frame.padding.side,
+    right: frame.padding.right ?? frame.padding.side,
+  };
   const { edge, shadow } = frame[theme];
   const context = await browser.newContext({
     viewport: {
-      width: size.width + padding.side * 2,
+      width: size.width + padding.left + padding.right,
       height: size.height + padding.top + padding.bottom,
     },
     deviceScaleFactor: 2,
@@ -321,13 +354,15 @@ async function writeFramed({ browser, frame, image, size, theme, output }) {
   await sheet.setContent(
     `<body style="margin:0;background:transparent">
        <div id="frame" style="
-         width:${size.width + padding.side * 2}px;
-         padding:${padding.top}px ${padding.side}px ${padding.bottom}px;
+         width:${size.width + padding.left + padding.right}px;
+         padding:${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px;
          box-sizing:border-box">
          <img src="data:image/png;base64,${image.toString("base64")}"
               style="display:block;width:${size.width}px;height:${size.height}px;
                      border-radius:${radius}px;
-                     box-shadow:${shadow}${edge === null ? "" : `, 0 0 0 1px ${edge}`}">
+                     box-shadow:${[shadow, edge === null ? null : `0 0 0 1px ${edge}`]
+                       .filter((layer) => layer !== null)
+                       .join(", ") || "none"}">
        </div>
      </body>`,
   );
@@ -396,6 +431,9 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
       // them are framed before they land.
       const outputs = shotFiles(shot);
       await shot.setup?.({ fixture, stack });
+      // bb's default window, unless a shot pictures something that reads
+      // better in a smaller one.
+      const windowSize = shot.viewport ?? VIEWPORT;
       const frames = { fullWindow: {}, card: {} };
       for (const theme of shot.themes ?? THEMES) {
         const takeCard = async ({ page, focusBoxes }, viewport) => {
@@ -410,7 +448,10 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
           return await page.screenshot({ clip });
         };
         const takeFullWindow = ({ page }) =>
-          page.screenshot({ clip: { x: 0, y: 0, ...VIEWPORT } });
+          page.screenshot({ clip: { x: 0, y: 0, ...windowSize } });
+        // A shot of the whole collection has no card and nothing to focus on,
+        // so it never measures one.
+        const wantsCard = outputs[CARD_FILE(theme)] !== undefined;
         if (shot.card === undefined) {
           const [fullWindow, card] = await render({
             browser,
@@ -418,8 +459,12 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
             fixture,
             shot,
             theme,
+            viewport: windowSize,
             async take(frame) {
-              return [await takeFullWindow(frame), await takeCard(frame, VIEWPORT)];
+              return [
+                await takeFullWindow(frame),
+                wantsCard ? await takeCard(frame, windowSize) : undefined,
+              ];
             },
           });
           frames.fullWindow[theme] = fullWindow;
@@ -436,6 +481,7 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
           fixture,
           shot,
           theme,
+          viewport: windowSize,
           take: takeFullWindow,
         });
         frames.card[theme] = await render({
@@ -452,8 +498,19 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
       for (const theme of shot.themes ?? THEMES) {
         const other = OTHER_THEME[theme];
         for (const [name, frame, taken, size] of [
-          [FULL_WINDOW_FILE(theme), WINDOW_FRAME, frames.fullWindow, VIEWPORT],
+          [
+            FULL_WINDOW_FILE(theme, shot.fileName),
+            WINDOW_FRAME,
+            frames.fullWindow,
+            windowSize,
+          ],
           [CARD_FILE(theme), CARD_FRAME, frames.card, frames.card.clip],
+          [
+            CARD_BESIDE_FILE(theme),
+            CARD_BESIDE_FRAME,
+            frames.card,
+            frames.card.clip,
+          ],
         ]) {
           if (outputs[name] === undefined) continue;
           await writeFramed({
@@ -484,6 +541,23 @@ export async function capture({ stack, fixture, shots, shotFiles }) {
 }
 
 /**
+ * A running thread spins forever, so every capture would otherwise catch it at
+ * a different angle and every recapture would report a change that is not one.
+ * Only looping animations are paused: bb opens its menus and dialogs with
+ * animations that run once, and pausing those leaves an empty box where the
+ * menu should be.
+ */
+async function freezeLoopingAnimations(page) {
+  await page.evaluate(() => {
+    for (const animation of document.getAnimations()) {
+      if (animation.effect?.getTiming().iterations !== Infinity) continue;
+      animation.pause();
+      animation.currentTime = 0;
+    }
+  });
+}
+
+/**
  * Arranges the app, shades it, and hands the page to whoever wants a frame of
  * it. Each frame gets its own window, because a card may want a different one.
  */
@@ -491,6 +565,7 @@ async function render({ browser, stack, fixture, shot, theme, viewport, style, t
   const { context, page } = await openApp({ browser, stack, theme, viewport, style });
   try {
     await shot.prepare({ page, fixture, stack, theme });
+    await freezeLoopingAnimations(page);
     const highlightBoxes = await highlightBoxesFor({ page, shot });
     let chipBoxes = [];
     if (highlightBoxes.length > 0) {

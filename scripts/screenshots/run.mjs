@@ -51,23 +51,32 @@ function parseArguments(argv) {
 }
 
 function shotFiles(shot) {
-  const pluginDirectory = join(repositoryRoot, "plugins", shot.plugin);
   return Object.fromEntries(
-    shot.outputs.map((output) => [
-      output,
-      join(pluginDirectory, "assets", output),
-    ]),
+    shot.outputs.map((output) => [output, join(assetsDirectory(shot), output)]),
   );
+}
+
+/** A shot of the whole collection belongs to the repository, not to a plugin. */
+function assetsDirectory(shot) {
+  return shot.plugin === null
+    ? join(repositoryRoot, "assets")
+    : join(repositoryRoot, "plugins", shot.plugin, "assets");
+}
+
+function pluginDirectoriesFor(shot) {
+  const directory = (plugin) => join(repositoryRoot, "plugins", plugin);
+  return shot.plugin === null
+    ? SHOTS.flatMap((each) => (each.plugin === null ? [] : [directory(each.plugin)]))
+    : [directory(shot.plugin)];
 }
 
 function expectedLock() {
   const shotsEntry = {};
   for (const shot of SHOTS) {
-    const pluginDirectory = join(repositoryRoot, "plugins", shot.plugin);
     shotsEntry[shot.id] = {
       inputs: inputDigest({
         repositoryRoot,
-        pluginDirectory,
+        pluginDirectories: pluginDirectoriesFor(shot),
         harnessDirectory,
       }),
       files: Object.fromEntries(
@@ -128,6 +137,13 @@ const captured = await capture({ stack, fixture, shots, shotFiles, repositoryRoo
 
 const lock = readLock(lockPath);
 const expected = expectedLock();
+// A shot that no longer exists leaves an entry behind, and the check reports
+// it forever, since only a capture can clear one. SHOTS is the whole list of
+// shots there are, so anything else in the lock is a shot that was renamed or
+// dropped.
+for (const id of Object.keys(lock.shots)) {
+  if (!SHOTS.some((shot) => shot.id === id)) delete lock.shots[id];
+}
 for (const shot of captured) {
   lock.shots[shot.id] = expected.shots[shot.id];
   lock.shots[shot.id].files = Object.fromEntries(

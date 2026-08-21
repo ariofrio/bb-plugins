@@ -50,19 +50,25 @@ function manifestFingerprint(pluginDirectory) {
 }
 
 /**
- * A screenshot is stale when the plugin it pictures changed, or when the
- * harness that framed it did. Both feed one digest per shot.
+ * A screenshot is stale when a plugin it pictures changed, or when the harness
+ * that framed it did. Both feed one digest per shot. A shot that pictures the
+ * whole collection names every plugin, so any of them can stale it.
  */
-export function inputDigest({ repositoryRoot, pluginDirectory, harnessDirectory }) {
+export function inputDigest({ repositoryRoot, pluginDirectories, harnessDirectory }) {
   const hash = createHash("sha256");
-  for (const directory of [join(pluginDirectory, "src"), harnessDirectory]) {
+  for (const directory of [
+    ...pluginDirectories.map((plugin) => join(plugin, "src")),
+    harnessDirectory,
+  ]) {
     if (!existsSync(directory)) continue;
     for (const path of walk(directory).sort()) {
       hash.update(relative(repositoryRoot, path));
       hashFile(hash, path);
     }
   }
-  hash.update(manifestFingerprint(pluginDirectory));
+  for (const plugin of pluginDirectories) {
+    hash.update(manifestFingerprint(plugin));
+  }
   return hash.digest("hex");
 }
 
