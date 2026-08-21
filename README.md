@@ -113,7 +113,7 @@ Run the same command after a `git pull`: it installs whatever is missing, then
 rebuilds and reloads every plugin.
 
 To run one plugin's unreleased code without a checkout, install it from `main`
-by its collection name — the names are listed in
+by its entry name in the collection — the entries are listed in
 [.bb/plugins.json](.bb/plugins.json):
 
 ```sh
