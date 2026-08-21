@@ -2,12 +2,11 @@ import type { WorkflowStage } from "../workflow-stage";
 import { Icon, type IconName } from "./Icon";
 
 const WORKFLOW_STAGE_ICONS: Record<WorkflowStage, IconName> = {
-  Backlog: "CircleDashed",
-  "To do": "Progress01",
-  Working: "Progress02",
+  Deferred: "CircleDashed",
+  "Idle": "Progress01",
+  Active: "Progress02",
   Blocked: "BlockedCircle",
-  Done: "CheckmarkCircle",
-  Canceled: "CircleX",
+  Completed: "CompletedProgress",
 };
 
 export function WorkflowStageIcon({

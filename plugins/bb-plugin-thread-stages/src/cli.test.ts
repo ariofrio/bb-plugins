@@ -34,13 +34,13 @@ describe("thread stages CLI", () => {
   it("shows the effective default stage as human and JSON output", () => {
     expect(runThreadWorkflowCli(store, ["show", "thr_a"])).toEqual({
       exitCode: 0,
-      stdout: "Thread: thr_a\n  Stage: To do (default)\n  Order: -\n",
+      stdout: "Thread: thr_a\n  Stage: Idle (default)\n  Order: -\n",
     });
     const result = runThreadWorkflowCli(store, ["show", "thr_a", "--json"]);
     const task = JSON.parse(result.stdout ?? "");
     expect(task).toMatchObject({
       id: "thr_a",
-      workflowStage: "To do",
+      workflowStage: "Idle",
       sortKey: null,
       explicit: false,
     });
@@ -63,13 +63,13 @@ describe("thread stages CLI", () => {
       "update",
       "thr_a",
       "--stage",
-      "Working",
+      "Active",
     ]);
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Thread thr_a updated");
     expect(store.get("thr_a")).toMatchObject({
-      workflowStage: "Working",
+      workflowStage: "Active",
       explicit: true,
     });
   });
@@ -77,28 +77,28 @@ describe("thread stages CLI", () => {
   it("updates the current thread through --self", () => {
     const result = runThreadWorkflowCli(
       store,
-      ["update", "--self", "--stage", "Working", "--json"],
+      ["update", "--self", "--stage", "Active", "--json"],
       { threadId: "thr_self" },
     );
     expect(JSON.parse(result.stdout ?? "")).toMatchObject({
       id: "thr_self",
-      workflowStage: "Working",
+      workflowStage: "Active",
     });
   });
 
   it("lists a JSON array and filters by stage", () => {
-    store.setStage("thr_a", "Working");
-    store.setStage("thr_b", "Done");
+    store.setStage("thr_a", "Active");
+    store.setStage("thr_b", "Completed");
 
     const result = runThreadWorkflowCli(store, [
       "list",
       "--stage",
-      "Working",
+      "Active",
       "--json",
     ]);
     const tasks = JSON.parse(result.stdout ?? "");
     expect(tasks).toMatchObject([
-      { id: "thr_a", workflowStage: "Working" },
+      { id: "thr_a", workflowStage: "Active" },
     ]);
     expect(tasks[0]).not.toHaveProperty("taskStatus");
     expect(tasks[0]).not.toHaveProperty("sortKey");
@@ -106,11 +106,11 @@ describe("thread stages CLI", () => {
 
   it("lists threads without order keys in canonical stage order", () => {
     store.ensureThreads(["thr_todo"]);
-    store.setStage("thr_backlog", "Backlog");
+    store.setStage("thr_backlog", "Deferred");
     store.setStage("thr_blocked", "Blocked");
-    store.setStage("thr_done", "Done");
-    store.setStage("thr_working", "Working");
-    store.setStage("thr_canceled", "Canceled");
+    store.setStage("thr_done", "Completed");
+    store.setStage("thr_working", "Active");
+    store.setStage("thr_canceled", "Completed");
 
     const result = runThreadWorkflowCli(store, ["list"]);
     const stdout = result.stdout ?? "";
@@ -168,20 +168,20 @@ describe("thread stages CLI", () => {
     ).toEqual(["thr_a", "thr_c", "thr_b"]);
     expect(JSON.parse(result.stdout ?? "")).toMatchObject({
       id: "thr_c",
-      workflowStage: "To do",
+      workflowStage: "Idle",
     });
   });
 
   it("appends a thread when changing its stage without position flags", () => {
     store.ensureThreads(["thr_first", "thr_second", "thr_moved"]);
-    store.setStage("thr_first", "Working");
-    store.setStage("thr_second", "Working");
+    store.setStage("thr_first", "Active");
+    store.setStage("thr_second", "Active");
 
     const result = runThreadWorkflowCli(store, [
       "update",
       "thr_moved",
       "--stage",
-      "Working",
+      "Active",
       "--json",
     ]);
 
@@ -189,7 +189,7 @@ describe("thread stages CLI", () => {
     expect(
       store
         .listState()
-        .assignments.filter((assignment) => assignment.workflowStage === "Working")
+        .assignments.filter((assignment) => assignment.workflowStage === "Active")
         .map((assignment) => assignment.threadId),
     ).toEqual(["thr_first", "thr_second", "thr_moved"]);
   });
@@ -202,7 +202,7 @@ describe("thread stages CLI", () => {
       "update",
       "thr_middle",
       "--stage",
-      "To do",
+      "Idle",
       "--json",
     ]);
 
@@ -215,14 +215,14 @@ describe("thread stages CLI", () => {
 
   it("overrides status-change position through update", () => {
     store.ensureThreads(["thr_first", "thr_second", "thr_moved"]);
-    store.setStage("thr_first", "Working");
-    store.setStage("thr_second", "Working");
+    store.setStage("thr_first", "Active");
+    store.setStage("thr_second", "Active");
 
     const result = runThreadWorkflowCli(store, [
       "update",
       "thr_moved",
       "--stage",
-      "Working",
+      "Active",
       "--after",
       "thr_first",
       "--before",
@@ -233,21 +233,21 @@ describe("thread stages CLI", () => {
     expect(
       store
         .listState()
-        .assignments.filter((assignment) => assignment.workflowStage === "Working")
+        .assignments.filter((assignment) => assignment.workflowStage === "Active")
         .map((assignment) => assignment.threadId),
     ).toEqual(["thr_first", "thr_moved", "thr_second"]);
   });
 
   it("ignores and warns about neighbors outside the destination stage", () => {
     store.ensureThreads(["thr_working", "thr_done", "thr_moved"]);
-    store.setStage("thr_working", "Working");
-    store.setStage("thr_done", "Done");
+    store.setStage("thr_working", "Active");
+    store.setStage("thr_done", "Completed");
 
     const result = runThreadWorkflowCli(store, [
       "update",
       "thr_moved",
       "--stage",
-      "Working",
+      "Active",
       "--after",
       "thr_done",
       "--json",
@@ -255,27 +255,27 @@ describe("thread stages CLI", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe(
-      "Warning: --after thread thr_done is not in stage Working; ignoring --after.\n",
+      "Warning: --after thread thr_done is not in stage Active; ignoring --after.\n",
     );
     expect(
       store
         .listState()
-        .assignments.filter((assignment) => assignment.workflowStage === "Working")
+        .assignments.filter((assignment) => assignment.workflowStage === "Active")
         .map((assignment) => assignment.threadId),
     ).toEqual(["thr_working", "thr_moved"]);
   });
 
   it("applies a valid neighbor while ignoring an invalid one", () => {
     store.ensureThreads(["thr_first", "thr_second", "thr_done", "thr_moved"]);
-    store.setStage("thr_first", "Working");
-    store.setStage("thr_second", "Working");
-    store.setStage("thr_done", "Done");
+    store.setStage("thr_first", "Active");
+    store.setStage("thr_second", "Active");
+    store.setStage("thr_done", "Completed");
 
     const result = runThreadWorkflowCli(store, [
       "update",
       "thr_moved",
       "--stage",
-      "Working",
+      "Active",
       "--after",
       "thr_first",
       "--before",
@@ -284,7 +284,7 @@ describe("thread stages CLI", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toContain("ignoring --before");
-    expect(store.get("thr_moved").workflowStage).toBe("Working");
+    expect(store.get("thr_moved").workflowStage).toBe("Active");
     expect(store.get("thr_moved").sortKey! > store.get("thr_first").sortKey!).toBe(
       true,
     );
@@ -316,7 +316,7 @@ describe("thread stages CLI", () => {
       "paused",
     ]);
     expect(invalid.exitCode).toBe(1);
-    expect(invalid.stderr).toContain("Backlog, To do, Working");
+    expect(invalid.stderr).toContain("Deferred, Idle, Active");
   });
 
   it("rejects stage reads and writes for child threads", () => {
@@ -329,7 +329,7 @@ describe("thread stages CLI", () => {
     const shown = runThreadWorkflowCli(store, ["show", "child"], { rootIdsByThreadId });
     const updated = runThreadWorkflowCli(
       store,
-      ["update", "child", "--stage", "Done"],
+      ["update", "child", "--stage", "Completed"],
       { rootIdsByThreadId },
     );
 
@@ -338,7 +338,7 @@ describe("thread stages CLI", () => {
       stderr: expect.stringContaining("root thread parent"),
     });
     expect(updated.exitCode).toBe(1);
-    expect(store.get("parent").workflowStage).toBe("To do");
-    expect(store.get("child").workflowStage).toBe("To do");
+    expect(store.get("parent").workflowStage).toBe("Idle");
+    expect(store.get("child").workflowStage).toBe("Idle");
   });
 });

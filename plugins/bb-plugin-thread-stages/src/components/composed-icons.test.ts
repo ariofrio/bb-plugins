@@ -3,14 +3,30 @@ import {
   AlbumNotFound01Icon,
   BanIcon,
   CheckmarkCircle02Icon,
+  Progress02Icon,
 } from "@hugeicons/core-free-icons";
 import {
   BlockedCircleIcon,
+  CompletedProgressIcon,
   ListViewOffIcon,
   SectionAddIcon,
 } from "./composed-icons";
 
 describe("composed icons", () => {
+  it("fills Active's inner progress circle for Completed", () => {
+    expect(CompletedProgressIcon[0]).toEqual(Progress02Icon[0]);
+    expect(CompletedProgressIcon[1]).toEqual([
+      "circle",
+      {
+        cx: "12",
+        cy: "12",
+        r: "7.5",
+        fill: "currentColor",
+        key: "1",
+      },
+    ]);
+  });
+
   it("paints the expanded Ban circle and slash as one path", () => {
     const circle = CheckmarkCircle02Icon[0];
     const slash = BanIcon[1];

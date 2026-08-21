@@ -6,7 +6,7 @@ import {
   createThreadWorkflowStore,
 } from "./store";
 import {
-  isWorkingThreadLifecycle,
+  isActiveThreadLifecycle,
   registerThreadWorkflow,
 } from "./workflow-automation";
 
@@ -17,8 +17,8 @@ describe("task workflow", () => {
     ["stopping", true],
     ["idle", false],
     ["error", false],
-  ] as const)("maps %s to isWorking=%s", (status, expected) => {
-    expect(isWorkingThreadLifecycle(status)).toBe(expected);
+  ] as const)("maps %s to isActive=%s", (status, expected) => {
+    expect(isActiveThreadLifecycle(status)).toBe(expected);
   });
 
   it("applies lifecycle events without overriding a manual move while work continues", async () => {
@@ -57,7 +57,7 @@ describe("task workflow", () => {
       await handlers.get("thread.active")?.({
         thread: { id: "thr_a", status: "active" },
       } as never);
-      expect(store.get("thr_a").workflowStage).toBe("Working");
+      expect(store.get("thr_a").workflowStage).toBe("Active");
 
       store.setStage("thr_a", "Blocked");
       await handlers.get("thread.active")?.({
@@ -92,7 +92,7 @@ describe("task workflow", () => {
 
     try {
       store.ensureThreads(["child"]);
-      store.setStage("child", "Done");
+      store.setStage("child", "Completed");
       registerThreadWorkflow(bb, store);
 
       await handlers.get("thread.active")?.({
@@ -113,7 +113,7 @@ describe("task workflow", () => {
     }
   });
 
-  it("treats a thread waiting on the user as To do while it stays active", async () => {
+  it("treats a thread waiting on the user as Idle while it stays active", async () => {
     const db = new Database(":memory:");
     for (const migration of THREAD_WORKFLOW_MIGRATIONS) db.exec(migration);
     const store = createThreadWorkflowStore(db);
@@ -140,20 +140,20 @@ describe("task workflow", () => {
       await handlers.get("thread.active")?.({
         thread: { id: "thr_a", status: "active" },
       } as never);
-      expect(store.get("thr_a").workflowStage).toBe("Working");
+      expect(store.get("thr_a").workflowStage).toBe("Active");
 
       pendingInteractions = [{ status: "pending" }];
       await handlers.get("thread.active")?.({
         thread: { id: "thr_a", status: "active" },
       } as never);
-      expect(store.get("thr_a").workflowStage).toBe("To do");
+      expect(store.get("thr_a").workflowStage).toBe("Idle");
 
       // Answering it puts the thread back to work without a status change.
       pendingInteractions = [];
       await handlers.get("thread.active")?.({
         thread: { id: "thr_a", status: "active" },
       } as never);
-      expect(store.get("thr_a").workflowStage).toBe("Working");
+      expect(store.get("thr_a").workflowStage).toBe("Active");
     } finally {
       db.close();
     }
@@ -187,7 +187,7 @@ describe("task workflow", () => {
       await handlers.get("thread.active")?.({
         thread: { id: "thr_a", status: "active" },
       } as never);
-      expect(store.get("thr_a").workflowStage).toBe("Working");
+      expect(store.get("thr_a").workflowStage).toBe("Active");
     } finally {
       db.close();
     }
@@ -239,20 +239,20 @@ describe("task workflow", () => {
 
       changed?.({ id: "thr_a", changes: ["status-changed"] });
       await vi.waitFor(() =>
-        expect(store.get("thr_a").workflowStage).toBe("Working"),
+        expect(store.get("thr_a").workflowStage).toBe("Active"),
       );
 
       pendingInteractions = [{ status: "pending" }];
       changed?.({ id: "thr_a", changes: ["interactions-changed"] });
       await vi.waitFor(() =>
-        expect(store.get("thr_a").workflowStage).toBe("To do"),
+        expect(store.get("thr_a").workflowStage).toBe("Idle"),
       );
 
       pendingInteractions = [];
       lifecycleStatus = "idle";
       changed?.({ id: "thr_a", changes: ["status-changed"] });
       await vi.waitFor(() =>
-        expect(store.get("thr_a").workflowStage).toBe("To do"),
+        expect(store.get("thr_a").workflowStage).toBe("Idle"),
       );
 
       abort.abort();

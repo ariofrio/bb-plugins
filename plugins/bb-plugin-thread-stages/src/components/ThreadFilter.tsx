@@ -29,6 +29,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { CHROME_SECTION_LABEL_CLASS } from "./ui/chrome-style-tokens";
 import {
   Tooltip,
   TooltipContent,
@@ -120,6 +121,22 @@ export function ThreadFilter({
     sections.length === 0 ? "Projects" : "Projects and sections";
   const allLabel =
     sections.length === 0 ? "All projects" : "All projects and sections";
+
+  function handleFilterChange(nextValue: string): void {
+    if (!nextValue) {
+      onChange(null);
+      return;
+    }
+    if (nextValue === "uncategorized") {
+      onChange({ kind: "uncategorized" });
+      return;
+    }
+    const [kind, id] = nextValue.split(":", 2);
+    if ((kind === "project" || kind === "section") && id) {
+      onChange({ kind, id });
+    }
+  }
+
   return (
     <div className="bb-sidebar-hover-actions-row group/thread-filter sticky top-[var(--bb-sidebar-sticky-stack-padding-top)] z-[70] mb-4 flex min-w-0 items-center gap-1 rounded-md bg-sidebar outline-none ring-sidebar-ring has-[.thread-filter-trigger:focus-visible]:ring-2 before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-2 before:bg-sidebar before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-4 after:bg-sidebar after:content-['']">
       <DropdownMenu responsive={false} open={open} onOpenChange={setOpen}>
@@ -154,26 +171,34 @@ export function ThreadFilter({
                 aria-hidden
               />
             )}
-            <span className="truncate">{activeLabel ?? scopeLabel}</span>
+            <span
+              data-thread-filter-label-cluster=""
+              className="flex min-w-0 items-center gap-1"
+            >
+              <span data-thread-filter-label="" className="truncate">
+                {activeLabel ?? scopeLabel}
+              </span>
+              {value === null ? null : (
+                <span
+                  aria-label="Threads are filtered"
+                  data-thread-filter-indicator=""
+                  className="inline-flex size-4 shrink-0 items-center justify-center text-subtle-foreground/60"
+                >
+                  <Icon
+                    name="FilterMailCircle"
+                    className="size-4"
+                    aria-hidden
+                  />
+                </span>
+              )}
+            </span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className={CONTENT_CLASS}>
           <DropdownMenuRadioGroup
+            aria-label="All threads"
             value={serializeThreadFilter(value) ?? ""}
-            onValueChange={(nextValue) => {
-              if (!nextValue) {
-                onChange(null);
-                return;
-              }
-              if (nextValue === "uncategorized") {
-                onChange({ kind: "uncategorized" });
-                return;
-              }
-              const [kind, id] = nextValue.split(":", 2);
-              if ((kind === "project" || kind === "section") && id) {
-                onChange({ kind, id });
-              }
-            }}
+            onValueChange={handleFilterChange}
           >
             <ThreadFilterItem label={allLabel} value="">
               <Icon
@@ -182,98 +207,123 @@ export function ThreadFilter({
                 aria-hidden
               />
             </ThreadFilterItem>
-            {projects.length > 0 ? (
-              <>
-                <DropdownMenuLabel>Projects</DropdownMenuLabel>
-                <DropdownMenuGroup>
-                  {personalProject ? (
-                    <ThreadFilterItem
-                      label="Threads"
-                      value={`project:${personalProject.id}`}
-                    >
-                      <ProjectFilterIcon
-                        icon={projectIcons.get(personalProject.id)}
-                        personal
-                      />
-                    </ThreadFilterItem>
-                  ) : null}
-                  {regularProjects.map((project) => (
-                    <ActionableThreadFilterItem
-                      key={project.id}
-                      label={project.name}
-                      selected={
-                        value?.kind === "project" && value.id === project.id
+          </DropdownMenuRadioGroup>
+          {projects.length > 0 ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel
+                id="thread-filter-projects-label"
+                className={CHROME_SECTION_LABEL_CLASS}
+              >
+                Projects
+              </DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                aria-labelledby="thread-filter-projects-label"
+                value={serializeThreadFilter(value) ?? ""}
+                onValueChange={handleFilterChange}
+              >
+                {personalProject ? (
+                  <ThreadFilterItem
+                    label="Threads"
+                    value={`project:${personalProject.id}`}
+                  >
+                    <ProjectFilterIcon
+                      icon={projectIcons.get(personalProject.id)}
+                      personal
+                    />
+                  </ThreadFilterItem>
+                ) : null}
+                {regularProjects.map((project) => (
+                  <ActionableThreadFilterItem
+                    key={project.id}
+                    label={project.name}
+                    selected={
+                      value?.kind === "project" && value.id === project.id
+                    }
+                    onSelect={() => {
+                      onChange({ kind: "project", id: project.id });
+                      setOpen(false);
+                    }}
+                  >
+                    <ProjectFilterIcon icon={projectIcons.get(project.id)} />
+                    <ProjectActions
+                      canAddLocalPath={
+                        projectActionStates.get(project.id)?.canAddLocalPath ??
+                        false
                       }
-                      onSelect={() => {
-                        onChange({ kind: "project", id: project.id });
-                        setOpen(false);
-                      }}
-                    >
-                      <ProjectFilterIcon icon={projectIcons.get(project.id)} />
-                      <ProjectActions
-                        canAddLocalPath={
-                          projectActionStates.get(project.id)
-                            ?.canAddLocalPath ?? false
-                        }
-                        onAddLocalPath={() => onAddProjectLocalPath(project)}
-                        onOpenSettings={() => onOpenProjectSettings(project)}
-                        onRemove={() => onRemoveProject(project)}
-                        onRename={() => onRenameProject(project)}
-                      />
-                    </ActionableThreadFilterItem>
-                  ))}
-                </DropdownMenuGroup>
-              </>
-            ) : null}
-            {sections.length > 0 ? (
-              <>
-                <DropdownMenuLabel>Sections</DropdownMenuLabel>
-                <DropdownMenuGroup>
-                  <ThreadFilterItem label="Uncategorized" value="uncategorized">
+                      onAddLocalPath={() => onAddProjectLocalPath(project)}
+                      onOpenSettings={() => onOpenProjectSettings(project)}
+                      onRemove={() => onRemoveProject(project)}
+                      onRename={() => onRenameProject(project)}
+                    />
+                  </ActionableThreadFilterItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </>
+          ) : null}
+          {sections.length > 0 ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel
+                id="thread-filter-sections-label"
+                className={CHROME_SECTION_LABEL_CLASS}
+              >
+                Sections
+              </DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                aria-labelledby="thread-filter-sections-label"
+                value={serializeThreadFilter(value) ?? ""}
+                onValueChange={handleFilterChange}
+              >
+                <ThreadFilterItem label="Uncategorized" value="uncategorized">
+                  <Icon
+                    name="ListViewOff"
+                    className="size-4 shrink-0"
+                    aria-hidden
+                  />
+                </ThreadFilterItem>
+                {sections.map((section) => (
+                  <ActionableThreadFilterItem
+                    key={section.id}
+                    label={section.name}
+                    selected={
+                      value?.kind === "section" && value.id === section.id
+                    }
+                    onSelect={() => {
+                      onChange({ kind: "section", id: section.id });
+                      setOpen(false);
+                    }}
+                  >
                     <Icon
-                      name="ListViewOff"
+                      name="ListView"
                       className="size-4 shrink-0"
                       aria-hidden
                     />
-                  </ThreadFilterItem>
-                  {sections.map((section) => (
-                    <ActionableThreadFilterItem
-                      key={section.id}
-                      label={section.name}
-                      selected={
-                        value?.kind === "section" && value.id === section.id
-                      }
-                      onSelect={() => {
-                        onChange({ kind: "section", id: section.id });
-                        setOpen(false);
-                      }}
-                    >
-                      <Icon
-                        name="ListView"
-                        className="size-4 shrink-0"
-                        aria-hidden
-                      />
-                      <SectionActions
-                        onRemove={() => onRemoveSection(section)}
-                        onRename={() => onRenameSection(section)}
-                      />
-                    </ActionableThreadFilterItem>
-                  ))}
-                </DropdownMenuGroup>
-              </>
-            ) : null}
-          </DropdownMenuRadioGroup>
+                    <SectionActions
+                      onRemove={() => onRemoveSection(section)}
+                      onRename={() => onRenameSection(section)}
+                    />
+                  </ActionableThreadFilterItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </>
+          ) : null}
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup aria-label="Create">
+            <DropdownMenuItem
+              disabled={newProjectDisabled}
+              onSelect={onNewProject}
+            >
+              <Icon name="FolderPlus" className="size-4 shrink-0" aria-hidden />
+              <span>New project</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={onNewSection}>
+              <Icon name="SectionAdd" className="size-4 shrink-0" aria-hidden />
+              <span>New section</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      {value === null ? null : (
-        <span
-          aria-label="Threads are filtered"
-          data-sidebar-hover-actions-open={actionsOpen ? "true" : undefined}
-          className="bb-sidebar-hover-actions-fade pointer-events-none absolute right-0 z-10 inline-flex size-7 items-center justify-center text-subtle-foreground/60"
-        >
-          <Icon name="FilterMailCircle" className="size-4" aria-hidden />
-        </span>
-      )}
       <TooltipProvider>
         <span
           data-thread-filter-actions=""

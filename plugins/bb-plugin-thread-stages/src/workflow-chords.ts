@@ -34,7 +34,7 @@ export interface ResolveStageChordInput {
 
 /**
  * Decides what a `.` chord does: file the open thread and move on to the next
- * one, bring the open thread back to To do, or — when it is already To do —
+ * one, bring the open thread back to Idle, or — when it is already Idle —
  * undo the user's most recent filing.
  */
 export function resolveStageChord({
@@ -53,8 +53,8 @@ export function resolveStageChord({
     (assignment) => assignment.threadId === threadId,
   )?.workflowStage;
 
-  if (workflowStage === "To do") {
-    if (openStage !== "To do") {
+  if (workflowStage === "Idle") {
+    if (openStage !== "Idle") {
       return { kind: "file", workflowStage, next: { kind: "stay" } };
     }
     const candidate = undoCandidates.find((item) =>
@@ -65,19 +65,19 @@ export function resolveStageChord({
       kind: "restore",
       threadId: candidate.threadId,
       sortKey:
-        candidate.previousStage === "To do" ? candidate.previousSortKey : null,
+        candidate.previousStage === "Idle" ? candidate.previousSortKey : null,
       next: { kind: "thread", threadId: candidate.threadId },
     };
   }
 
-  // Walk the To do section the way the sidebar renders it, so "the row below"
+  // Walk the Idle section the way the sidebar renders it, so "the row below"
   // means the row below on screen.
   const threadById = new Map(rootThreads.map((thread) => [thread.id, thread]));
   const pinned = pinnedThreadIds(listed);
   const toDo = assignments
     .filter(
       (assignment) =>
-        assignment.workflowStage === "To do" &&
+        assignment.workflowStage === "Idle" &&
         threadById.has(assignment.threadId) &&
         !pinned.has(assignment.threadId),
     )

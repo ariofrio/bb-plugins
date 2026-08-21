@@ -3,10 +3,26 @@ import {
   AlbumNotFound01Icon,
   BanIcon,
   CheckmarkCircle02Icon,
+  Progress02Icon,
 } from "@hugeicons/core-free-icons";
 
 const standardCirclePath = CheckmarkCircle02Icon[0];
 const banSlash = BanIcon[1];
+
+/** Active's progress ring with its inner progress circle fully filled. */
+export const CompletedProgressIcon: IconSvgElement = [
+  Progress02Icon[0],
+  [
+    "circle",
+    {
+      cx: "12",
+      cy: "12",
+      r: "7.5",
+      fill: "currentColor",
+      key: "1",
+    },
+  ],
+];
 
 /** Radius-10 Ban painted as one path so translucent strokes do not compound. */
 export const BlockedCircleIcon: IconSvgElement = [

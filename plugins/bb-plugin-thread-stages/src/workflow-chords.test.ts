@@ -29,9 +29,9 @@ function assignment(
 
 const threads = [thread("thr_open"), thread("thr_next"), thread("thr_later")];
 const assignments = [
-  assignment("thr_open", "To do", "a"),
-  assignment("thr_next", "To do", "b"),
-  assignment("thr_later", "To do", "c"),
+  assignment("thr_open", "Idle", "a"),
+  assignment("thr_next", "Idle", "b"),
+  assignment("thr_later", "Idle", "c"),
 ];
 
 describe("resolveStageChord", () => {
@@ -39,20 +39,20 @@ describe("resolveStageChord", () => {
     expect(
       resolveStageChord({
         threadId: "thr_open",
-        workflowStage: "Done",
+        workflowStage: "Completed",
         threads,
         assignments,
         undoCandidates: [],
       }),
     ).toEqual({
       kind: "file",
-      workflowStage: "Done",
+      workflowStage: "Completed",
       next: { kind: "thread", threadId: "thr_next" },
     });
     expect(
       resolveStageChord({
         threadId: "thr_next",
-        workflowStage: "Done",
+        workflowStage: "Completed",
         threads,
         assignments,
         undoCandidates: [],
@@ -64,7 +64,7 @@ describe("resolveStageChord", () => {
     expect(
       resolveStageChord({
         threadId: "thr_later",
-        workflowStage: "Done",
+        workflowStage: "Completed",
         threads,
         assignments,
         undoCandidates: [],
@@ -72,16 +72,16 @@ describe("resolveStageChord", () => {
     ).toMatchObject({ next: { kind: "thread", threadId: "thr_next" } });
   });
 
-  it("starts at the top when the filed task was not in To do", () => {
+  it("starts at the top when the filed task was not in Idle", () => {
     expect(
       resolveStageChord({
         threadId: "thr_open",
-        workflowStage: "Canceled",
+        workflowStage: "Completed",
         threads,
         assignments: [
-          assignment("thr_open", "Backlog", "a"),
-          assignment("thr_next", "To do", "b"),
-          assignment("thr_later", "To do", "c"),
+          assignment("thr_open", "Deferred", "a"),
+          assignment("thr_next", "Idle", "b"),
+          assignment("thr_later", "Idle", "c"),
         ],
         undoCandidates: [],
       }),
@@ -92,15 +92,15 @@ describe("resolveStageChord", () => {
     expect(
       resolveStageChord({
         threadId: "thr_open",
-        workflowStage: "Done",
+        workflowStage: "Completed",
         threads: [
           thread("thr_open"),
           thread("thr_child", { parentThreadId: "thr_open" }),
           thread("thr_next"),
         ],
         assignments: [
-          assignment("thr_open", "To do", "a"),
-          assignment("thr_next", "To do", "c"),
+          assignment("thr_open", "Idle", "a"),
+          assignment("thr_next", "Idle", "c"),
         ],
         undoCandidates: [],
       }),
@@ -111,7 +111,7 @@ describe("resolveStageChord", () => {
     expect(
       resolveStageChord({
         threadId: "thr_open",
-        workflowStage: "Canceled",
+        workflowStage: "Completed",
         threads: [
           thread("thr_open"),
           thread("thr_pinned", { pinnedAt: 5, pinSortKey: "a" }),
@@ -120,11 +120,11 @@ describe("resolveStageChord", () => {
           thread("thr_next"),
         ],
         assignments: [
-          assignment("thr_open", "To do", "a"),
-          assignment("thr_pinned", "To do", "b"),
-          assignment("thr_hidden", "To do", "c"),
-          assignment("thr_archived", "To do", "d"),
-          assignment("thr_next", "To do", "e"),
+          assignment("thr_open", "Idle", "a"),
+          assignment("thr_pinned", "Idle", "b"),
+          assignment("thr_hidden", "Idle", "c"),
+          assignment("thr_archived", "Idle", "d"),
+          assignment("thr_next", "Idle", "e"),
         ],
         undoCandidates: [],
       }),
@@ -135,48 +135,48 @@ describe("resolveStageChord", () => {
     expect(
       resolveStageChord({
         threadId: "thr_open",
-        workflowStage: "Done",
+        workflowStage: "Completed",
         threads: [thread("thr_open")],
-        assignments: [assignment("thr_open", "To do", "a")],
+        assignments: [assignment("thr_open", "Idle", "a")],
         undoCandidates: [],
       }),
     ).toEqual({
       kind: "file",
-      workflowStage: "Done",
+      workflowStage: "Completed",
       next: { kind: "compose" },
     });
   });
 
-  it("brings a task back to To do and stays put", () => {
+  it("brings a task back to Idle and stays put", () => {
     expect(
       resolveStageChord({
         threadId: "thr_open",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         threads,
         assignments: [
-          assignment("thr_open", "Backlog", "a"),
-          assignment("thr_next", "To do", "b"),
+          assignment("thr_open", "Deferred", "a"),
+          assignment("thr_next", "Idle", "b"),
         ],
         undoCandidates: [],
       }),
     ).toEqual({
       kind: "file",
-      workflowStage: "To do",
+      workflowStage: "Idle",
       next: { kind: "stay" },
     });
   });
 
-  it("undoes the most recent filing when the open task is already To do", () => {
+  it("undoes the most recent filing when the open task is already Idle", () => {
     expect(
       resolveStageChord({
         threadId: "thr_open",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         threads,
         assignments,
         undoCandidates: [
           {
             threadId: "thr_later",
-            previousStage: "To do",
+            previousStage: "Idle",
             previousSortKey: "c",
             updatedAt: 20,
           },
@@ -196,11 +196,11 @@ describe("resolveStageChord", () => {
     });
   });
 
-  it("appends a restored task that never sat in To do", () => {
+  it("appends a restored task that never sat in Idle", () => {
     expect(
       resolveStageChord({
         threadId: "thr_open",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         threads,
         assignments,
         undoCandidates: [
@@ -219,13 +219,13 @@ describe("resolveStageChord", () => {
     expect(
       resolveStageChord({
         threadId: "thr_open",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         threads: [thread("thr_open"), thread("thr_gone", { archivedAt: 3 })],
         assignments,
         undoCandidates: [
           {
             threadId: "thr_gone",
-            previousStage: "To do",
+            previousStage: "Idle",
             previousSortKey: "z",
             updatedAt: 30,
           },
@@ -238,7 +238,7 @@ describe("resolveStageChord", () => {
     expect(
       resolveStageChord({
         threadId: "thr_open",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         threads,
         assignments,
         undoCandidates: [],

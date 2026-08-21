@@ -18,25 +18,27 @@ const baseChord = {
 
 describe("workflowStageShortcut", () => {
   it("maps each period chord to its workflow stage", () => {
-    expect(workflowStageShortcut(baseChord)).toBe("Done");
-    expect(workflowStageShortcut({ ...baseChord, shiftKey: true })).toBe("To do");
+    expect(workflowStageShortcut(baseChord)).toBe("Completed");
+    expect(workflowStageShortcut({ ...baseChord, shiftKey: true })).toBe("Idle");
     expect(
       workflowStageShortcut({ ...baseChord, ctrlKey: true, shiftKey: true }),
     ).toBe("Blocked");
-    expect(workflowStageShortcut({ ...baseChord, ctrlKey: true })).toBe("Backlog");
-    expect(workflowStageShortcut({ ...baseChord, altKey: true })).toBe("Canceled");
+    expect(workflowStageShortcut({ ...baseChord, ctrlKey: true })).toBe("Deferred");
+    expect(workflowStageShortcut({ ...baseChord, altKey: true })).toBe(
+      "Completed",
+    );
   });
 
   it("matches the period key when modifiers change its character", () => {
     expect(
       workflowStageShortcut({ ...baseChord, key: ">", shiftKey: true }),
-    ).toBe("To do");
+    ).toBe("Idle");
     expect(workflowStageShortcut({ ...baseChord, altKey: true, key: "≥" })).toBe(
-      "Canceled",
+      "Completed",
     );
   });
 
-  it("leaves Working to the automatic workflow", () => {
+  it("leaves Active to the automatic workflow", () => {
     const statuses = [
       workflowStageShortcut(baseChord),
       workflowStageShortcut({ ...baseChord, shiftKey: true }),
@@ -45,7 +47,7 @@ describe("workflowStageShortcut", () => {
       workflowStageShortcut({ ...baseChord, altKey: true }),
     ];
 
-    expect(statuses).not.toContain("Working");
+    expect(statuses).not.toContain("Active");
   });
 
   it("rejects unassigned modifier combinations", () => {

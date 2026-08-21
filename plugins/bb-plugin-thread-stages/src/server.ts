@@ -423,7 +423,7 @@ export default function plugin(bb: BbPluginApi) {
       if (chord.kind === "none") return { destination: stay };
 
       if (chord.kind === "restore") {
-        store.restoreToTodo(chord.threadId, chord.sortKey);
+        store.restoreToIdle(chord.threadId, chord.sortKey);
       } else {
         store.setStage(threadId, chord.workflowStage, "app");
       }

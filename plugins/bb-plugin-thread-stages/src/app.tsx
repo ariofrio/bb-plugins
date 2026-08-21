@@ -103,9 +103,15 @@ const COLLAPSIBLE_SECTION_SET: ReadonlySet<string> = new Set([
   ...WORKFLOW_STAGES,
 ]);
 const DEFAULT_COLLAPSED_STAGES: ReadonlySet<string> = new Set([
-  "Backlog",
-  "Done",
-  "Canceled",
+  "Deferred",
+  "Completed",
+]);
+const LEGACY_COLLAPSED_STAGE_ALIASES: ReadonlyMap<string, string> = new Map([
+  ["Backlog", "Deferred"],
+  ["To do", "Idle"],
+  ["Working", "Active"],
+  ["Done", "Completed"],
+  ["Canceled", "Completed"],
 ]);
 
 interface OrganizationState {
@@ -379,7 +385,7 @@ function ThreadRow({
                       ? `${title} — open in split; ${indicatorThread.indicatorLabel}`
                       : `${title} — open in split`
                   }
-                  isWorking={[
+                  isActive={[
                     "working-draft",
                     "workflow",
                     "background-agent",
@@ -659,6 +665,7 @@ function WorkflowStageList({
     COLLAPSED_STATUSES_STORAGE_KEY,
     COLLAPSIBLE_SECTION_SET,
     DEFAULT_COLLAPSED_STAGES,
+    LEGACY_COLLAPSED_STAGE_ALIASES,
   );
   const [collapsedThreads, setCollapsedThreads] = usePersistentStringSet(
     COLLAPSED_THREADS_STORAGE_KEY,

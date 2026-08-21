@@ -1,7 +1,7 @@
 {
   "name": "bb-plugin-thread-stages",
   "version": "0.6.3",
-  "description": "Group threads in the sidebar into stages from Backlog to Done, updating as they run.",
+  "description": "Group threads in the sidebar into stages from Deferred to Completed, updating as they run.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -43,7 +43,7 @@
   },
   "bb": {
     "name": "Thread stages",
-    "description": "Group threads in the sidebar into stages from Backlog to Done, updating as they run.",
+    "description": "Group threads in the sidebar into stages from Deferred to Completed, updating as they run.",
     "branding": {
       "icon": "./assets/icon.svg"
     },

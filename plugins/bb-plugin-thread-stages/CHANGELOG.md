@@ -1,5 +1,16 @@
 # bb-plugin-thread-stages
 
+## Unreleased
+
+### Minor Changes
+
+- Replace Backlog, To do, Working, Blocked, Done, and Canceled with Deferred,
+  Idle, Active, Blocked, and Completed. Existing assignments and saved collapse
+  choices migrate, with Done and Canceled combined in Completed.
+- Add New project and New section to the filter dropdown, place the active
+  filter marker beside its label, and match BB's native dropdown group labels
+  and dividers.
+
 ## 0.6.3
 
 ### Patch Changes

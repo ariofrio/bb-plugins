@@ -120,7 +120,7 @@
     {
       "id": "thread-stages",
       "displayName": "Thread stages",
-      "description": "Group threads in the sidebar into stages from Backlog to Done, updating as they run.",
+      "description": "Group threads in the sidebar into stages from Deferred to Completed, updating as they run.",
       "icon": {
         "url": "./plugins/bb-plugin-thread-stages/assets/icon.svg"
       },

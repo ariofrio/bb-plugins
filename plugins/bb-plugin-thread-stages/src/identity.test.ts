@@ -12,7 +12,7 @@ describe("plugin identity", () => {
     expect(manifest.name).toBe("bb-plugin-thread-stages");
     expect(manifest.bb.name).toBe("Thread stages");
     expect(manifest.bb.description).toBe(
-      "Group threads in the sidebar into stages from Backlog to Done, updating as they run.",
+      "Group threads in the sidebar into stages from Deferred to Completed, updating as they run.",
     );
     expect(skill).toContain("name: thread-stages");
     expect(collection.plugins).toContainEqual({

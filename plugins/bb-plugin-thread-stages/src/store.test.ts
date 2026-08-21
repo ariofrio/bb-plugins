@@ -14,7 +14,7 @@ describe("thread status store", () => {
 
     try {
       store.ensureThreads(["parent", "child"]);
-      store.setStage("child", "Working");
+      store.setStage("child", "Active");
       store.setPreview("child", "Child output");
 
       const state = store.syncRootThreads(["parent"], ["child"]);
@@ -24,7 +24,7 @@ describe("thread status store", () => {
       ]);
       expect(store.get("child")).toMatchObject({
         explicit: false,
-        workflowStage: "To do",
+        workflowStage: "Idle",
       });
       expect(store.listPreviews()).toContainEqual({
         threadId: "child",
@@ -46,10 +46,10 @@ describe("thread status store", () => {
 
   afterEach(() => db.close());
 
-  it("returns To do for a thread with no explicit assignment", () => {
+  it("returns Idle for a thread with no explicit assignment", () => {
     expect(store.get("thr_new")).toEqual({
       threadId: "thr_new",
-      workflowStage: "To do",
+      workflowStage: "Idle",
       sortKey: null,
       updatedAt: null,
       explicit: false,
@@ -71,12 +71,12 @@ describe("thread status store", () => {
 
   it("lists canonical workflow stages and fractional order within each group", () => {
     store.ensureThreads(["thr_todo_first", "thr_todo_second"]);
-    store.setStage("thr_canceled", "Canceled");
+    store.setStage("thr_canceled", "Completed");
     store.setStage("thr_blocked", "Blocked");
-    store.setStage("thr_done", "Done");
-    store.setStage("thr_working_first", "Working");
-    store.setStage("thr_working_second", "Working");
-    store.setStage("thr_backlog", "Backlog");
+    store.setStage("thr_done", "Completed");
+    store.setStage("thr_working_first", "Active");
+    store.setStage("thr_working_second", "Active");
+    store.setStage("thr_backlog", "Deferred");
 
     expect(
       store.listState().assignments.map((assignment) => assignment.threadId),
@@ -87,12 +87,12 @@ describe("thread status store", () => {
       "thr_working_first",
       "thr_working_second",
       "thr_blocked",
-      "thr_done",
       "thr_canceled",
+      "thr_done",
     ]);
   });
 
-  it("renames stored Deferred assignments to Backlog", () => {
+  it("carries stored Deferred assignments through the legacy Backlog migration", () => {
     const migrationDb = new Database(":memory:");
     try {
       for (const migration of THREAD_WORKFLOW_MIGRATIONS.slice(0, 6)) {
@@ -109,9 +109,9 @@ describe("thread status store", () => {
       }
 
       const migrated = createThreadWorkflowStore(migrationDb);
-      expect(migrated.get("thr_legacy").workflowStage).toBe("Backlog");
+      expect(migrated.get("thr_legacy").workflowStage).toBe("Deferred");
       expect(migrated.listUndoCandidates()).toMatchObject([
-        { threadId: "thr_legacy", previousStage: "Backlog" },
+        { threadId: "thr_legacy", previousStage: "Deferred" },
       ]);
     } finally {
       migrationDb.close();
@@ -144,17 +144,67 @@ describe("thread status store", () => {
     }
   });
 
+  it("migrates every legacy stage into the five-stage model", () => {
+    const migrationDb = new Database(":memory:");
+    try {
+      for (const migration of THREAD_WORKFLOW_MIGRATIONS.slice(0, -1)) {
+        migrationDb.exec(migration);
+      }
+      const insert = migrationDb.prepare(
+        "INSERT INTO thread_organization(thread_id, status, position, updated_at, sort_key, moved_by, previous_status, previous_sort_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      );
+      for (const [index, status] of [
+        "Backlog",
+        "To do",
+        "Working",
+        "Blocked",
+        "Done",
+        "Canceled",
+      ].entries()) {
+        insert.run(
+          `thr_${index}`,
+          status,
+          index,
+          index,
+          `a${index}`,
+          "app",
+          status,
+          `z${index}`,
+        );
+      }
+
+      migrationDb.exec(THREAD_WORKFLOW_MIGRATIONS.at(-1) ?? "");
+      const migrated = createThreadWorkflowStore(migrationDb);
+
+      expect(
+        migrated.listState().assignments.map((assignment) => [
+          assignment.threadId,
+          assignment.workflowStage,
+        ]),
+      ).toEqual([
+        ["thr_0", "Deferred"],
+        ["thr_1", "Idle"],
+        ["thr_2", "Active"],
+        ["thr_3", "Blocked"],
+        ["thr_4", "Completed"],
+        ["thr_5", "Completed"],
+      ]);
+    } finally {
+      migrationDb.close();
+    }
+  });
+
   it("places status changes at the bottom and preserves idempotent keys", () => {
     store.ensureThreads(["thr_a", "thr_b"]);
-    store.setStage("thr_b", "Working");
+    store.setStage("thr_b", "Active");
     const firstKey = store.get("thr_b").sortKey;
-    store.setStage("thr_b", "Working");
+    store.setStage("thr_b", "Active");
     expect(store.get("thr_b").sortKey).toBe(firstKey);
 
-    store.setStage("thr_a", "Working");
+    store.setStage("thr_a", "Active");
     const working = store
       .listState()
-      .assignments.filter((assignment) => assignment.workflowStage === "Working");
+      .assignments.filter((assignment) => assignment.workflowStage === "Active");
     expect(working.map((assignment) => assignment.threadId)).toEqual([
       "thr_b",
       "thr_a",
@@ -162,44 +212,44 @@ describe("thread status store", () => {
     expect(working[0]?.sortKey < (working[1]?.sortKey ?? "")).toBe(true);
   });
 
-  it("moves a task to Working only when it enters a working lifecycle", () => {
+  it("moves a task to Active only when it enters a working lifecycle", () => {
     store.ensureThreads(["thr_a"]);
 
-    store.observeWorkingState("thr_a", true);
-    expect(store.get("thr_a").workflowStage).toBe("Working");
+    store.observeActiveState("thr_a", true);
+    expect(store.get("thr_a").workflowStage).toBe("Active");
 
     store.setStage("thr_a", "Blocked");
-    store.observeWorkingState("thr_a", true);
+    store.observeActiveState("thr_a", true);
     expect(store.get("thr_a").workflowStage).toBe("Blocked");
   });
 
-  it("moves a Working task to To do when work stops without undoing an override", () => {
-    store.observeWorkingState("thr_finished", true);
-    store.observeWorkingState("thr_finished", false);
-    expect(store.get("thr_finished").workflowStage).toBe("To do");
+  it("moves an Active task to Idle when work stops without undoing an override", () => {
+    store.observeActiveState("thr_finished", true);
+    store.observeActiveState("thr_finished", false);
+    expect(store.get("thr_finished").workflowStage).toBe("Idle");
 
-    store.observeWorkingState("thr_overridden", true);
-    store.setStage("thr_overridden", "Backlog");
-    store.observeWorkingState("thr_overridden", false);
-    expect(store.get("thr_overridden").workflowStage).toBe("Backlog");
+    store.observeActiveState("thr_overridden", true);
+    store.setStage("thr_overridden", "Deferred");
+    store.observeActiveState("thr_overridden", false);
+    expect(store.get("thr_overridden").workflowStage).toBe("Deferred");
   });
 
   it("persists the lifecycle edge across store recreation", () => {
-    store.observeWorkingState("thr_a", true);
-    store.setStage("thr_a", "Canceled");
+    store.observeActiveState("thr_a", true);
+    store.setStage("thr_a", "Completed");
 
     const reloadedStore = createThreadWorkflowStore(db);
-    reloadedStore.observeWorkingState("thr_a", true);
+    reloadedStore.observeActiveState("thr_a", true);
 
-    expect(reloadedStore.get("thr_a").workflowStage).toBe("Canceled");
+    expect(reloadedStore.get("thr_a").workflowStage).toBe("Completed");
   });
 
-  it("reconciles a previously unobserved idle Working task to To do", () => {
-    store.setStage("thr_a", "Working");
+  it("reconciles a previously unobserved idle Active task to Idle", () => {
+    store.setStage("thr_a", "Active");
 
-    store.observeWorkingState("thr_a", false);
+    store.observeActiveState("thr_a", false);
 
-    expect(store.get("thr_a").workflowStage).toBe("To do");
+    expect(store.get("thr_a").workflowStage).toBe("Idle");
   });
 
   it("persists one derived message preview per thread", () => {
@@ -224,7 +274,7 @@ describe("thread status store", () => {
 
     const after = store.reorderThread({
       threadId: "thr_c",
-      workflowStage: "To do",
+      workflowStage: "Idle",
       previousThreadId: "thr_a",
       nextThreadId: "thr_b",
     });
@@ -245,7 +295,7 @@ describe("thread status store", () => {
 
     const after = store.reorderThread({
       threadId: "thr_b",
-      workflowStage: "To do",
+      workflowStage: "Idle",
       previousThreadId: null,
       nextThreadId: null,
     });
@@ -260,37 +310,37 @@ describe("thread status store", () => {
 
   it("changes status and order in one transaction", () => {
     store.ensureThreads(["thr_a", "thr_b"]);
-    store.setStage("thr_b", "Working");
+    store.setStage("thr_b", "Active");
 
     const after = store.reorderThread({
       threadId: "thr_a",
-      workflowStage: "Working",
+      workflowStage: "Active",
       previousThreadId: "thr_b",
       nextThreadId: null,
     });
 
     expect(
       after.assignments
-        .filter((assignment) => assignment.workflowStage === "Working")
+        .filter((assignment) => assignment.workflowStage === "Active")
         .map((assignment) => assignment.threadId),
     ).toEqual(["thr_b", "thr_a"]);
   });
 
   it("materializes an unassigned moved thread during an ordered status change", () => {
     store.ensureThreads(["thr_before", "thr_after"]);
-    store.setStage("thr_before", "Working");
-    store.setStage("thr_after", "Working");
+    store.setStage("thr_before", "Active");
+    store.setStage("thr_after", "Active");
 
     const after = store.reorderThread({
       threadId: "thr_new",
-      workflowStage: "Working",
+      workflowStage: "Active",
       previousThreadId: "thr_before",
       nextThreadId: "thr_after",
     });
 
     expect(
       after.assignments
-        .filter((assignment) => assignment.workflowStage === "Working")
+        .filter((assignment) => assignment.workflowStage === "Active")
         .map((assignment) => assignment.threadId),
     ).toEqual(["thr_before", "thr_new", "thr_after"]);
   });
@@ -302,7 +352,7 @@ describe("thread status store", () => {
     expect(() =>
       store.reorderThread({
         threadId: "thr_c",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         previousThreadId: "thr_missing",
         nextThreadId: null,
       }),
@@ -310,7 +360,7 @@ describe("thread status store", () => {
     expect(() =>
       store.reorderThread({
         threadId: "thr_c",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         previousThreadId: "thr_b",
         nextThreadId: "thr_a",
       }),
@@ -318,7 +368,7 @@ describe("thread status store", () => {
     expect(() =>
       store.reorderThread({
         threadId: "thr_c",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         previousThreadId: "thr_c",
         nextThreadId: null,
       }),
@@ -355,10 +405,10 @@ describe("thread status store", () => {
     }
   });
 
-  it("renames stored To Do assignments to To do", () => {
+  it("renames stored To Do assignments to Idle", () => {
     const migrationDb = new Database(":memory:");
     try {
-      // The first four migrations predate the To do rename.
+      // The first four migrations predate the Idle rename.
       for (const migration of THREAD_WORKFLOW_MIGRATIONS.slice(0, 4)) {
         migrationDb.exec(migration);
       }
@@ -378,7 +428,7 @@ describe("thread status store", () => {
 
       const migrated = createThreadWorkflowStore(migrationDb);
       expect(migrated.listState().assignments).toMatchObject([
-        { threadId: "thr_legacy", workflowStage: "To do", sortKey: "a1" },
+        { threadId: "thr_legacy", workflowStage: "Idle", sortKey: "a1" },
         { threadId: "thr_blocked", workflowStage: "Blocked", sortKey: "a2" },
       ]);
       expect(() =>
@@ -395,12 +445,12 @@ describe("thread status store", () => {
     store.ensureThreads(["thr_a", "thr_b"]);
     const before = store.get("thr_a");
 
-    store.setStage("thr_a", "Done", "app");
+    store.setStage("thr_a", "Completed", "app");
 
     expect(store.listUndoCandidates()).toEqual([
       {
         threadId: "thr_a",
-        previousStage: "To do",
+        previousStage: "Idle",
         previousSortKey: before.sortKey,
         updatedAt: expect.any(Number),
       },
@@ -409,10 +459,10 @@ describe("thread status store", () => {
 
   it("offers only app moves into a filed status as undo candidates", () => {
     store.ensureThreads(["thr_app", "thr_cli", "thr_auto", "thr_todo"]);
-    store.setStage("thr_app", "Backlog", "app");
-    store.setStage("thr_cli", "Done", "cli");
-    store.observeWorkingState("thr_auto", true);
-    store.setStage("thr_todo", "To do", "app");
+    store.setStage("thr_app", "Deferred", "app");
+    store.setStage("thr_cli", "Completed", "cli");
+    store.observeActiveState("thr_auto", true);
+    store.setStage("thr_todo", "Idle", "app");
 
     expect(
       store.listUndoCandidates().map(({ threadId }) => threadId),
@@ -424,9 +474,9 @@ describe("thread status store", () => {
     vi.useFakeTimers();
     try {
       vi.setSystemTime(1_000);
-      store.setStage("thr_a", "Done", "app");
+      store.setStage("thr_a", "Completed", "app");
       vi.setSystemTime(2_000);
-      store.setStage("thr_b", "Canceled", "app");
+      store.setStage("thr_b", "Completed", "app");
     } finally {
       vi.useRealTimers();
     }
@@ -436,51 +486,51 @@ describe("thread status store", () => {
     ).toEqual(["thr_b", "thr_a"]);
   });
 
-  it("restores a task to the position it held in To do", () => {
+  it("restores a task to the position it held in Idle", () => {
     store.ensureThreads(["thr_a", "thr_b", "thr_c"]);
     const original = store.get("thr_b").sortKey;
-    store.setStage("thr_b", "Done", "app");
+    store.setStage("thr_b", "Completed", "app");
 
     const [candidate] = store.listUndoCandidates();
-    store.restoreToTodo("thr_b", candidate?.previousSortKey ?? null);
+    store.restoreToIdle("thr_b", candidate?.previousSortKey ?? null);
 
     expect(store.get("thr_b")).toMatchObject({
-      workflowStage: "To do",
+      workflowStage: "Idle",
       sortKey: original,
     });
     expect(
       store
         .listState()
-        .assignments.filter(({ workflowStage }) => workflowStage === "To do")
+        .assignments.filter(({ workflowStage }) => workflowStage === "Idle")
         .map(({ threadId }) => threadId),
     ).toEqual(["thr_a", "thr_b", "thr_c"]);
     expect(store.listUndoCandidates()).toEqual([]);
   });
 
-  it("appends a restored task that never sat in To do", () => {
+  it("appends a restored task that never sat in Idle", () => {
     store.ensureThreads(["thr_a", "thr_b"]);
     store.setStage("thr_b", "Blocked", "app");
-    store.setStage("thr_b", "Canceled", "app");
+    store.setStage("thr_b", "Completed", "app");
 
-    store.restoreToTodo("thr_b", null);
+    store.restoreToIdle("thr_b", null);
 
     expect(
       store
         .listState()
-        .assignments.filter(({ workflowStage }) => workflowStage === "To do")
+        .assignments.filter(({ workflowStage }) => workflowStage === "Idle")
         .map(({ threadId }) => threadId),
     ).toEqual(["thr_a", "thr_b"]);
   });
 
   it("removes organization state for deleted threads", () => {
-    store.observeWorkingState("thr_a", true);
-    store.setStage("thr_a", "Backlog");
+    store.observeActiveState("thr_a", true);
+    store.setStage("thr_a", "Deferred");
 
     expect(store.delete("thr_a")).toBe(true);
     expect(store.delete("thr_a")).toBe(false);
     expect(store.listState()).toEqual({ assignments: [] });
 
-    store.observeWorkingState("thr_a", true);
-    expect(store.get("thr_a").workflowStage).toBe("Working");
+    store.observeActiveState("thr_a", true);
+    expect(store.get("thr_a").workflowStage).toBe("Active");
   });
 });

@@ -9,7 +9,7 @@ export type ThreadLifecycleStatus =
   | "stopping"
   | "error";
 
-export function isWorkingThreadLifecycle(
+export function isActiveThreadLifecycle(
   status: ThreadLifecycleStatus,
 ): boolean {
   switch (status) {
@@ -55,9 +55,9 @@ export function registerThreadWorkflow(
       }
       return;
     }
-    const isWorking =
-      isWorkingThreadLifecycle(thread.status) && !(await isWaitingOnUser(thread.id));
-    const result = store.observeWorkingState(thread.id, isWorking);
+    const isActive =
+      isActiveThreadLifecycle(thread.status) && !(await isWaitingOnUser(thread.id));
+    const result = store.observeActiveState(thread.id, isActive);
     if (result.workflowStageChanged) {
       bb.realtime.publish("state-changed", { threadId: thread.id });
     }

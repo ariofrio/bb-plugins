@@ -24,14 +24,14 @@ agent-browser --session "$qa_session" open "$qa_server_url" >/dev/null
 agent-browser --session "$qa_session" wait --load networkidle >/dev/null
 
 if agent-browser --session "$qa_session" get count \
-  'button[aria-label="Expand Working section"]' | grep -qx '1'; then
+  'button[aria-label="Expand Active section"]' | grep -qx '1'; then
   agent-browser --session "$qa_session" click \
-    'button[aria-label="Expand Working section"]' >/dev/null
+    'button[aria-label="Expand Active section"]' >/dev/null
 fi
 
 agent-browser --session "$qa_session" eval '(() => {
   const button = document.querySelector(
-    "button[aria-label=\"Collapse Working section\"]",
+    "button[aria-label=\"Collapse Active section\"]",
   );
   const section = button?.closest("section");
   const label = button?.closest("[data-sidebar-sticky-tier=\"label\"]");
@@ -42,21 +42,21 @@ agent-browser --session "$qa_session" eval '(() => {
     "[data-sidebar-thread-trailing-indicator]",
   );
   if (count) {
-    throw new Error("Expanded Working stage unexpectedly shows a count.");
+    throw new Error("Expanded Active stage unexpectedly shows a count.");
   }
   if (!(indicator instanceof HTMLElement)) {
-    throw new Error("Working has no visible thread indicator to compare.");
+    throw new Error("Active has no visible thread indicator to compare.");
   }
   const rect = indicator.getBoundingClientRect();
   window.__threadStagesThreadIndicatorCenter = rect.left + rect.width / 2;
 })()' >/dev/null
 
 agent-browser --session "$qa_session" click \
-  'button[aria-label="Collapse Working section"]' >/dev/null
+  'button[aria-label="Collapse Active section"]' >/dev/null
 
 agent-browser --session "$qa_session" eval '(() => {
   const button = document.querySelector(
-    "button[aria-label=\"Expand Working section\"]",
+    "button[aria-label=\"Expand Active section\"]",
   );
   const label = button?.closest("[data-sidebar-sticky-tier=\"label\"]");
   const indicator = label?.querySelector(
@@ -69,7 +69,7 @@ agent-browser --session "$qa_session" eval '(() => {
     throw new Error("Collapsed stage indicators should be disabled by default.");
   }
   if (!(count instanceof HTMLElement)) {
-    throw new Error("Collapsed nonempty Working stage has no count.");
+    throw new Error("Collapsed nonempty Active stage has no count.");
   }
   const countRect = count.getBoundingClientRect();
   const countCenter = countRect.left + countRect.width / 2;

@@ -1,12 +1,11 @@
 import { rootThreadIdByThreadId } from "./root-thread-ownership";
 
 export const WORKFLOW_STAGES = [
-  "Backlog",
-  "To do",
-  "Working",
+  "Deferred",
+  "Idle",
+  "Active",
   "Blocked",
-  "Done",
-  "Canceled",
+  "Completed",
 ] as const;
 
 export type WorkflowStage = (typeof WORKFLOW_STAGES)[number];
@@ -24,7 +23,7 @@ export interface SidebarThreadLike {
   updatedAt: number;
 }
 
-export const DEFAULT_WORKFLOW_STAGE: WorkflowStage = "To do";
+export const DEFAULT_WORKFLOW_STAGE: WorkflowStage = "Idle";
 
 function stageKey(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -33,9 +32,13 @@ function stageKey(value: string): string {
 const STAGE_BY_KEY = new Map<string, WorkflowStage>(
   WORKFLOW_STAGES.flatMap((stage) => {
     const entries: Array<[string, WorkflowStage]> = [[stageKey(stage), stage]];
-    if (stage === "Backlog") entries.push(["deferred", stage]);
+    if (stage === "Deferred") entries.push(["backlog", stage]);
+    if (stage === "Idle") entries.push(["todo", stage]);
+    if (stage === "Active") entries.push(["working", stage]);
     if (stage === "Blocked") entries.push(["waiting", stage]);
-    if (stage === "Canceled") entries.push(["cancelled", stage]);
+    if (stage === "Completed") {
+      entries.push(["done", stage], ["canceled", stage], ["cancelled", stage]);
+    }
     return entries;
   }),
 );
@@ -59,12 +62,11 @@ export function groupThreadsByStage<Thread extends SidebarThreadLike>(
     })),
   );
   const groups: Record<WorkflowStage, Thread[]> = {
-    Backlog: [],
-    "To do": [],
-    Working: [],
+    Deferred: [],
+    "Idle": [],
+    Active: [],
     Blocked: [],
-    Done: [],
-    Canceled: [],
+    Completed: [],
   };
 
   for (const thread of threads) {

@@ -10,23 +10,23 @@ import {
 describe("thread statuses", () => {
   it("keeps the supported labels stable and accepts friendly CLI spellings", () => {
     expect(WORKFLOW_STAGES).toEqual([
-      "Backlog",
-      "To do",
-      "Working",
+      "Deferred",
+      "Idle",
+      "Active",
       "Blocked",
-      "Done",
-      "Canceled",
+      "Completed",
     ]);
-    expect(parseWorkflowStage("backlog")).toBe("Backlog");
-    expect(parseWorkflowStage("deferred")).toBe("Backlog");
+    expect(parseWorkflowStage("backlog")).toBe("Deferred");
+    expect(parseWorkflowStage("deferred")).toBe("Deferred");
     expect(parseWorkflowStage("waiting")).toBe("Blocked");
-    expect(parseWorkflowStage("to-do")).toBe("To do");
-    expect(parseWorkflowStage("TODO")).toBe("To do");
-    expect(parseWorkflowStage("cancelled")).toBe("Canceled");
+    expect(parseWorkflowStage("to-do")).toBe("Idle");
+    expect(parseWorkflowStage("working")).toBe("Active");
+    expect(parseWorkflowStage("done")).toBe("Completed");
+    expect(parseWorkflowStage("cancelled")).toBe("Completed");
     expect(parseWorkflowStage("not started")).toBeNull();
   });
 
-  it("defaults unassigned threads to To do and honors explicit sort keys", () => {
+  it("defaults unassigned threads to Idle and honors explicit sort keys", () => {
     const threads = [
       { id: "unassigned", updatedAt: 30 },
       { id: "second", updatedAt: 20 },
@@ -34,11 +34,11 @@ describe("thread statuses", () => {
       { id: "working", updatedAt: 5 },
     ];
     const assignments: ThreadAssignment[] = [
-      { threadId: "second", workflowStage: "To do", sortKey: "k", updatedAt: 2 },
-      { threadId: "first", workflowStage: "To do", sortKey: "U", updatedAt: 1 },
+      { threadId: "second", workflowStage: "Idle", sortKey: "k", updatedAt: 2 },
+      { threadId: "first", workflowStage: "Idle", sortKey: "U", updatedAt: 1 },
       {
         threadId: "working",
-        workflowStage: "Working",
+        workflowStage: "Active",
         sortKey: "U",
         updatedAt: 3,
       },
@@ -46,16 +46,16 @@ describe("thread statuses", () => {
 
     const groups = groupThreadsByStage(threads, assignments);
 
-    expect(groups["To do"].map((thread) => thread.id)).toEqual([
+    expect(groups["Idle"].map((thread) => thread.id)).toEqual([
       "first",
       "second",
       "unassigned",
     ]);
-    expect(groups.Working.map((thread) => thread.id)).toEqual(["working"]);
-    expect(groups.Done).toEqual([]);
+    expect(groups.Active.map((thread) => thread.id)).toEqual(["working"]);
+    expect(groups.Completed).toEqual([]);
   });
 
-  it("defaults assignments from an incompatible bundle to To do", () => {
+  it("defaults assignments from an incompatible bundle to Idle", () => {
     const assignments = [
       {
         threadId: "newer-status",
@@ -70,7 +70,7 @@ describe("thread statuses", () => {
       assignments,
     );
 
-    expect(groups["To do"].map((thread) => thread.id)).toEqual(["newer-status"]);
+    expect(groups["Idle"].map((thread) => thread.id)).toEqual(["newer-status"]);
   });
 
   it("groups every descendant under its root workflow stage", () => {
@@ -81,22 +81,22 @@ describe("thread statuses", () => {
       { id: "parent", parentThreadId: null, updatedAt: 1 },
     ];
     const assignments: ThreadAssignment[] = [
-      { threadId: "parent", workflowStage: "Done", sortKey: "a", updatedAt: 1 },
-      { threadId: "child", workflowStage: "Working", sortKey: "b", updatedAt: 2 },
+      { threadId: "parent", workflowStage: "Completed", sortKey: "a", updatedAt: 1 },
+      { threadId: "child", workflowStage: "Active", sortKey: "b", updatedAt: 2 },
       { threadId: "grandchild", workflowStage: "Blocked", sortKey: "c", updatedAt: 3 },
-      { threadId: "other", workflowStage: "To do", sortKey: "d", updatedAt: 4 },
+      { threadId: "other", workflowStage: "Idle", sortKey: "d", updatedAt: 4 },
     ];
 
     const groups = groupThreadsByStage(threads, assignments);
 
-    expect(groups.Done.map(({ id }) => id)).toEqual([
+    expect(groups.Completed.map(({ id }) => id)).toEqual([
       "child",
       "grandchild",
       "parent",
     ]);
-    expect(groups.Working).toEqual([]);
+    expect(groups.Active).toEqual([]);
     expect(groups.Blocked).toEqual([]);
-    expect(groups["To do"].map(({ id }) => id)).toEqual(["other"]);
+    expect(groups["Idle"].map(({ id }) => id)).toEqual(["other"]);
   });
 
   it("computes reorder and cross-group destination orders", () => {

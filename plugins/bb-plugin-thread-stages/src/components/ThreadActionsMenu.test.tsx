@@ -76,7 +76,7 @@ describe("ThreadActionsDropdown", () => {
         onSetSection={vi.fn()}
         onSetWorkflowStage={vi.fn()}
         splitAvailable
-        workflowStage="To do"
+        workflowStage="Idle"
         thread={thread()}
       />,
     );
@@ -168,7 +168,7 @@ describe("ThreadActionsDropdown", () => {
           onSetSection={vi.fn()}
           onSetWorkflowStage={vi.fn()}
           splitAvailable={false}
-          workflowStage="To do"
+          workflowStage="Idle"
           thread={thread()}
         />
       </CompactViewportOverrideProvider>,
@@ -207,7 +207,7 @@ describe("ThreadActionsDropdown", () => {
         onSetSection={onSetSection}
         onSetWorkflowStage={vi.fn()}
         splitAvailable={false}
-        workflowStage="To do"
+        workflowStage="Idle"
         thread={{ ...thread(), sectionId: "section_1" }}
       />,
     );
@@ -252,7 +252,7 @@ describe("ThreadActionsDropdown", () => {
         onSetSection={onSetSection}
         onSetWorkflowStage={vi.fn()}
         splitAvailable={false}
-        workflowStage="To do"
+        workflowStage="Idle"
         thread={thread()}
       />,
     );
@@ -292,7 +292,7 @@ describe("ThreadActionsDropdown", () => {
         onSetSection={vi.fn()}
         onSetWorkflowStage={vi.fn()}
         splitAvailable={false}
-        workflowStage="To do"
+        workflowStage="Idle"
         thread={thread()}
       />,
     );
@@ -302,12 +302,11 @@ describe("ThreadActionsDropdown", () => {
     });
     fireEvent.click(screen.getByText("Move to stage"));
 
-    expectMenuItemIcon("Backlog", "CircleDashed");
-    expectMenuItemIcon("To do", "Progress01");
-    expectMenuItemIcon("Working", "Progress02");
+    expectMenuItemIcon("Deferred", "CircleDashed");
+    expectMenuItemIcon("Idle", "Progress01");
+    expectMenuItemIcon("Active", "Progress02");
     expectMenuItemIcon("Blocked", "BlockedCircle");
-    expectMenuItemIcon("Done", "CheckmarkCircle");
-    expectMenuItemIcon("Canceled", "CircleX");
+    expectMenuItemIcon("Completed", "CompletedProgress");
   });
 });
 
@@ -333,7 +332,7 @@ describe("ThreadActionsContextMenu", () => {
         onSetSection={vi.fn()}
         onSetWorkflowStage={vi.fn()}
         splitAvailable
-        workflowStage="To do"
+        workflowStage="Idle"
         thread={thread()}
       >
         <button type="button">Thread row</button>
@@ -344,8 +343,8 @@ describe("ThreadActionsContextMenu", () => {
     const parentMenu = screen.getByRole("menu", { name: "Thread actions" });
     fireEvent.click(screen.getByText("Move to stage"));
 
-    expect(parentMenu.contains(screen.getByText("Done"))).toBe(false);
-    expectMenuItemIcon("Done", "CheckmarkCircle");
+    expect(parentMenu.contains(screen.getByText("Completed"))).toBe(false);
+    expectMenuItemIcon("Completed", "CompletedProgress");
   });
 
   it("portals the section submenu outside the right-click menu", () => {
@@ -369,7 +368,7 @@ describe("ThreadActionsContextMenu", () => {
         onSetSection={vi.fn()}
         onSetWorkflowStage={vi.fn()}
         splitAvailable
-        workflowStage="To do"
+        workflowStage="Idle"
         thread={thread()}
       >
         <button type="button">Thread row</button>

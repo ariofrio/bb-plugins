@@ -44,6 +44,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import {
   BlockedCircleIcon,
+  CompletedProgressIcon,
   ListViewOffIcon,
   SectionAddIcon,
 } from "./composed-icons";
@@ -54,6 +55,7 @@ const ICONS = {
   ArrowDown: ArrowDown01Icon,
   ArrowUp: ArrowUp01Icon,
   BlockedCircle: BlockedCircleIcon,
+  CompletedProgress: CompletedProgressIcon,
   BubbleChat: BubbleChatIcon,
   CancelCircle: CancelCircleIcon,
   Check: Tick02Icon,

@@ -28,9 +28,9 @@ function assignment(
 
 const threads = [thread("thr_a"), thread("thr_b"), thread("thr_c")];
 const assignments = [
-  assignment("thr_a", "To do", "a"),
-  assignment("thr_b", "To do", "b"),
-  assignment("thr_c", "To do", "c"),
+  assignment("thr_a", "Idle", "a"),
+  assignment("thr_b", "Idle", "b"),
+  assignment("thr_c", "Idle", "c"),
 ];
 
 describe("resolveWorkflowReorder", () => {
@@ -40,12 +40,12 @@ describe("resolveWorkflowReorder", () => {
         threads,
         assignments,
         threadId: "thr_c",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         intent: { scope: "step", direction: -1 },
       }),
     ).toEqual({
       kind: "order",
-      workflowStage: "To do",
+      workflowStage: "Idle",
       previousThreadId: "thr_a",
       nextThreadId: "thr_b",
     });
@@ -57,12 +57,12 @@ describe("resolveWorkflowReorder", () => {
         threads,
         assignments,
         threadId: "thr_a",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         intent: { scope: "edge", direction: 1 },
       }),
     ).toEqual({
       kind: "order",
-      workflowStage: "To do",
+      workflowStage: "Idle",
       previousThreadId: "thr_c",
       nextThreadId: null,
     });
@@ -74,7 +74,7 @@ describe("resolveWorkflowReorder", () => {
         threads,
         assignments,
         threadId: "thr_a",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         intent: { scope: "step", direction: -1 },
       }),
     ).toEqual({ kind: "none" });
@@ -86,16 +86,16 @@ describe("resolveWorkflowReorder", () => {
         threads,
         assignments,
         threadId: "thr_b",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         intent: { scope: "stage", direction: -1 },
       }),
-    ).toEqual({ kind: "stage", workflowStage: "Backlog" });
+    ).toEqual({ kind: "stage", workflowStage: "Deferred" });
     expect(
       resolveWorkflowReorder({
         threads,
         assignments,
         threadId: "thr_b",
-        workflowStage: "Backlog",
+        workflowStage: "Deferred",
         intent: { scope: "stage", direction: -1 },
       }),
     ).toEqual({ kind: "none" });
@@ -104,7 +104,7 @@ describe("resolveWorkflowReorder", () => {
         threads,
         assignments,
         threadId: "thr_b",
-        workflowStage: "Canceled",
+        workflowStage: "Completed",
         intent: { scope: "stage", direction: 1 },
       }),
     ).toEqual({ kind: "none" });
@@ -118,10 +118,10 @@ describe("resolveWorkflowReorder", () => {
       thread("thr_c"),
     ];
     const nestedAssignments = [
-      assignment("thr_a", "To do", "a"),
-      assignment("thr_a1", "To do", "b"),
-      assignment("thr_b", "To do", "c"),
-      assignment("thr_c", "To do", "d"),
+      assignment("thr_a", "Idle", "a"),
+      assignment("thr_a1", "Idle", "b"),
+      assignment("thr_b", "Idle", "c"),
+      assignment("thr_c", "Idle", "d"),
     ];
 
     expect(
@@ -129,12 +129,12 @@ describe("resolveWorkflowReorder", () => {
         threads: nested,
         assignments: nestedAssignments,
         threadId: "thr_b",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         intent: { scope: "step", direction: -1 },
       }),
     ).toEqual({
       kind: "order",
-      workflowStage: "To do",
+      workflowStage: "Idle",
       previousThreadId: null,
       nextThreadId: "thr_a",
     });
@@ -143,7 +143,7 @@ describe("resolveWorkflowReorder", () => {
         threads: nested,
         assignments: nestedAssignments,
         threadId: "thr_a1",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         intent: { scope: "step", direction: 1 },
       }),
     ).toEqual({ kind: "none" });
@@ -158,9 +158,9 @@ describe("resolveWorkflowReorder", () => {
     expect(
       resolveWorkflowReorder({
         threads: nested,
-        assignments: [assignment("thr_parent", "To do", "a")],
+        assignments: [assignment("thr_parent", "Idle", "a")],
         threadId: "thr_child",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         intent: { scope: "stage", direction: 1 },
       }),
     ).toEqual({ kind: "none" });
@@ -179,7 +179,7 @@ describe("resolveWorkflowReorder", () => {
         threads: pinned,
         assignments,
         threadId: "thr_c",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         intent: { scope: "edge", direction: -1 },
       }),
     ).toEqual({
@@ -197,10 +197,10 @@ describe("resolveWorkflowReorder", () => {
       thread("thr_c"),
     ];
     const mixedAssignments = [
-      assignment("thr_a", "To do", "a"),
-      assignment("thr_hidden", "To do", "b"),
-      assignment("thr_archived", "To do", "c"),
-      assignment("thr_c", "To do", "d"),
+      assignment("thr_a", "Idle", "a"),
+      assignment("thr_hidden", "Idle", "b"),
+      assignment("thr_archived", "Idle", "c"),
+      assignment("thr_c", "Idle", "d"),
     ];
 
     expect(
@@ -208,12 +208,12 @@ describe("resolveWorkflowReorder", () => {
         threads: mixed,
         assignments: mixedAssignments,
         threadId: "thr_c",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         intent: { scope: "step", direction: -1 },
       }),
     ).toEqual({
       kind: "order",
-      workflowStage: "To do",
+      workflowStage: "Idle",
       previousThreadId: null,
       nextThreadId: "thr_a",
     });
@@ -222,7 +222,7 @@ describe("resolveWorkflowReorder", () => {
         threads: mixed,
         assignments: mixedAssignments,
         threadId: "thr_missing",
-        workflowStage: "To do",
+        workflowStage: "Idle",
         intent: { scope: "step", direction: -1 },
       }),
     ).toEqual({ kind: "none" });

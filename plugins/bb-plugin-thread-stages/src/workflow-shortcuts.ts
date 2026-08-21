@@ -17,13 +17,13 @@ interface StageChord {
   stage: WorkflowStage;
 }
 
-// Working is omitted because automatic stage handling assigns it.
+// Active is omitted because automatic stage handling assigns it.
 const STAGE_CHORDS: readonly StageChord[] = [
-  { altKey: false, ctrlKey: false, shiftKey: false, stage: "Done" },
-  { altKey: false, ctrlKey: false, shiftKey: true, stage: "To do" },
+  { altKey: false, ctrlKey: false, shiftKey: false, stage: "Completed" },
+  { altKey: false, ctrlKey: false, shiftKey: true, stage: "Idle" },
   { altKey: false, ctrlKey: true, shiftKey: true, stage: "Blocked" },
-  { altKey: false, ctrlKey: true, shiftKey: false, stage: "Backlog" },
-  { altKey: true, ctrlKey: false, shiftKey: false, stage: "Canceled" },
+  { altKey: false, ctrlKey: true, shiftKey: false, stage: "Deferred" },
+  { altKey: true, ctrlKey: false, shiftKey: false, stage: "Completed" },
 ];
 
 export function workflowStageShortcut(

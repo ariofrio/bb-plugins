@@ -24,7 +24,7 @@
 
 ### <img src="assets/icons/thread-stages.svg" alt="" width="26" align="absmiddle"> &nbsp;Thread stages
 
-Group threads in the sidebar into stages from Backlog to Done, updating as they run.
+Group threads in the sidebar into stages from Deferred to Completed, updating as they run.
 
 ```sh
 bb marketplace add git:github.com/ariofrio/ribbon

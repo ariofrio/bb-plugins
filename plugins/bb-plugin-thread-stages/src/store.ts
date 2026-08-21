@@ -138,6 +138,56 @@ export const THREAD_WORKFLOW_MIGRATIONS = [
     CREATE INDEX IF NOT EXISTS thread_organization_status_sort_key
       ON thread_organization(status, sort_key, thread_id);
   `,
+  `
+    CREATE TABLE thread_organization_five_stages (
+      thread_id TEXT PRIMARY KEY,
+      status TEXT NOT NULL CHECK (status IN ('Deferred', 'Idle', 'Active', 'Blocked', 'Completed')),
+      position INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      sort_key TEXT,
+      moved_by TEXT,
+      previous_status TEXT,
+      previous_sort_key TEXT
+    );
+    INSERT INTO thread_organization_five_stages(
+      thread_id, status, position, updated_at, sort_key,
+      moved_by, previous_status, previous_sort_key
+    )
+      SELECT
+        thread_id,
+        CASE status
+          WHEN 'Backlog' THEN 'Deferred'
+          WHEN 'To do' THEN 'Idle'
+          WHEN 'Working' THEN 'Active'
+          WHEN 'Done' THEN 'Completed'
+          WHEN 'Canceled' THEN 'Completed'
+          ELSE status
+        END,
+        position,
+        updated_at,
+        CASE status
+          WHEN 'Done' THEN '0' || sort_key
+          WHEN 'Canceled' THEN '1' || sort_key
+          ELSE sort_key
+        END,
+        moved_by,
+        CASE previous_status
+          WHEN 'Backlog' THEN 'Deferred'
+          WHEN 'To do' THEN 'Idle'
+          WHEN 'Working' THEN 'Active'
+          WHEN 'Done' THEN 'Completed'
+          WHEN 'Canceled' THEN 'Completed'
+          ELSE previous_status
+        END,
+        previous_sort_key
+      FROM thread_organization;
+    DROP TABLE thread_organization;
+    ALTER TABLE thread_organization_five_stages RENAME TO thread_organization;
+    CREATE INDEX IF NOT EXISTS thread_organization_status_position
+      ON thread_organization(status, position, thread_id);
+    CREATE INDEX IF NOT EXISTS thread_organization_status_sort_key
+      ON thread_organization(status, sort_key, thread_id);
+  `,
 ];
 
 interface AssignmentRow {
@@ -152,10 +202,9 @@ export type MoveSource = "app" | "cli" | "auto";
 
 /** Stages a thread only reaches by being filed, never by automation. */
 const FILED_STAGES: readonly WorkflowStage[] = [
-  "Backlog",
-  "Done",
+  "Deferred",
+  "Completed",
   "Blocked",
-  "Canceled",
 ];
 
 export interface UndoCandidate {
@@ -185,7 +234,7 @@ export interface ReorderThreadInput {
   source?: MoveSource;
 }
 
-export interface WorkingStateObservation {
+export interface ActiveStateObservation {
   state: WorkflowStageState;
   workflowStageChanged: boolean;
 }
@@ -211,11 +260,11 @@ export interface ThreadWorkflowStore {
     stage: WorkflowStage,
     source?: MoveSource,
   ): WorkflowStageState;
-  restoreToTodo(threadId: string, sortKey: string | null): WorkflowStageState;
-  observeWorkingState(
+  restoreToIdle(threadId: string, sortKey: string | null): WorkflowStageState;
+  observeActiveState(
     threadId: string,
     isWorking: boolean,
-  ): WorkingStateObservation;
+  ): ActiveStateObservation;
   setPreview(threadId: string, preview: string | null): boolean;
   reorderThread(input: ReorderThreadInput): WorkflowStageState;
   delete(threadId: string): boolean;
@@ -243,12 +292,11 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
     WHERE sort_key IS NOT NULL
     ORDER BY
       CASE status
-        WHEN 'Backlog' THEN 0
-        WHEN 'To do' THEN 1
-        WHEN 'Working' THEN 2
+        WHEN 'Deferred' THEN 0
+        WHEN 'Idle' THEN 1
+        WHEN 'Active' THEN 2
         WHEN 'Blocked' THEN 3
-        WHEN 'Done' THEN 4
-        WHEN 'Canceled' THEN 5
+        WHEN 'Completed' THEN 4
       END,
       sort_key,
       thread_id
@@ -435,16 +483,16 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
     },
   );
 
-  const restoreToTodoTransaction = db.transaction(
+  const restoreToIdleTransaction = db.transaction(
     (threadId: string, sortKey: string | null): WorkflowStageState => {
       if (sortKey === null) {
-        moveToStage(threadId, "To do", "app");
+        moveToStage(threadId, "Idle", "app");
         return listState();
       }
       const existing = getAssignment.get(threadId) as AssignmentRow | undefined;
       upsertAssignment.run(
         threadId,
-        "To do",
+        "Idle",
         Date.now(),
         sortKey,
         "app",
@@ -455,21 +503,21 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
     },
   );
 
-  const observeWorkingStateTransaction = db.transaction(
-    (threadId: string, isWorking: boolean): WorkingStateObservation => {
+  const observeActiveStateTransaction = db.transaction(
+    (threadId: string, isWorking: boolean): ActiveStateObservation => {
       const previous = getWorkingState.get(threadId) as
         | { is_working: number }
         | undefined;
       let workflowStageChanged = false;
 
       if (isWorking && previous?.is_working !== 1) {
-        workflowStageChanged = moveToStage(threadId, "Working", "auto");
+        workflowStageChanged = moveToStage(threadId, "Active", "auto");
       } else if (!isWorking && previous?.is_working !== 0) {
         const assignment = getAssignment.get(threadId) as
           | AssignmentRow
           | undefined;
-        if (assignment?.status === "Working") {
-          workflowStageChanged = moveToStage(threadId, "To do", "auto");
+        if (assignment?.status === "Active") {
+          workflowStageChanged = moveToStage(threadId, "Idle", "auto");
         }
       }
 
@@ -589,9 +637,9 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
       }
       return setStageTransaction.immediate(threadId, stage, source);
     },
-    restoreToTodo(threadId, sortKey) {
+    restoreToIdle(threadId, sortKey) {
       assertThreadId(threadId);
-      return restoreToTodoTransaction.immediate(threadId, sortKey);
+      return restoreToIdleTransaction.immediate(threadId, sortKey);
     },
     listUndoCandidates() {
       return (
@@ -608,9 +656,9 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
         updatedAt: row.updated_at,
       }));
     },
-    observeWorkingState(threadId, isWorking) {
+    observeActiveState(threadId, isWorking) {
       assertThreadId(threadId);
-      return observeWorkingStateTransaction.immediate(threadId, isWorking);
+      return observeActiveStateTransaction.immediate(threadId, isWorking);
     },
     setPreview(threadId, preview) {
       assertThreadId(threadId);

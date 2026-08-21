@@ -353,7 +353,7 @@ describe("thread stages plugin API", () => {
     await expect(
       harness.behavior.callRpc("moveThread", {
         threadId: "",
-        workflowStage: "Working",
+        workflowStage: "Active",
         previousThreadId: null,
         nextThreadId: null,
       }),

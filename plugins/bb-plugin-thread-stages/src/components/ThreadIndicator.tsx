@@ -46,15 +46,15 @@ export function ThreadIndicator({
         />
       );
     case "workflow":
-      return <WorkingIcon name="Workflow" label={ariaLabel} />;
+      return <ActiveIcon name="Workflow" label={ariaLabel} />;
     case "background-agent":
-      return <WorkingIcon name="UserRoundPlus" label={ariaLabel} />;
+      return <ActiveIcon name="UserRoundPlus" label={ariaLabel} />;
     case "background-command":
-      return <WorkingIcon name="Terminal" label={ariaLabel} />;
+      return <ActiveIcon name="Terminal" label={ariaLabel} />;
     case "plan-mode":
-      return <WorkingIcon name="Progress02" label={ariaLabel} />;
+      return <ActiveIcon name="Progress02" label={ariaLabel} />;
     case "goal":
-      return <WorkingIcon name="Target" label={ariaLabel} />;
+      return <ActiveIcon name="Target" label={ariaLabel} />;
     case "draft":
       return (
         <Icon
@@ -86,7 +86,7 @@ export function ThreadIndicator({
   }
 }
 
-function WorkingIcon({
+function ActiveIcon({
   name,
   label,
 }: {

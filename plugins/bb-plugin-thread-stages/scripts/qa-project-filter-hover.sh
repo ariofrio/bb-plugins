@@ -34,6 +34,62 @@ agent-browser --session "$qa_session" eval '(() => {
   }
   return JSON.stringify({ unfilteredControl: { label, icon: "FolderLibrary" } });
 })()'
+agent-browser --session "$qa_session" click \
+  '[data-thread-filter-trigger]' >/dev/null
+agent-browser --session "$qa_session" eval '(() => {
+  const menu = document.querySelector("[role=menu][data-bb-plugin-root]");
+  const groupLabels = menu === null
+    ? []
+    : [...menu.querySelectorAll("[id^=thread-filter-]")]
+        .filter((node) => node.textContent === "Projects" || node.textContent === "Sections");
+  const groups = menu === null
+    ? []
+    : [...menu.querySelectorAll("[role=group][aria-labelledby]")];
+  const separators = menu === null
+    ? []
+    : [...menu.querySelectorAll("[role=separator]")];
+  const stageHeader = document.querySelector("[data-sidebar-sticky-tier=label]");
+  const createItems = menu === null
+    ? []
+    : [...menu.querySelectorAll("[role=menuitem]")]
+        .filter((item) => item.textContent === "New project" || item.textContent === "New section");
+  if (
+    !(menu instanceof HTMLElement) ||
+    !(stageHeader instanceof HTMLElement) ||
+    groupLabels.length === 0 ||
+    groups.length !== groupLabels.length ||
+    separators.length !== groupLabels.length + 1 ||
+    createItems.length !== 2
+  ) {
+    throw new Error(`Unexpected native dropdown structure: ${JSON.stringify({
+      labels: groupLabels.map((label) => label.textContent),
+      groups: groups.length,
+      separators: separators.length,
+      createItems: createItems.map((item) => item.textContent),
+    })}.`);
+  }
+  const reference = getComputedStyle(stageHeader);
+  for (const label of groupLabels) {
+    const style = getComputedStyle(label);
+    for (const property of ["fontSize", "fontWeight", "lineHeight", "color"]) {
+      if (style[property] !== reference[property]) {
+        throw new Error(
+          `${label.textContent} ${property} is ${style[property]}; native section chrome is ${reference[property]}.`,
+        );
+      }
+    }
+  }
+  return JSON.stringify({
+    nativeDropdown: {
+      labels: groupLabels.map((label) => label.textContent),
+      groups: groups.length,
+      separators: separators.length,
+      createItems: createItems.map((item) => item.textContent),
+    },
+  });
+})()'
+agent-browser --session "$qa_session" press Escape >/dev/null
+agent-browser --session "$qa_session" wait 250 >/dev/null
 agent-browser --session "$qa_session" hover \
   '[data-sidebar-sticky-tier="label"]' >/dev/null
 agent-browser --session "$qa_session" wait 100 >/dev/null
@@ -290,6 +346,7 @@ agent-browser --session "$qa_session" eval '(() => {
   const labelRect = label.getBoundingClientRect();
   const toggleRect = toggle.getBoundingClientRect();
   const labelToToggle = toggleRect.left - labelRect.right;
+  window.__threadStagesStageLabelGap = labelToToggle;
   if (Math.abs(labelToToggle - 4) > 0.25) {
     throw new Error(
       `Stage toggle is ${labelToToggle}px after its label; expected the built-in 4px gap.`,
@@ -474,20 +531,50 @@ agent-browser --session "$qa_session" wait --text \
 agent-browser --session "$qa_session" eval '(() => {
   const control = document.querySelector("[data-thread-filter-trigger]");
   const icon = control?.querySelector("svg");
-  const label = control?.querySelector("span")?.textContent?.trim();
+  const label = control?.querySelector("[data-thread-filter-label]")?.textContent?.trim();
+  const labelElement = control?.querySelector("[data-thread-filter-label]");
+  const indicator = control?.querySelector("[data-thread-filter-indicator]");
+  const stageGap = window.__threadStagesStageLabelGap;
   const iconName = icon?.getAttribute("data-icon");
   if (
     !(control instanceof HTMLButtonElement) ||
     !(icon instanceof SVGElement) ||
+    !(labelElement instanceof HTMLElement) ||
+    !(indicator instanceof HTMLElement) ||
+    typeof stageGap !== "number" ||
+    indicator.parentElement?.parentElement !== control ||
+    labelElement.nextElementSibling !== indicator ||
     label === "Projects" ||
     label === "Projects and sections" ||
-    (iconName !== null && iconName !== "Folder")
+    (iconName !== null && iconName !== undefined && iconName !== "Folder")
   ) {
     throw new Error(
-      `Unexpected selected-project control: ${JSON.stringify({ label, icon: iconName })}.`,
+      `Unexpected selected-project control: ${JSON.stringify({
+        label,
+        icon: iconName ?? null,
+        control: control instanceof HTMLButtonElement,
+        labelElement: labelElement instanceof HTMLElement,
+        indicator: indicator instanceof HTMLElement,
+        indicatorParent: indicator?.parentElement?.parentElement === control,
+        indicatorAfterLabel: labelElement?.nextElementSibling === indicator,
+        stageGap,
+      })}.`,
     );
   }
-  return JSON.stringify({ selectedProjectControl: { label, icon: iconName ?? "Project icons glyph" } });
+  const filterGap = indicator.getBoundingClientRect().left - labelElement.getBoundingClientRect().right;
+  if (Math.abs(filterGap - stageGap) > 0.25) {
+    throw new Error(
+      `Filter marker is ${filterGap}px after its label; stage chevron is ${stageGap}px after its label.`,
+    );
+  }
+  return JSON.stringify({
+    selectedProjectControl: {
+      label,
+      icon: iconName ?? "Project icons glyph",
+      filterGap,
+      stageGap,
+    },
+  });
 })()'
 agent-browser --session "$qa_session" eval '(() => {
   const expected = window.__threadStagesExpectedFilterInsets;
@@ -522,7 +609,7 @@ agent-browser --session "$qa_session" eval '(() => {
 agent-browser --session "$qa_session" eval '(() => {
   const control = document.querySelector("[data-thread-filter-trigger]");
   const controlIcon = control?.querySelector("svg");
-  const controlLabel = control?.querySelector("span");
+  const controlLabel = control?.querySelector("[data-thread-filter-label]");
   const messageLabel = [...document.querySelectorAll("span")].find(
     (node) => node.textContent?.trim() === "No threads in this project",
   );

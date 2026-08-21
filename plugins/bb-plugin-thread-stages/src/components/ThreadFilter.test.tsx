@@ -30,7 +30,7 @@ describe("ThreadFilter", () => {
     onRenameSection: vi.fn(),
   };
 
-  it("replaces sidebar actions with an active-filter indicator", () => {
+  it("places the active-filter indicator immediately after the label", () => {
     const { rerender } = render(
       <ThreadFilter
         projects={projects}
@@ -48,7 +48,12 @@ describe("ThreadFilter", () => {
       name: "Projects and sections options",
     });
     const actionsContainer = screen.getByTestId("thread-filter-actions");
-    expect(indicator.className).toContain("bb-sidebar-hover-actions-fade");
+    const trigger = screen.getByRole("button", {
+      name: "Projects and sections: Alpha",
+    });
+    const label = within(trigger).getByText("Alpha");
+    expect(indicator.parentElement?.parentElement).toBe(trigger);
+    expect(label.nextElementSibling).toBe(indicator);
     expect(
       indicator.querySelector('[data-icon="FilterMailCircle"]'),
     ).not.toBeNull();
@@ -61,9 +66,7 @@ describe("ThreadFilter", () => {
     expect(
       actionsContainer.getAttribute("data-sidebar-hover-actions-open"),
     ).toBe("true");
-    expect(indicator.getAttribute("data-sidebar-hover-actions-open")).toBe(
-      "true",
-    );
+    expect(screen.getByLabelText("Threads are filtered")).toBe(indicator);
 
     rerender(
       <ThreadFilter
@@ -114,6 +117,9 @@ describe("ThreadFilter", () => {
     );
     expect(within(menu).getByText("Projects")).toBeDefined();
     expect(within(menu).getByText("Sections")).toBeDefined();
+    expect(within(menu).getAllByRole("separator")).toHaveLength(3);
+    expect(within(menu).getByRole("group", { name: "Projects" })).toBeDefined();
+    expect(within(menu).getByRole("group", { name: "Sections" })).toBeDefined();
     expect(
       within(menu)
         .getAllByRole("menuitemradio")
@@ -359,6 +365,43 @@ describe("ThreadFilter", () => {
     expect(onNewProject).toHaveBeenCalledOnce();
     expect(onNewSection).toHaveBeenCalledOnce();
     expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("runs creation actions from the dropdown without changing the filter", () => {
+    const onChange = vi.fn();
+    const onNewProject = vi.fn();
+    const onNewSection = vi.fn();
+    render(
+      <ThreadFilter
+        projects={projects}
+        sections={sections}
+        value={null}
+        onChange={onChange}
+        onNewProject={onNewProject}
+        onNewSection={onNewSection}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", {
+      name: "Projects and sections",
+    });
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(
+      within(screen.getByRole("menu")).getByRole("menuitem", {
+        name: "New project",
+      }),
+    );
+
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(
+      within(screen.getByRole("menu")).getByRole("menuitem", {
+        name: "New section",
+      }),
+    );
+
+    expect(onNewProject).toHaveBeenCalledOnce();
+    expect(onNewSection).toHaveBeenCalledOnce();
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it("keeps the creation actions visible while the filter menu is open", () => {
