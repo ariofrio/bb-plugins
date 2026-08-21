@@ -1,5 +1,40 @@
 # bb-plugin-thread-stages
 
+## 0.6.3
+
+### Patch Changes
+
+- 4a64b4a: Clarify the unfiltered thread filter as Projects or Projects and sections while
+  retaining the All choice in its menu. The control shows the selected project or
+  section icon, including the personal Threads chat fallback when Icons is absent,
+  and a trailing indicator while filtering. Project and section choices expose
+  BB's native settings, rename, local-path, and removal actions through hoverable
+  submenus and right-click; the filter and stage headers also gain built-in-style
+  display option menus.
+- a49ecf7: Refresh every stage icon, include stage and section icons in thread action
+  menus, show nonzero counts only in collapsed stage headers, and add an opt-in
+  experimental aggregate activity indicator aligned with thread indicators.
+  Use BB's registry dropdown and context-menu components so every menu shares its
+  native motion, focus, hover, responsive, and portal behavior.
+- c54050c: Let a bb thread section hold an icon the way a project does.
+  
+  Icons are now keyed by an owner kind and an id rather than a project id, so the
+  two never collide, and the RPC contract follows: `listIcons`, `setIcon`, and
+  `clearIcon` in place of their project-only spellings. Existing choices migrate
+  across untouched.
+  
+  Sections default to bb's own section mark. Projects default to a folder and the
+  personal project to a chat bubble because bb draws them that way itself, and a
+  section has the same claim — but Hugeicons has no matching glyph, which is why
+  Thread stages already composes its own SectionAdd. This is that mark without
+  the plus.
+  
+  bb publishes no event when a section is created, renamed, or removed, so an
+  icon whose section is gone can only be found by comparing against the live
+  list. The cleanup service sweeps on start and after each write, which keeps the
+  read path free of a round-trip it would otherwise pay on every header mount.
+- 78424bf: Start new clients with Backlog, Done, and Canceled collapsed while preserving saved sidebar choices.
+
 ## 0.6.2
 
 ### Patch Changes

@@ -1,5 +1,64 @@
 # bb-plugin-project-breadcrumbs
 
+## 0.4.0
+
+### Minor Changes
+
+- 9544123: Show the thread's section and the threads it came from, each switchable on its
+  own.
+  
+  The section crumb opens the menu bb's own sidebar section header opens —
+  Rename and Remove, with bb's wording for both — backed by bb's section SDK.
+  Ancestor crumbs walk from the thread to its root, so a fork or a side chat
+  reads `Section > Project > Parent > This thread`, and each one opens that
+  thread.
+  
+  The section is resolved on the backend from a thread id rather than read from
+  the sidebar's live view, because that view hydrates a thread's `sectionId`
+  separately from the thread itself and bb publishes no event when a section
+  changes.
+
+### Patch Changes
+
+- 0ad30ec: Say that the trail follows parents, not forks.
+  
+  The setting and the README both promised "every thread this one was forked or
+  spawned under", which the trail never did and should not: bb gives a thread
+  spawned under another a `parentThreadId` and nests it in the sidebar, while a
+  fork gets a `sourceThreadId` and no parent, and bb shows a fork's origin
+  elsewhere. Only the wording changes; a test now holds the line.
+- c8f4fc0: Give every control this repo adds to bb's thread header the hover bb's own
+  controls use: the fill snaps in and eases out, and an open menu holds the
+  active fill.
+  
+  The ChatGPT theme also stops reaching into what plugins draw. One rule matched
+  icon-only buttons by shape — `size-7` and `text-muted-foreground` — rather than
+  by where they are, which caught the icon this repo adds to the header and gave
+  it a dimmer fill than the button beside it, with a colour that never lifted on
+  hover. It now skips anything inside a plugin's own root.
+- 35f2fc0: Let the icon and the crumbs share bb's thread header.
+  
+  Both plugins put a node of their own at the head of that header, and both
+  looked for bb's title at `center.firstElementChild` — so whichever arrived
+  first became that child and the other found a sibling plugin's node with no
+  title in it and gave up. The title is now found by what it holds, skipping
+  anything marked as a plugin's root, which makes it independent of who arrives
+  first.
+  
+  The crumbs also render in a React root of their own, scheduled on an animation
+  frame. bb refuses to put a React-owned node under a container React does not
+  own while any plugin is attributed on its stack, and it keeps that attribution
+  across `setTimeout` and `queueMicrotask`; `requestAnimationFrame` is left
+  native, so a frame callback runs unattributed.
+- 716aebc: Describe what each plugin now does.
+  
+  Icons covers projects and thread sections, on bb's own sidebar headers as well
+  as the thread header, with either placement switchable. Breadcrumbs shows a
+  thread's section, its project, and the threads it came from, each switchable.
+  
+  The screenshot fixture seeded icons through the RPC name the rename replaced,
+  so a capture failed on the first project it reached.
+
 ## 0.3.0
 
 ### Minor Changes
