@@ -359,13 +359,17 @@ main .bg-card button[class~="border-input"][class~="bg-transparent"]:hover {
   background-color: var(--chatgpt-button-fill-hover);
 }
 
-/* Icon-only Settings actions are tertiary until their component hover. */
-main button[class~="size-7"][class~="text-muted-foreground"] {
+/* Icon-only Settings actions are tertiary until their component hover.
+   Matched by shape rather than by place, so it reaches anything shaped like
+   one — including controls a plugin draws into bb's own chrome, which then
+   hover a different colour from everything beside them. A theme dresses bb;
+   what a plugin renders is that plugin's to style. */
+main button[class~="size-7"][class~="text-muted-foreground"]:not([data-bb-plugin-root] *) {
   background-color: transparent;
   color: var(--subtle-foreground);
 }
 
-main button[class~="size-7"][class~="text-muted-foreground"]:hover {
+main button[class~="size-7"][class~="text-muted-foreground"]:not([data-bb-plugin-root] *):hover {
   background-color: var(--sidebar-accent);
   color: var(--subtle-foreground);
 }

@@ -190,7 +190,7 @@ function IconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
       onFocus={() => setWanted(true)}
       // The desktop header is a window drag region, so an interactive control
       // inside it has to opt out or Electron swallows the click.
-      className="relative z-50 -ml-0.5 flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground [app-region:no-drag] [-webkit-app-region:no-drag]"
+      className="relative z-50 -ml-0.5 flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:duration-0 hover:bg-state-hover hover:text-foreground data-[state=open]:bg-state-active data-[state=open]:text-foreground [app-region:no-drag] [-webkit-app-region:no-drag]"
     >
       <IconGlyph name={icon} glyph={glyph} color={color} />
     </button>

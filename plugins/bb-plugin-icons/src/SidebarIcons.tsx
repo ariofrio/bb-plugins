@@ -79,7 +79,7 @@ function SidebarIcon({
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
       onDragStart={(event) => event.preventDefault()}
-      className="relative z-20 inline-flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm text-subtle-foreground transition-colors hover:text-foreground"
+      className="relative z-20 inline-flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm text-subtle-foreground transition-colors duration-150 hover:duration-0 hover:text-foreground"
     >
       {glyphNode}
     </button>
