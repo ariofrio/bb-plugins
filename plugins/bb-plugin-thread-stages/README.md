@@ -48,7 +48,7 @@ Add this repository as a bb marketplace, then install the plugin from it:
 
 ```sh
 bb marketplace add git:github.com/ariofrio/bb-plugins
-bb plugin install thread-stages@ariofrio-bb-plugins
+bb plugin install thread-stages@ariofrio
 ```
 
 Skip the first line if you already added the marketplace for another plugin.

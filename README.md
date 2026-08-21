@@ -69,7 +69,7 @@ bb marketplace add git:github.com/ariofrio/bb-plugins
 Or install one of them from the command line:
 
 ```sh
-bb plugin install chatgpt-theme@ariofrio-bb-plugins
+bb plugin install chatgpt-theme@ariofrio
 ```
 
 The entry ids are `breadcrumbs`, `chatgpt-theme`, `icons`,

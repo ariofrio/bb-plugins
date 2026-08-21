@@ -1,7 +1,7 @@
 {
   "$schema": "https://getbb.app/schemas/marketplace.schema.json",
   "schemaVersion": 1,
-  "name": "ariofrio-bb-plugins",
+  "name": "ariofrio",
   "displayName": "Andres Riofrio's bb plugins",
   "description": "Plugins for bb maintained by Andres Riofrio.",
   "plugins": [

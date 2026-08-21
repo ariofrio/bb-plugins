@@ -13,7 +13,7 @@ const collection = await readJson(new URL("../.bb/plugins.json", import.meta.url
 test("publishes every repository plugin from its immutable release line", async () => {
   assert.equal(marketplace.$schema, "https://getbb.app/schemas/marketplace.schema.json");
   assert.equal(marketplace.schemaVersion, 1);
-  assert.equal(marketplace.name, "ariofrio-bb-plugins");
+  assert.equal(marketplace.name, "ariofrio");
   assert.equal(marketplace.displayName, "Andres Riofrio's bb plugins");
 
   const listings = new Map(marketplace.plugins.map((plugin) => [plugin.id, plugin]));
