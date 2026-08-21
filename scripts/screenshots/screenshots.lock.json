@@ -20,11 +20,11 @@
       }
     },
     "icons": {
-      "inputs": "8e773f25229c3d63915f82acda1e9b5b0bc52632c73f8b08b7caa35720ae7f2e",
+      "inputs": "0c16745a22502a5c1b138ff9abd3d60b7da66af5c9405ecbb692e8d26970c77b",
       "files": {
-        "screenshot-light.png": "a52a498fb5916c5c7e0ef4115c08e6c3691ef9b6cb11f475cc04519574a37876",
-        "screenshot-dark.png": "3b7367e69b2fe07b048fbb18ceb64563dfde89587c3f49841e985816c34b1b90",
-        "card-light.png": "d92c893c867d16224635ca22dca9771bd3ad691585160fb4804e8331888c70fc",
+        "screenshot-light.png": "3610f8d44aee6ee066fbace9ce6f682d5ebc70908df559f066d4c130272ab47e",
+        "screenshot-dark.png": "729032c1368819aed2c51ab628e10d57afde2357b8c37848f405079c1be1c547",
+        "card-light.png": "8ebebffbc83d2c12c52a05c16f5e25336a36808ec6b3da14e5be365a7dddce32",
         "card-dark.png": "638be644b0ed31b8e92b6a9c5e942582e92fcadd21887c74383769dfc7598807"
       }
     },

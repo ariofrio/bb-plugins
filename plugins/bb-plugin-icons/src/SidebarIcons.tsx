@@ -67,6 +67,10 @@ function SidebarIcon({
       type="button"
       aria-label={`Icon for ${name}`}
       title="Change icon"
+      // Fetched on approach, so the picker is whole when it opens rather than
+      // arriving and then filling in. loadCatalog only ever runs once.
+      onPointerEnter={onOpenPicker}
+      onFocus={onOpenPicker}
       // bb's group header is a drag handle and a collapse target, so the
       // control keeps the event from reaching either. It stops propagation
       // only: the picker's own trigger listens on this same button, and Radix

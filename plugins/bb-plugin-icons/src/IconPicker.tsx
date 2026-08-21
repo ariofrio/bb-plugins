@@ -2,6 +2,7 @@ import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   type ReactElement,
   useEffect,
+  useLayoutEffect,
   useId,
   useMemo,
   useRef,
@@ -62,7 +63,7 @@ export function IconPicker({
   trigger,
 }: IconPickerProps) {
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [chosenCategory, setChosenCategory] = useState<string | null>(null);
   const [categoryOverflow, setCategoryOverflow] = useState({
     left: false,
     right: false,
@@ -73,6 +74,17 @@ export function IconPicker({
   });
   const [catalogScroller, setCatalogScroller] =
     useState<HTMLDivElement | null>(null);
+  /**
+   * Whether the scroll fades may animate yet.
+   *
+   * They are measured from a scroller this component only learns about through
+   * a ref callback, and from a catalog that arrives over RPC, so the first
+   * honest value always lands after the popover has painted. Transitioning to
+   * it turns the picker's arrival into two movements — the popover, then a
+   * fade a beat behind it. The fades therefore appear at their measured
+   * opacity and only start transitioning on the frame after that.
+   */
+  const [fadesMayAnimate, setFadesMayAnimate] = useState(false);
   const isCompactViewport = useIsCompactViewport();
   const titleId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -91,11 +103,19 @@ export function IconPicker({
     [groups, results, searching],
   );
 
-  useEffect(() => {
-    if (!visibleGroups.some(({ name }) => name === activeCategory)) {
-      setActiveCategory(visibleGroups[0]?.name ?? null);
-    }
-  }, [activeCategory, visibleGroups]);
+  /**
+   * Derived while rendering rather than chosen in an effect.
+   *
+   * A chip carries `transition-colors`, so selecting the first category after
+   * mount animates it from unselected to selected — a second, later movement
+   * on top of the popover's own entrance, which is not what bb's static menus
+   * do. Naming the category during the same render paints it selected once.
+   */
+  const activeCategory =
+    chosenCategory !== null &&
+    visibleGroups.some(({ name }) => name === chosenCategory)
+      ? chosenCategory
+      : (visibleGroups[0]?.name ?? null);
 
   useEffect(() => {
     if (activeCategory === null) return;
@@ -116,7 +136,7 @@ export function IconPicker({
     });
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     updateCategoryOverflow();
     window.addEventListener("resize", updateCategoryOverflow);
     return () => window.removeEventListener("resize", updateCategoryOverflow);
@@ -124,6 +144,9 @@ export function IconPicker({
 
   const updateCatalogOverflow = (scroller = catalogScroller) => {
     if (scroller === null) return;
+    if (!fadesMayAnimate) {
+      requestAnimationFrame(() => setFadesMayAnimate(true));
+    }
     setCatalogOverflow({
       top: scroller.scrollTop > 1,
       bottom:
@@ -131,7 +154,12 @@ export function IconPicker({
     });
   };
 
-  useEffect(() => {
+  /**
+   * Layout, not effect: the fades carry `transition-opacity`, so measuring
+   * after the browser has painted makes them fade in a beat behind the popover
+   * instead of simply being there.
+   */
+  useLayoutEffect(() => {
     const scroller = catalogScroller;
     if (scroller === null) return;
     updateCatalogOverflow(scroller);
@@ -166,7 +194,7 @@ export function IconPicker({
   };
 
   const jumpToCategory = (name: string) => {
-    setActiveCategory(name);
+    setChosenCategory(name);
     sectionRefs.current.get(name)?.scrollIntoView({
       behavior: "smooth",
       block: "start",
@@ -185,7 +213,7 @@ export function IconPicker({
         next = name;
       } else if (section !== undefined) break;
     }
-    if (next !== null) setActiveCategory(next);
+    if (next !== null) setChosenCategory(next);
   };
 
   return (
@@ -199,7 +227,14 @@ export function IconPicker({
         mobileTitle={null}
         style={isCompactViewport ? undefined : { width: 386 }}
       >
-        <div className="flex h-[calc(var(--radix-popover-content-available-height)-2rem)] max-h-[32rem] flex-col gap-3 pr-1 max-md:h-[calc(85dvh-3rem)] max-md:max-h-none">
+        {/*
+          A guard, not a fix for anything observed: Radix only sets
+          --radix-popover-content-available-height once it has measured, and
+          without a fallback the calc() is invalid until then, leaving the box
+          to whatever its content happens to be. 32rem matches the max-height
+          below, so a measured value only ever shrinks it.
+        */}
+        <div className="flex h-[calc(var(--radix-popover-content-available-height,32rem)-2rem)] max-h-[32rem] flex-col gap-3 pr-1 max-md:h-[calc(85dvh-3rem)] max-md:max-h-none">
           <PopoverTitle id={titleId} className="sr-only">
             Icon for {ownerName}
           </PopoverTitle>
@@ -274,7 +309,7 @@ export function IconPicker({
             ) : null}
           </div>
 
-          {visibleGroups.length > 0 ? (
+          {visibleGroups.length > 0 || loading ? (
             <nav
               aria-label="Icon categories"
               className="flex min-w-0 items-center gap-1"
@@ -375,13 +410,13 @@ export function IconPicker({
               aria-hidden
               data-scroll-fade="top"
               style={{ opacity: catalogOverflow.top ? 1 : 0 }}
-              className="pointer-events-none absolute inset-x-0 top-0 z-10 h-6 bg-gradient-to-b from-popover to-transparent transition-opacity"
+              className={`pointer-events-none absolute inset-x-0 top-0 z-10 h-6 bg-gradient-to-b from-popover to-transparent ${fadesMayAnimate ? "transition-opacity" : ""}`}
             />
             <div
               aria-hidden
               data-scroll-fade="bottom"
               style={{ opacity: catalogOverflow.bottom ? 1 : 0 }}
-              className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-6 bg-gradient-to-t from-popover to-transparent transition-opacity"
+              className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 h-6 bg-gradient-to-t from-popover to-transparent ${fadesMayAnimate ? "transition-opacity" : ""}`}
             />
           </div>
         </div>

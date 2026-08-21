@@ -81,6 +81,15 @@ function IconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
   const [picking, setPicking] = useState(false);
   const [catalog, setCatalog] = useState<readonly CatalogIcon[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
+  /**
+   * Set when the pointer reaches the icon, before any click.
+   *
+   * The catalog is 2,532 icons and deliberately not in the bundle, so opening
+   * cold means the popover arrives, then its categories and grid land a beat
+   * later — one movement answered by a second. Fetching on approach keeps the
+   * bundle small and still has the picker whole by the time it opens.
+   */
+  const [wanted, setWanted] = useState(false);
 
   const refresh = useCallback(async () => {
     const state = await rpc.call("listIcons", null);
@@ -90,13 +99,13 @@ function IconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
 
   // The catalog is big, so it is fetched the first time the picker opens.
   useEffect(() => {
-    if (!picking || catalog.length > 0 || loadingCatalog) return;
+    if ((!picking && !wanted) || catalog.length > 0 || loadingCatalog) return;
     setLoadingCatalog(true);
     void rpc
       .call("listIconCatalog", null)
       .then(({ icons: entries }) => setCatalog(entries))
       .finally(() => setLoadingCatalog(false));
-  }, [catalog.length, loadingCatalog, picking, rpc]);
+  }, [catalog.length, loadingCatalog, picking, rpc, wanted]);
 
   useEffect(() => {
     void refresh();
@@ -177,6 +186,8 @@ function IconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
       type="button"
       aria-label={`Icon for ${ownerName}`}
       title="Change project icon"
+      onPointerEnter={() => setWanted(true)}
+      onFocus={() => setWanted(true)}
       // The desktop header is a window drag region, so an interactive control
       // inside it has to opt out or Electron swallows the click.
       className="relative z-50 -ml-0.5 flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-state-hover hover:text-foreground [app-region:no-drag] [-webkit-app-region:no-drag]"
