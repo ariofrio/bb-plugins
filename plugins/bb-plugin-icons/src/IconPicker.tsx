@@ -19,6 +19,14 @@ import {
   iconColorStyle,
 } from "./icon-colors";
 import { ICON_COLORS, type IconColor } from "./store";
+import {
+  ROW_HEIGHT,
+  chunkRows,
+  gridHeight,
+  sameRange,
+  visibleRows,
+  type RowRange,
+} from "./virtual-rows";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { useIsCompactViewport } from "@/components/ui/hooks/use-compact-viewport";
@@ -85,6 +93,8 @@ export function IconPicker({
    * opacity and only start transitioning on the frame after that.
    */
   const [fadesMayAnimate, setFadesMayAnimate] = useState(false);
+  /** Bumped when the scroll area changes shape, so categories re-window. */
+  const [resizeTick, setResizeTick] = useState(0);
   const isCompactViewport = useIsCompactViewport();
   const titleId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -375,7 +385,7 @@ export function IconPicker({
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {visibleGroups.map(({ name, entries }, index) => {
+                    {visibleGroups.map(({ name, entries }) => {
                       const headingId = `${titleId}-${name}`;
                       return (
                         <section
@@ -385,7 +395,7 @@ export function IconPicker({
                             else sectionRefs.current.set(name, node);
                           }}
                           aria-labelledby={headingId}
-                          className="scroll-mt-1 [content-visibility:auto] [contain-intrinsic-size:auto_12rem]"
+                          className="scroll-mt-1"
                         >
                           <h3
                             id={headingId}
@@ -393,13 +403,14 @@ export function IconPicker({
                           >
                             {titleCase(categoryLabel(name))}
                           </h3>
-                          <LazyIconGrid
+                          <IconGrid
                             entries={entries}
                             icon={icon}
                             color={color}
                             onPick={onPick}
                             scroller={catalogScroller}
-                            eager={index < EAGER_CATEGORIES}
+                            virtualize={!isCompactViewport}
+                            resizeTick={resizeTick}
                           />
                         </section>
                       );
@@ -485,121 +496,156 @@ function CategoryChip({
   );
 }
 
-/** Columns in the icon grid; the placeholder needs the same number. */
-const GRID_COLUMNS = 11;
-
 /**
- * How many categories are drawn without waiting to be looked at.
+ * Draws only the rows of a category that are near the viewport.
  *
- * One, measured. None leaves the observer to start every category, and the
- * first icons take 117ms to appear; three costs so much first paint that the
- * entrance animation runs on a blocked thread and reads as a snap. One puts
- * icons on screen in 61ms and leaves the animation nearly its full 150ms.
- */
-const EAGER_CATEGORIES = 1;
-
-/**
- * Holds a category's place until it is nearly on screen.
+ * The catalog is 2,532 icons. Drawing every one of them put over fourteen
+ * thousand nodes in the popover, where bb's own menus hold about twenty-five,
+ * and the cost landed where it shows most: the browser built the whole grid
+ * before it could paint, so the picker arrived late, and its entrance
+ * animation ran on a blocked thread, dropping frames until it snapped into
+ * place rather than easing.
  *
- * The catalog is 2,532 icons, and rendering every one of them put over
- * fourteen thousand nodes in the popover — bb's own menus hold about
- * twenty-five. The cost lands exactly where it is most visible: the browser
- * builds the whole grid before it can paint, so the popover is late, and the
- * entrance animation runs while the main thread is busy, so its frames are
- * dropped and it snaps into place instead of easing. The section keeps its
- * `contain-intrinsic-size`, so the scrollbar still describes the whole
- * catalog while only what is near the viewport actually exists.
+ * A category holds its full height whether or not its rows exist, so the
+ * scrollbar always describes the whole catalog and nothing shifts underneath
+ * the pointer. Rows are measured against the scroller rather than observed
+ * individually: one listener per category, and a range that only changes when
+ * the window of rows actually moves.
+ *
+ * A compact viewport lays the grid out with as many columns as fit rather than
+ * a fixed eleven, so the row arithmetic would not hold; there the grid is
+ * drawn whole.
  */
-function LazyIconGrid({
+function IconGrid({
   entries,
   icon,
   color,
   onPick,
   scroller,
-  eager,
+  virtualize,
+  resizeTick,
 }: {
   entries: readonly CatalogIcon[];
   icon: string;
   color: IconColor | null;
   onPick: (icon: string) => void;
   scroller: HTMLDivElement | null;
-  eager: boolean;
+  virtualize: boolean;
+  resizeTick: number;
 }) {
-  const placeholderRef = useRef<HTMLDivElement>(null);
-  const [rendered, setRendered] = useState(eager);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const rows = useMemo(() => chunkRows(entries), [entries]);
+  const [range, setRange] = useState<RowRange>({ start: 0, end: 0 });
 
-  useEffect(() => {
-    if (rendered) return;
-    const node = placeholderRef.current;
-    if (node === null || typeof IntersectionObserver === "undefined") {
-      setRendered(true);
-      return;
-    }
-    const observer = new IntersectionObserver(
-      (entriesSeen) => {
-        if (entriesSeen.some((seen) => seen.isIntersecting)) setRendered(true);
-      },
-      // Ahead of the scroll, so a category is drawn before it is looked at.
-      { root: scroller, rootMargin: "400px" },
+  // Measured before the browser paints, so the first frame already carries
+  // the rows that belong on screen rather than filling in behind the popover.
+  useLayoutEffect(() => {
+    if (!virtualize || scroller === null) return;
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const grid = gridRef.current;
+      if (grid === null) return;
+      // offsetTop and scrollTop, not bounding rects: every category measures
+      // itself, and asking each one for a rect forces the browser to lay the
+      // whole scroller out again, dozens of times, in the same frame the
+      // popover is trying to appear in. The scroll area is the offset parent,
+      // so subtracting the scroll gives the same number for nothing.
+      const next = visibleRows(
+        grid.offsetTop - scroller.scrollTop,
+        scroller.clientHeight,
+        rows.length,
+      );
+      setRange((current) => (sameRange(current, next) ? current : next));
+    };
+    // Scrolling fires far faster than the screen refreshes; one measure a
+    // frame keeps the work off the critical path.
+    const onScroll = () => {
+      if (frame === 0) frame = requestAnimationFrame(measure);
+    };
+    measure();
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      if (frame !== 0) cancelAnimationFrame(frame);
+      scroller.removeEventListener("scroll", onScroll);
+    };
+    // resizeTick stands in for the scroller changing shape: the picker already
+    // watches it, and thirty-two categories each adding their own observer to
+    // the same element would be that much waste for the same answer.
+  }, [resizeTick, rows.length, scroller, virtualize]);
+
+  if (!virtualize) {
+    return (
+      <div className="grid grid-cols-11 gap-1 max-md:grid-cols-[repeat(auto-fill,1.75rem)]">
+        {entries.map((entry) => (
+          <IconButton
+            key={entry.name}
+            entry={entry}
+            icon={icon}
+            color={color}
+            onPick={onPick}
+          />
+        ))}
+      </div>
     );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [rendered, scroller]);
-
-  if (rendered) {
-    return <IconGrid entries={entries} icon={icon} color={color} onPick={onPick} />;
   }
-  // Sized like the grid it stands in for — 11 to a row, each row a 28px
-  // button and 4px of gap — so swapping one in never moves the scrollbar
-  // under the pointer.
-  const rows = Math.ceil(entries.length / GRID_COLUMNS);
+
+  const drawn = rows.slice(range.start, range.end);
   return (
-    <div
-      ref={placeholderRef}
-      aria-hidden
-      style={{ height: rows * 32 - 4 }}
-    />
+    <div ref={gridRef} style={{ height: gridHeight(rows.length) }}>
+      <div style={{ transform: `translateY(${range.start * ROW_HEIGHT}px)` }}>
+        {drawn.map((row, index) => (
+          <div
+            key={range.start + index}
+            className="grid grid-cols-11 gap-1"
+            style={{ height: ROW_HEIGHT - 4, marginBottom: 4 }}
+          >
+            {row.map((entry) => (
+              <IconButton
+                key={entry.name}
+                entry={entry}
+                icon={icon}
+                color={color}
+                onPick={onPick}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
-function IconGrid({
-  entries,
+/** One icon in the grid, drawn the same whether or not rows are windowed. */
+function IconButton({
+  entry,
   icon,
   color,
   onPick,
 }: {
-  entries: readonly CatalogIcon[];
+  entry: CatalogIcon;
   icon: string;
   color: IconColor | null;
   onPick: (icon: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-11 gap-1 max-md:grid-cols-[repeat(auto-fill,1.75rem)]">
-      {entries.map((entry) => (
-        <button
-          key={entry.name}
-          type="button"
-          title={iconLabel(entry.name)}
-          aria-label={iconLabel(entry.name)}
-          aria-pressed={entry.name === icon}
-          onClick={() => onPick(entry.name)}
-          style={iconColorStyle(color)}
-          className={`flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors ${
-            entry.name === icon
-              ? "bg-state-active"
-              : color === null
-                ? "text-muted-foreground hover:bg-state-hover hover:text-foreground"
-                : "hover:bg-state-hover"
-          }`}
-        >
-          <HugeiconsIcon
-            icon={entry.glyph}
-            className="size-[18px]"
-            aria-hidden
-          />
-        </button>
-      ))}
-    </div>
+    <button
+      type="button"
+      title={iconLabel(entry.name)}
+      aria-label={iconLabel(entry.name)}
+      aria-pressed={entry.name === icon}
+      onClick={() => onPick(entry.name)}
+      style={iconColorStyle(color)}
+      className={`flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 hover:duration-0 ${
+        entry.name === icon
+          ? "bg-state-active"
+          : color === null
+            ? "text-muted-foreground hover:bg-state-hover hover:text-foreground"
+            : "hover:bg-state-hover"
+      }`}
+    >
+      <HugeiconsIcon icon={entry.glyph} className="size-[18px]" aria-hidden />
+    </button>
   );
 }
 

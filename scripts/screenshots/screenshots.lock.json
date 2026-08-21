@@ -20,10 +20,10 @@
       }
     },
     "icons": {
-      "inputs": "c8ca589965dea6cd3a7050d75d4c72b88a8f13b4b678c539490503f74876ac3d",
+      "inputs": "8e764e559f219cb6506c67420191351ddaf0f4bc1dd6bfa7538dd73ef23fd0b7",
       "files": {
-        "screenshot-light.png": "ca1aa4b0b9570a60fb3ea82500a79de38cf23df25ff9587841f2742dad9097cc",
-        "screenshot-dark.png": "515d351617cec7b5865e6655fd8175fafa6a9367614faa92ff9d6f8a6227236c",
+        "screenshot-light.png": "62109826e84347d0c2f111994e43fa88e472e672d07764b6efffe478a0972afa",
+        "screenshot-dark.png": "1d7951b58668b21cdac47b650fe131fe8db243257399062989c5232f9c562f6b",
         "card-light.png": "199d557b37e68beab3dfb1da50f357950dd69365a14628a048b51b0eba5fd750",
         "card-dark.png": "e34ae475e2a1bfe9487811e084ad26a6420027c6b03d33d2e22f63e4d639b63a"
       }
