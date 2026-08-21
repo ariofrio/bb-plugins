@@ -10,74 +10,94 @@
 
 <br>
 
-<table>
-  <thead>
-    <tr>
-      <th align="center" width="33%">Organization</th>
-      <th align="center" width="33%">Navigation</th>
-      <th align="center" width="33%">Themes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-thread-stages#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-thread-stages/assets/card-dark.png"><img src="plugins/bb-plugin-thread-stages/assets/card-light.png" alt="Thread stages grouping the bb sidebar into Backlog, To do, Working, Blocked, and Done" width="100%"></picture></a></p>
-        <p><a href="plugins/bb-plugin-thread-stages#readme"><img src="plugins/bb-plugin-thread-stages/assets/icon.svg" alt="" width="40" height="40"><br><strong>Thread stages</strong></a></p>
-        <p>Group threads in the sidebar into stages from Backlog to Done, updating as they run.</p>
-        <p></p>
-      </td>
-      <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-breadcrumbs#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-breadcrumbs/assets/card-dark.png"><img src="plugins/bb-plugin-breadcrumbs/assets/card-light.png" alt="The Storefront project and its actions menu in a bb thread header" width="100%"></picture></a></p>
-        <p><a href="plugins/bb-plugin-breadcrumbs#readme"><img src="plugins/bb-plugin-breadcrumbs/assets/icon.svg" alt="" width="40" height="40"><br><strong>Breadcrumbs</strong></a></p>
-        <p>Show a thread's section, project, and ancestors in its header.</p>
-        <p></p>
-      </td>
-      <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-chatgpt-theme#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-dark.png"><img src="plugins/bb-plugin-chatgpt-theme/assets/card-light.png" alt="bb wearing the ChatGPT palette, its light and dark halves meeting along the diagonal" width="100%"></picture></a></p>
-        <p><a href="plugins/bb-plugin-chatgpt-theme#readme"><img src="plugins/bb-plugin-chatgpt-theme/assets/icon.svg" alt="" width="40" height="40"><br><strong>ChatGPT theme</strong></a></p>
-        <p>Restyle bb to match the OpenAI ChatGPT (Codex) desktop app.</p>
-        <p></p>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-icons#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-icons/assets/card-dark.png"><img src="plugins/bb-plugin-icons/assets/card-light.png" alt="The icon picker open on the Storefront project's icon in a bb thread header" width="100%"></picture></a></p>
-        <p><a href="plugins/bb-plugin-icons#readme"><img src="plugins/bb-plugin-icons/assets/icon.svg" alt="" width="40" height="40"><br><strong>Icons</strong></a></p>
-        <p>Give each project and section an icon and color.</p>
-        <p></p>
-      </td>
-      <td valign="top" align="center">
-        <p><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><picture><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-dark.png"><img src="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-light.png" alt="A bb side chat opened with the ⇧⌘L shortcut" width="100%"></picture></a></p>
-        <p><a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><img src="plugins/bb-plugin-missing-keyboard-shortcuts/assets/icon.svg" alt="" width="40" height="40"><br><strong>Missing keyboard shortcuts</strong></a></p>
-        <p>Add shortcuts to start personal or project threads, navigate history, and reach the composer or panel tabs.</p>
-        <p></p>
-      </td>
-      <td></td>
-    </tr>
-  </tbody>
-</table>
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.png"><img src="assets/hero-light.png" alt="bb with Thread stages, Icons, and Breadcrumbs at work"></picture></p>
 
-## Install
+<br>
 
-Add this repository as a bb marketplace, then choose any of its plugins in
-Settings → Plugins:
+## Plugins
+
+<br clear="all">
+
+<a href="plugins/bb-plugin-thread-stages#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-thread-stages/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-thread-stages/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-thread-stages/assets/card-beside-dark.png"><img src="plugins/bb-plugin-thread-stages/assets/card-beside-light.png" alt="Thread stages grouping the bb sidebar into Backlog, To do, Working, Blocked, and Done" align="right" width="45%"></picture></a>
+
+### <img src="assets/icons/thread-stages.svg" alt="" width="26" align="absmiddle"> &nbsp;Thread stages
+
+Group threads in the sidebar into stages from Backlog to Done, updating as they run.
 
 ```sh
 bb marketplace add git:github.com/ariofrio/bb-plugins
+bb plugin install thread-stages@ariofrio
 ```
 
-Or install one of them from the command line:
+<a href="plugins/bb-plugin-thread-stages#readme">Read more &rarr;</a>
+
+<picture><source media="(min-width: 881px)" srcset="assets/blank.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/rule-dark.svg"><img src="assets/rule-light.svg" alt="" width="1120" height="1"></picture><br clear="all">
+
+<a href="plugins/bb-plugin-icons#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-icons/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-icons/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-icons/assets/card-beside-dark.png"><img src="plugins/bb-plugin-icons/assets/card-beside-light.png" alt="The icon picker open on the Storefront project's icon in a bb thread header" align="right" width="45%"></picture></a>
+
+### <img src="assets/icons/icons.svg" alt="" width="26" align="absmiddle"> &nbsp;Icons
+
+Give each project and section an icon and color.
 
 ```sh
+bb marketplace add git:github.com/ariofrio/bb-plugins
+bb plugin install icons@ariofrio
+```
+
+<a href="plugins/bb-plugin-icons#readme">Read more &rarr;</a>
+
+<picture><source media="(min-width: 881px)" srcset="assets/blank.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/rule-dark.svg"><img src="assets/rule-light.svg" alt="" width="1120" height="1"></picture><br clear="all">
+
+<a href="plugins/bb-plugin-breadcrumbs#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-breadcrumbs/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-breadcrumbs/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-breadcrumbs/assets/card-beside-dark.png"><img src="plugins/bb-plugin-breadcrumbs/assets/card-beside-light.png" alt="The Storefront project and its actions menu in a bb thread header" align="right" width="45%"></picture></a>
+
+### <img src="assets/icons/breadcrumbs.svg" alt="" width="26" align="absmiddle"> &nbsp;Breadcrumbs
+
+Show a thread's section, project, and ancestors in its header.
+
+```sh
+bb marketplace add git:github.com/ariofrio/bb-plugins
+bb plugin install breadcrumbs@ariofrio
+```
+
+<a href="plugins/bb-plugin-breadcrumbs#readme">Read more &rarr;</a>
+
+<picture><source media="(min-width: 881px)" srcset="assets/blank.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/rule-dark.svg"><img src="assets/rule-light.svg" alt="" width="1120" height="1"></picture><br clear="all">
+
+<a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-beside-dark.png"><img src="plugins/bb-plugin-missing-keyboard-shortcuts/assets/card-beside-light.png" alt="A bb side chat opened with the ⇧⌘L shortcut" align="right" width="45%"></picture></a>
+
+### <img src="assets/icons/missing-keyboard-shortcuts.svg" alt="" width="26" align="absmiddle"> &nbsp;Missing keyboard shortcuts
+
+Add shortcuts to start personal or project threads, navigate history, and reach the composer or panel tabs.
+
+```sh
+bb marketplace add git:github.com/ariofrio/bb-plugins
+bb plugin install missing-keyboard-shortcuts@ariofrio
+```
+
+<a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Read more &rarr;</a>
+
+<picture><source media="(min-width: 881px)" srcset="assets/blank.svg"><source media="(prefers-color-scheme: dark)" srcset="assets/rule-dark.svg"><img src="assets/rule-light.svg" alt="" width="1120" height="1"></picture><br clear="all">
+
+<a href="plugins/bb-plugin-chatgpt-theme#readme"><picture><source media="(max-width: 880px) and (prefers-color-scheme: dark)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-dark.png" width="1120"><source media="(max-width: 880px)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-light.png" width="1120"><source media="(prefers-color-scheme: dark)" srcset="plugins/bb-plugin-chatgpt-theme/assets/card-beside-dark.png"><img src="plugins/bb-plugin-chatgpt-theme/assets/card-beside-light.png" alt="bb wearing the ChatGPT palette, its light and dark halves meeting along the diagonal" align="right" width="45%"></picture></a>
+
+### <img src="assets/icons/chatgpt-theme.svg" alt="" width="26" align="absmiddle"> &nbsp;ChatGPT theme
+
+Restyle bb to match the OpenAI ChatGPT (Codex) desktop app.
+
+```sh
+bb marketplace add git:github.com/ariofrio/bb-plugins
 bb plugin install chatgpt-theme@ariofrio
 ```
 
-The entry ids are `breadcrumbs`, `chatgpt-theme`, `icons`,
-`missing-keyboard-shortcuts`, and `thread-stages`, and each plugin's
-README repeats its own. Every entry resolves the plugin's highest
-`<entry-id>/vX.Y.Z` release tag, so `bb plugin update <entry-id>` picks up new
-releases and the marketplace never has to be re-added. Its catalog is defined
-in [marketplace.json](marketplace.json). Nothing here is published to npm yet.
+<a href="plugins/bb-plugin-chatgpt-theme#readme">Read more &rarr;</a>
+
+<br clear="all">
+
+## Updating
+
+`bb plugin update <entry-id>` moves an installed plugin to its newest release.
+Once the marketplace is added, its other plugins can also be picked in
+Settings → Plugins.
 
 ## Development
 
@@ -112,7 +132,8 @@ request validates the affected plugins, creates immutable `<plugin-id>/vX.Y.Z`
 Git tags, and publishes a
 [GitHub release](https://github.com/ariofrio/bb-plugins/releases) per tag
 carrying that version's changelog entry. Every listing accepts any released
-version, so the catalog never changes with a release.
+version, so the catalog never changes with a release. Nothing is published to
+npm yet.
 
 `npm run release:check` runs each plugin's tests, type checks, build, SDK
 declaration verification, and packed artifact verification.

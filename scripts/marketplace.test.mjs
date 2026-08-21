@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { satisfies } from "semver";
 
 import { derivePluginId } from "./plugin-id.mjs";
+import { headingIcons, padViewBox } from "./heading-icons.mjs";
 
 const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 
@@ -79,12 +81,21 @@ test("shows one description for each plugin everywhere it appears", async () => 
       `${id} marketplace description must match its bb.description`,
     );
 
-    const cell = new RegExp(
-      `href="${directory.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}#readme"[^]*?<strong>([^<]*)</strong>[^]*?</p>\\s*<p>([^<]*)</p>`,
-    ).exec(readme);
-    assert.ok(cell, `README has no table cell linking to ${directory}`);
-    assert.equal(cell[1], manifest.bb.name, `${id} README heading must match its bb.name`);
-    assert.equal(cell[2], description, `${id} README description must match its bb.description`);
+    // Asserted as presence rather than as markup, so the README can be laid
+    // out however it reads best and still has to say the same thing the
+    // manifest and the marketplace say.
+    assert.ok(
+      readme.includes(`plugins/${directory.split("/").pop()}#readme`),
+      `README must link to ${directory}`,
+    );
+    assert.ok(
+      readme.includes(manifest.bb.name),
+      `${id} README must name it exactly as bb.name does`,
+    );
+    assert.ok(
+      readme.includes(description),
+      `${id} README description must match its bb.description`,
+    );
   }
 });
 
@@ -112,6 +123,17 @@ test("packages every plugin the same way and paints its icon in bb's muted foreg
       icon,
       /@media \(prefers-color-scheme: dark\) \{ svg \{ color: #b7b7b7; \} \}/,
       `${id} icon must carry bb's muted foreground for dark mode`,
+    );
+  }
+});
+
+test("derives every heading icon from the plugin icon it stands for", async () => {
+  const repositoryRoot = new URL("..", import.meta.url);
+  for (const icon of headingIcons(fileURLToPath(repositoryRoot))) {
+    assert.equal(
+      await readFile(icon.output, "utf8"),
+      padViewBox(await readFile(icon.source, "utf8")),
+      `${icon.id} heading icon is stale; run npm run build:heading-icons`,
     );
   }
 });
