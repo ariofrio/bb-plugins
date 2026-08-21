@@ -1,7 +1,7 @@
 # Breadcrumbs
 
 Adds a trail to each thread header — the thread's section, its project, and
-every thread it was forked or spawned under:
+every thread it was spawned under:
 
 ```text
 Release  >  bb-plugins  >  Polish the sidebar  >  Trace the timer
@@ -34,6 +34,11 @@ Clicking the section name opens what bb's own sidebar section header opens —
 Rename and Remove, carrying bb's wording, including that removing a section
 moves its threads back to Unorganized. Sections attach to root threads, so a
 child shows the section its root is in. Clicking an ancestor opens that thread.
+
+A fork is not an ancestor here. bb gives a thread spawned under another a
+`parentThreadId` and nests it in the sidebar, while a fork gets a
+`sourceThreadId` and no parent, so it sits at the root; the trail follows the
+first and leaves the second to where bb already shows it.
 
 ## Implementation
 

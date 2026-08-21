@@ -22,7 +22,7 @@ export const CRUMBS = {
     type: "boolean",
     label: "Show the threads it came from",
     description:
-      "Put every thread this one was forked or spawned under before its title.",
+      "Put every thread this one was spawned under before its title. A fork is not one of them; bb shows where a fork came from elsewhere.",
     default: true,
   },
 } as const;
@@ -127,8 +127,19 @@ export default function plugin(bb: BbPluginApi) {
           titleFallback?: string | null;
         } | null>;
 
-      // Oldest first, excluding the thread itself. A parent bb cannot serve,
-      // or a cycle, stops the walk rather than spinning the header.
+      /**
+       * Parents only, deliberately.
+       *
+       * bb records two ways a thread can come from another: a thread spawned
+       * under one carries `parentThreadId`, and a fork carries
+       * `sourceThreadId` with no parent at all. The SDK calls
+       * `parentThreadId` "the thread this one was forked from or spawned
+       * under", but a fork does not set it — so following it alone is what
+       * gives ancestry without fork sources, which bb already shows elsewhere.
+       *
+       * Oldest first, excluding the thread itself. A parent bb cannot serve,
+       * or a cycle, stops the walk rather than spinning the header.
+       */
       const seen = new Set<string>([threadId]);
       const self = await read(threadId);
       const ancestors: Array<{ id: string; title: string }> = [];

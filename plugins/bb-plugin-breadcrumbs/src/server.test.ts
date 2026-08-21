@@ -121,3 +121,55 @@ describe("section action RPC", () => {
     });
   });
 });
+
+/** A thread graph with both of bb's relationships in it. */
+function createTrailHarness() {
+  const threads: Record<string, Record<string, unknown>> = {
+    root: { id: "root", parentThreadId: null, sourceThreadId: null, sectionId: "sec_a", projectId: "proj_a", title: "Polish the sidebar" },
+    child: { id: "child", parentThreadId: "root", sourceThreadId: null, sectionId: null, projectId: "proj_a", title: "Trace the timer" },
+    // bb gives a fork a source and no parent, so it sits at the sidebar root.
+    forked: { id: "forked", parentThreadId: null, sourceThreadId: "root", sectionId: null, projectId: "proj_a", title: "A fork of the first" },
+  };
+  const host = createFakePluginHost({
+    pluginId: "breadcrumbs",
+    sdk: {
+      threads: {
+        get: vi.fn(async ({ threadId }: { threadId: string }) => threads[threadId] ?? null),
+      },
+      threadSections: {
+        list: vi.fn().mockResolvedValue([{ id: "sec_a", name: "Example", createdAt: 1, updatedAt: 1 }]),
+      },
+      projects: {
+        get: vi.fn().mockResolvedValue({ name: "bb-plugins", kind: "standard" }),
+      },
+    },
+  });
+  disposeHosts.push(() => host.harness.lifecycle.dispose());
+  plugin(host.bb);
+  return host.harness;
+}
+
+describe("the trail's ancestry", () => {
+  it("walks the threads this one was spawned under, oldest first", async () => {
+    const harness = createTrailHarness();
+
+    const trail = (await harness.behavior.callRpc("trailForThread", {
+      threadId: "child",
+    })) as { ancestors: Array<{ id: string; title: string }>; section: unknown };
+
+    expect(trail.ancestors).toEqual([{ id: "root", title: "Polish the sidebar" }]);
+    // The section hangs off the root, which is why the walk runs first.
+    expect(trail.section).toEqual({ id: "sec_a", name: "Example" });
+  });
+
+  it("leaves a fork's source out, because bb shows that elsewhere", async () => {
+    const harness = createTrailHarness();
+
+    const trail = (await harness.behavior.callRpc("trailForThread", {
+      threadId: "forked",
+    })) as { ancestors: unknown[] };
+
+    // `sourceThreadId` points at "root"; following it would put a crumb here.
+    expect(trail.ancestors).toEqual([]);
+  });
+});

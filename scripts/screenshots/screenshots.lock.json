@@ -2,10 +2,10 @@
   "bbVersion": "0.39.0",
   "shots": {
     "breadcrumbs": {
-      "inputs": "1fed2f07b9fce225b50bada6c406f3203ec177d15f8d4036cd60d22a3298b5c9",
+      "inputs": "843d0299642b63ecb9dba264dfa3e8c0cb86c3a30b10dc4eeadf8fcf7583e0d0",
       "files": {
-        "screenshot-light.png": "8b172fd9c47c8fe44ae3b35a4963d8834e28105a6a137d1fd917f398bcb35ebc",
-        "screenshot-dark.png": "36454304bc4c689a78c690c9898a49b339c7a7c423df90c7731788331b7b8bce",
+        "screenshot-light.png": "4e5529f2684058a640249d1a0fef1b72b1155100727c99009e27cfdef2948379",
+        "screenshot-dark.png": "2c98a177ba4d99993b5957be2ca1a30154a116ed96ff909066de57ce6fcaf16a",
         "card-light.png": "8fb81f5e10a7833d9951d357f27f26dd195be0e7263061882a24fa49b34ec3b9",
         "card-dark.png": "f5eef72a622acf1be5ba5beaaa8f22bcc7d575a2a1fd5e785f1e03d201b6d7e6"
       }
