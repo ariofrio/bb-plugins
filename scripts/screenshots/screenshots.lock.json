@@ -2,12 +2,12 @@
   "bbVersion": "0.39.0",
   "shots": {
     "breadcrumbs": {
-      "inputs": "843d0299642b63ecb9dba264dfa3e8c0cb86c3a30b10dc4eeadf8fcf7583e0d0",
+      "inputs": "9e400a12775b4f29ca3d6ca98aa4b129048f7f882b019cecddec2876730145aa",
       "files": {
-        "screenshot-light.png": "4e5529f2684058a640249d1a0fef1b72b1155100727c99009e27cfdef2948379",
-        "screenshot-dark.png": "2c98a177ba4d99993b5957be2ca1a30154a116ed96ff909066de57ce6fcaf16a",
-        "card-light.png": "8fb81f5e10a7833d9951d357f27f26dd195be0e7263061882a24fa49b34ec3b9",
-        "card-dark.png": "f5eef72a622acf1be5ba5beaaa8f22bcc7d575a2a1fd5e785f1e03d201b6d7e6"
+        "screenshot-light.png": "e5a8e86bbd3d71061bfcb6d4bb6652f8682defb32dc2671c38d94dce793fce56",
+        "screenshot-dark.png": "cf51a9bf51c00bb5d5e48c22af0a7d047a62d6437657c41727b6995fda0b381a",
+        "card-light.png": "0fdf535452ffc949d493f732d91d9b70493d80db3b2d1ea947179a9b2c09b1ea",
+        "card-dark.png": "047aa2cec04c3f947ecee8a3d8e0b2093f787f9b7b8c528bbbbdec9921daf755"
       }
     },
     "chatgpt-theme": {
@@ -20,12 +20,12 @@
       }
     },
     "icons": {
-      "inputs": "0c16745a22502a5c1b138ff9abd3d60b7da66af5c9405ecbb692e8d26970c77b",
+      "inputs": "c8ca589965dea6cd3a7050d75d4c72b88a8f13b4b678c539490503f74876ac3d",
       "files": {
-        "screenshot-light.png": "3610f8d44aee6ee066fbace9ce6f682d5ebc70908df559f066d4c130272ab47e",
-        "screenshot-dark.png": "729032c1368819aed2c51ab628e10d57afde2357b8c37848f405079c1be1c547",
-        "card-light.png": "8ebebffbc83d2c12c52a05c16f5e25336a36808ec6b3da14e5be365a7dddce32",
-        "card-dark.png": "638be644b0ed31b8e92b6a9c5e942582e92fcadd21887c74383769dfc7598807"
+        "screenshot-light.png": "ca1aa4b0b9570a60fb3ea82500a79de38cf23df25ff9587841f2742dad9097cc",
+        "screenshot-dark.png": "515d351617cec7b5865e6655fd8175fafa6a9367614faa92ff9d6f8a6227236c",
+        "card-light.png": "199d557b37e68beab3dfb1da50f357950dd69365a14628a048b51b0eba5fd750",
+        "card-dark.png": "e34ae475e2a1bfe9487811e084ad26a6420027c6b03d33d2e22f63e4d639b63a"
       }
     },
     "missing-keyboard-shortcuts": {

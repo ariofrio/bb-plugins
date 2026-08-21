@@ -375,7 +375,7 @@ export function IconPicker({
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {visibleGroups.map(({ name, entries }) => {
+                    {visibleGroups.map(({ name, entries }, index) => {
                       const headingId = `${titleId}-${name}`;
                       return (
                         <section
@@ -393,11 +393,13 @@ export function IconPicker({
                           >
                             {titleCase(categoryLabel(name))}
                           </h3>
-                          <IconGrid
+                          <LazyIconGrid
                             entries={entries}
                             icon={icon}
                             color={color}
                             onPick={onPick}
+                            scroller={catalogScroller}
+                            eager={index < EAGER_CATEGORIES}
                           />
                         </section>
                       );
@@ -480,6 +482,83 @@ function CategoryChip({
     >
       {label}
     </button>
+  );
+}
+
+/** Columns in the icon grid; the placeholder needs the same number. */
+const GRID_COLUMNS = 11;
+
+/**
+ * How many categories are drawn without waiting to be looked at.
+ *
+ * One, measured. None leaves the observer to start every category, and the
+ * first icons take 117ms to appear; three costs so much first paint that the
+ * entrance animation runs on a blocked thread and reads as a snap. One puts
+ * icons on screen in 61ms and leaves the animation nearly its full 150ms.
+ */
+const EAGER_CATEGORIES = 1;
+
+/**
+ * Holds a category's place until it is nearly on screen.
+ *
+ * The catalog is 2,532 icons, and rendering every one of them put over
+ * fourteen thousand nodes in the popover — bb's own menus hold about
+ * twenty-five. The cost lands exactly where it is most visible: the browser
+ * builds the whole grid before it can paint, so the popover is late, and the
+ * entrance animation runs while the main thread is busy, so its frames are
+ * dropped and it snaps into place instead of easing. The section keeps its
+ * `contain-intrinsic-size`, so the scrollbar still describes the whole
+ * catalog while only what is near the viewport actually exists.
+ */
+function LazyIconGrid({
+  entries,
+  icon,
+  color,
+  onPick,
+  scroller,
+  eager,
+}: {
+  entries: readonly CatalogIcon[];
+  icon: string;
+  color: IconColor | null;
+  onPick: (icon: string) => void;
+  scroller: HTMLDivElement | null;
+  eager: boolean;
+}) {
+  const placeholderRef = useRef<HTMLDivElement>(null);
+  const [rendered, setRendered] = useState(eager);
+
+  useEffect(() => {
+    if (rendered) return;
+    const node = placeholderRef.current;
+    if (node === null || typeof IntersectionObserver === "undefined") {
+      setRendered(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entriesSeen) => {
+        if (entriesSeen.some((seen) => seen.isIntersecting)) setRendered(true);
+      },
+      // Ahead of the scroll, so a category is drawn before it is looked at.
+      { root: scroller, rootMargin: "400px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [rendered, scroller]);
+
+  if (rendered) {
+    return <IconGrid entries={entries} icon={icon} color={color} onPick={onPick} />;
+  }
+  // Sized like the grid it stands in for — 11 to a row, each row a 28px
+  // button and 4px of gap — so swapping one in never moves the scrollbar
+  // under the pointer.
+  const rows = Math.ceil(entries.length / GRID_COLUMNS);
+  return (
+    <div
+      ref={placeholderRef}
+      aria-hidden
+      style={{ height: rows * 32 - 4 }}
+    />
   );
 }
 
