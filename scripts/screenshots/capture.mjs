@@ -240,6 +240,16 @@ function padBox(box, padding) {
   };
 }
 
+/**
+ * State the capturing machine brings with it. bb's sidebar footer carries an
+ * update chip for everything waiting on this host — bb itself, and each agent
+ * CLI it found — so the same shot taken on two machines differs in the corner
+ * for reasons no plugin here is responsible for. These shots are about the
+ * plugins, so the chips stay out of them.
+ */
+const HOST_STATE_STYLE =
+  '[data-sidebar="footer"] a[href="/settings/updates"] { display: none !important; }';
+
 export async function openApp({ browser, stack, theme, viewport, style }) {
   const context = await browser.newContext({
     viewport: viewport ?? VIEWPORT,
@@ -253,15 +263,16 @@ export async function openApp({ browser, stack, theme, viewport, style }) {
     (mode) => window.localStorage.setItem("bb.theme", mode),
     theme,
   );
-  if (style !== undefined) {
-    await context.addInitScript((css) => {
+  await context.addInitScript(
+    (css) => {
       const sheet = document.createElement("style");
       sheet.textContent = css;
       document.addEventListener("DOMContentLoaded", () =>
         document.head.append(sheet),
       );
-    }, style);
-  }
+    },
+    style === undefined ? HOST_STATE_STYLE : `${HOST_STATE_STYLE}\n${style}`,
+  );
   const page = await context.newPage();
   await page.goto(stack.serverUrl, { waitUntil: "networkidle" });
   return { context, page };

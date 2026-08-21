@@ -47,6 +47,13 @@ async function openFeaturedThread(page) {
   await page
     .getByText("Dashboard polish is in place.", { exact: true })
     .waitFor();
+  // The composer resolves its permission mode after the thread itself, and a
+  // shot taken in between differs from the same shot taken after, in a corner
+  // no plugin here owns.
+  await page
+    .getByRole("button", { name: "Permission mode" })
+    .filter({ hasText: "Accept Edits" })
+    .waitFor();
   await page.waitForTimeout(600);
 }
 
