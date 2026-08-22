@@ -2,7 +2,7 @@
 
 <p align="center"><strong>Grow your swarm. Don't lose the thread.</strong></p>
 
-<p align="center">A suite of <a href="https://getbb.app">bb</a> plugins for managing a lot of agents.</p>
+<p align="center">A suite of <a href="https://getbb.app">bb</a> plugins for managing large amounts of agents.</p>
 
 <p align="center">
   <a href="https://getbb.app"><img src="https://img.shields.io/badge/bb-0.39%2B-656D76?style=flat-square" alt="bb 0.39+"></a>
