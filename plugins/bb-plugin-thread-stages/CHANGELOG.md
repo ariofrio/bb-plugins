@@ -1,5 +1,24 @@
 # bb-plugin-thread-stages
 
+## 0.7.0
+
+### Minor Changes
+
+- 814341b: Adapt Thread stages to different workflows with configurable message previews,
+  optional Deferred and Blocked stages, and automatic archival of Completed thread
+  hierarchies after 1, 7, or 30 days. Auto-archive defaults to 7 days, preserves
+  pinned hierarchies, and can be disabled. Rows without previews now shrink to the
+  same height as bb's built-in thread rows.
+
+### Patch Changes
+
+- 1600e04: Call the section-less bucket Unorganized, the way bb calls it. The filter and the
+  Move to section submenu said Uncategorized, a word bb uses nowhere — its sidebar
+  group is labeled Unorganized, and its own remove-section dialog says threads
+  "will move back to Unorganized", which this plugin already repeats verbatim one
+  component over. Only the wording moves; the saved filter keeps its stored value,
+  so a client filtered to that bucket stays filtered to it.
+
 ## 0.6.4
 
 ### Patch Changes
