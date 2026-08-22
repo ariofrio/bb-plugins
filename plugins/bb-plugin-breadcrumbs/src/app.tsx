@@ -141,9 +141,41 @@ interface CrumbsProps {
   threadActions: ReturnType<typeof experimental_useSidebarThreadActions>;
 }
 
+/**
+ * An empty place for the Icons plugin to draw an owner's icon in.
+ *
+ * The two plugins cannot render each other's components — bb's SDK has no way
+ * to — and the icons have to sit between the crumbs rather than before them,
+ * so this leaves a marked, deliberately childless node and lets the neighbour
+ * fill it. Nothing here knows whether that plugin is installed: unfilled, the
+ * span occupies nothing and the crumbs read exactly as they did.
+ *
+ * React never puts children in it, so a neighbour's are safe from this tree's
+ * reconciliation, and a container React owns is one bb's foreign-DOM guard
+ * lets a fresh node into even while a plugin is attributed.
+ */
+function IconAnchor({
+  kind,
+  ownerId,
+}: {
+  kind: "section" | "project";
+  ownerId: string;
+}) {
+  return (
+    <span
+      data-breadcrumb-icon-anchor={kind}
+      data-breadcrumb-icon-owner={ownerId}
+      className="contents"
+    />
+  );
+}
+
 function Crumbs({ section, project, ancestors, refresh, rpc, navigate, threadActions }: CrumbsProps) {
   return (
     <>
+      {section === null ? null : (
+        <IconAnchor kind="section" ownerId={section.id} />
+      )}
       {section === null ? null : (
         <SectionBreadcrumb
           sectionName={section.name}
@@ -160,6 +192,9 @@ function Crumbs({ section, project, ancestors, refresh, rpc, navigate, threadAct
             await refresh();
           }}
         />
+      )}
+      {project === null ? null : (
+        <IconAnchor kind="project" ownerId={project.id} />
       )}
       {project === null ? null : (
         <ProjectBreadcrumb
