@@ -80,6 +80,13 @@ export const THREADS = [
 ];
 
 /** Asked in the side chat the keyboard-shortcut screenshot opens. */
+/**
+ * The thread every shot is framed around. Named here, beside the threads
+ * themselves, so the fixture and the shots cannot disagree about which one it
+ * is — the fixture has to know in order to leave it read.
+ */
+export const FEATURED_THREAD = "Polish analytics dashboard";
+
 export const SIDE_CHAT_QUESTION = "What did the dashboard pass end up covering?";
 
 /** Every thread answers from its own entry, plus the side chat a shot opens. */
@@ -223,6 +230,12 @@ export function seed({ stack, workspaceRoot, bb }) {
     if (spec.stage === null) continue;
     run(["thread-stages", "update", threads.get(spec.title).id, "--stage", spec.stage]);
   }
+
+  // Only an opened thread paints the "NEW" divider and then clears it moments
+  // later, mid-capture on a slow machine, and only this one is ever opened. The
+  // rest are left alone: their unread state cannot change while a shot is being
+  // taken, and the sidebar keeps the unread mark a busy bb actually carries.
+  run(["thread", "read", threads.get(FEATURED_THREAD).id]);
 
   return { projects, threads, run, runJson };
 }
