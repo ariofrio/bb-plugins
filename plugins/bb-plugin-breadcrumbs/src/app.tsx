@@ -8,14 +8,13 @@ import {
 } from "@get-bb/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { ProjectBreadcrumb } from "./ProjectBreadcrumb";
 import { SectionBreadcrumb } from "./SectionBreadcrumb";
 import {
   installBreadcrumbPortal,
   navigateToProjectSettings,
 } from "./header-dom";
-import { afterPluginFrame } from "./after-plugin-frame";
+import { createCrumbRoot, type CrumbRoot } from "./crumb-root";
 import type { rpcContract } from "./server";
 
 interface Trail {
@@ -84,56 +83,48 @@ function BreadcrumbsBridge({ threadId }: PluginThreadHeaderActionProps) {
   }, [shouldShow]);
 
   /**
-   * The crumbs render in a root of their own, scheduled out of the call bb is
-   * watching.
+   * The crumbs render in a root of their own, which draws them on a frame of
+   * its own and again later if bb refused them.
    *
-   * bb guards its React tree: while any plugin is attributed on the stack it
+   * bb guards its React tree: while any plugin is attributed on its stack it
    * refuses to put a React-owned node under a container React does not own.
    * Portaling from bb's own root put these crumbs in exactly that position —
    * a commit begun by another plugin would carry them into the block, and bb
    * would report that the *other* plugin had moved a node out of React's tree.
-   * A separate root shares no commit with anyone else, and the timeout leaves
-   * bb's stack before rendering.
+   * A separate root shares no commit with anyone else. See `crumb-root.ts` for
+   * why leaving bb's stack is not by itself enough to leave that window.
    */
-  const rootRef = useRef<Root | null>(null);
+  const crumbRootRef = useRef<CrumbRoot | null>(null);
   useEffect(() => {
     if (portalTarget === null) return;
-    let root = rootRef.current;
-    return afterPluginFrame(() => {
-      root ??= createRoot(portalTarget);
-      rootRef.current = root;
-      root.render(
-        <Crumbs
-          section={section}
-          project={project}
-          ancestors={ancestors}
-          refresh={refresh}
-          rpc={rpc}
-          navigate={navigate}
-          threadActions={threadActions}
-        />,
-      );
-    });
-  }, [
-    ancestors,
-    navigate,
-    portalTarget,
-    project,
-    refresh,
-    rpc,
-    section,
-    threadActions,
-  ]);
+    const crumbRoot = createCrumbRoot(portalTarget);
+    crumbRootRef.current = crumbRoot;
+    return () => {
+      crumbRootRef.current = null;
+      crumbRoot.dispose();
+    };
+  }, [portalTarget]);
 
-  useEffect(
-    () => () => {
-      const root = rootRef.current;
-      rootRef.current = null;
-      // Unmounting during a commit is what React warns about, so it waits.
-      if (root !== null) afterPluginFrame(() => root.unmount());
-    },
-    [],
-  );
+  /**
+   * Handed over on every render rather than on a dependency list: `ancestors`
+   * is a fresh array each time, so a list would fire anyway, and the root
+   * coalesces repeats into the one frame it already has on its way. A list
+   * would instead cancel that frame each render, and a burst of them would
+   * leave the crumbs undrawn for as long as it lasted.
+   */
+  useEffect(() => {
+    crumbRootRef.current?.render(
+      <Crumbs
+        section={section}
+        project={project}
+        ancestors={ancestors}
+        refresh={refresh}
+        rpc={rpc}
+        navigate={navigate}
+        threadActions={threadActions}
+      />,
+    );
+  });
 
   return <span ref={markerRef} hidden />;
 }
