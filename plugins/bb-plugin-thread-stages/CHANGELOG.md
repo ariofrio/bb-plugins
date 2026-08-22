@@ -16,7 +16,8 @@
 ### Minor Changes
 
 - Add a setting to hide thread message previews while preserving the compact
-  title-only row layout.
+  title-only row layout. Rows now grow from native-height title-only geometry
+  only when the preview adds a second line.
 - Let Deferred and Blocked be disabled. Disabled stages disappear from empty
   sidebar groups, move menus, drag destinations, and shortcuts, while a
   nonempty disabled stage remains visible until its threads are moved out.

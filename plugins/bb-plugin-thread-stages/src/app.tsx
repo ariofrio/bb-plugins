@@ -293,7 +293,7 @@ function ThreadRow({
         />
       ) : null}
       <div
-        className={`bb-sidebar-hover-actions-row group/thread-row relative flex h-11 w-full items-center gap-2 rounded-md py-0.5 pr-0 text-sm transition-colors max-md:pointer-coarse:h-[52px] ${
+        className={`bb-sidebar-hover-actions-row group/thread-row relative flex w-full items-center gap-2 rounded-md py-1 pr-0 text-sm transition-colors max-md:pointer-coarse:py-2.5 ${
           active
             ? "bg-state-active text-sidebar-foreground"
             : "cursor-pointer text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:text-sidebar-foreground"
@@ -374,7 +374,7 @@ function ThreadRow({
             </button>
           ) : null}
         </span>
-        <span className="relative flex h-10 w-7 shrink-0 items-center justify-end max-md:pointer-coarse:h-12 max-md:pointer-coarse:w-9">
+        <span className="relative -my-1 flex w-7 shrink-0 self-stretch items-center justify-end max-md:pointer-coarse:-my-2.5 max-md:pointer-coarse:w-9">
           <span
             data-sidebar-hover-actions-open={actionsOpen ? "true" : undefined}
             className="bb-sidebar-hover-actions-fade absolute inset-0 flex items-center justify-center text-subtle-foreground"
