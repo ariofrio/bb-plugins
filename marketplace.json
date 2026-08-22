@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "name": "ribbon",
   "displayName": "Ribbon",
-  "description": "Plugins for running a lot of bb agents at once. Grow your swarm without losing the thread.",
+  "description": "A suite of bb plugins for managing a lot of agents. Grow your swarm. Don't lose the thread.",
   "plugins": [
     {
       "id": "breadcrumbs",
