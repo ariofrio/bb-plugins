@@ -190,12 +190,17 @@ function IconHeaderAction({ projectId }: PluginThreadHeaderActionProps) {
       onFocus={() => setWanted(true)}
       // The desktop header is a window drag region, so an interactive control
       // inside it has to opt out or Electron swallows the click.
-      className="relative z-50 -ml-0.5 flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 hover:duration-0 hover:bg-state-hover hover:text-foreground data-[state=open]:bg-state-active data-[state=open]:text-foreground [app-region:no-drag] [-webkit-app-region:no-drag]"
+      //
+      // No color of its own, like the sidebar's: the icon then reads at the
+      // same weight as the thread title it sits beside, which is where bb puts
+      // its own header controls too. The hover and open states stay, so the
+      // icon still lifts if it ever inherits something dimmer.
+      className="relative z-50 -ml-0.5 flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 hover:duration-0 hover:bg-state-hover hover:text-foreground data-[state=open]:bg-state-active data-[state=open]:text-foreground [app-region:no-drag] [-webkit-app-region:no-drag]"
     >
       <IconGlyph name={icon} glyph={glyph} color={color} />
     </button>
   ) : (
-    <span className="-ml-0.5 flex size-6 items-center justify-center text-muted-foreground">
+    <span className="-ml-0.5 flex size-6 items-center justify-center">
       <IconGlyph name={icon} glyph={glyph} color={color} />
     </span>
   );
