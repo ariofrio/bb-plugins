@@ -34,3 +34,4 @@
 
 - For bb UI tests and experiments, never drive the user's active bb client. Instead, for client-only state, use an agent-owned web or desktop client connected to the existing bb server. When the test can modify server or host-daemon state, start an isolated client with its own server and host daemon.
 - Check a UI change by its rendered effect — `getComputedStyle`, real pointer and keyboard events — never by class names or DOM attributes. Markup that reads correctly still renders nothing when a plugin class falls outside the `@scope` root bb compiles its stylesheet into, and a dispatched `click()` passes where a real one is swallowed.
+- Wait for what a plugin drew, inside the container only that plugin installs. A label, role, or name bb also uses somewhere else is answered by bb's own control, and the wait then returns before the plugin has drawn anything — silently, and at whichever moment is worst.

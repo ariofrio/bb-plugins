@@ -59,8 +59,23 @@ async function openFeaturedThread(page) {
   // own on an animation frame. Only the breadcrumbs shot clicks the crumb, so
   // every other shot framing this header would otherwise race it and capture
   // whichever title won — with the project before it, or bare.
-  await page.locator('[aria-label="Storefront actions"]').waitFor();
+  await projectCrumb(page).waitFor();
   await page.waitForTimeout(600);
+}
+
+/**
+ * The crumb the featured thread's project draws, named by the container the
+ * plugin installs rather than by the label alone.
+ *
+ * bb's own sidebar lists threads under a project heading whose menu carries
+ * the same `Storefront actions` label, and it is on screen from the first
+ * paint until Thread stages replaces the list — which happens just before the
+ * crumb arrives. Waiting on the label alone is therefore answered immediately
+ * by a control in the other half of the window, and the wait returns during
+ * the one second when neither the heading nor the crumb is on screen.
+ */
+function projectCrumb(page) {
+  return page.locator('[data-breadcrumbs-root] [aria-label="Storefront actions"]');
 }
 
 export const SHOTS = [
@@ -90,12 +105,12 @@ export const SHOTS = [
       await openFeaturedThread(page);
       // The open menu marks the header aria-hidden, so the trigger has to be
       // found by attribute rather than by role.
-      await page.locator('[aria-label="Storefront actions"]').click();
+      await projectCrumb(page).click();
       await page.getByRole("menu").waitFor();
       await page.waitForTimeout(400);
     },
     highlights: (page) => [
-      { locator: page.locator('[aria-label="Storefront actions"]') },
+      { locator: projectCrumb(page) },
       { locator: page.getByRole("menu") },
     ],
   },
