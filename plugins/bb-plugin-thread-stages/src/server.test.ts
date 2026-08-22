@@ -84,6 +84,9 @@ describe("thread stages plugin API", () => {
       "reorderThread",
       "renameProject",
       "renameSection",
+      "updateSettings",
+      "listProjectIcons",
+      "listAppKeybindings",
     ]);
     expect(
       harness.inspection.registrations.services.map(({ name }) => name),
@@ -407,6 +410,169 @@ describe("thread stages plugin API", () => {
         nextThreadId: null,
       }),
     ).rejects.toThrow("Stage Blocked is disabled");
+  });
+
+  it("reads project icons from the Icons plugin through the bb SDK", async () => {
+    const glyph = [["path", { d: "M1" }]] as const;
+    const callRpc = vi.fn(async () => ({
+      icons: [
+        {
+          kind: "project",
+          id: "proj_a",
+          icon: "rocket",
+          color: "teal",
+          glyph,
+        },
+      ],
+      defaults: { project: glyph, personal: glyph, section: glyph },
+    }));
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: { plugins: { callRpc } },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("listProjectIcons", null),
+    ).resolves.toMatchObject({
+      icons: [{ id: "proj_a", icon: "rocket" }],
+    });
+    expect(callRpc).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pluginId: "icons",
+        method: "listIcons",
+        input: null,
+      }),
+    );
+  });
+
+  it("routes a personal-project thread without a project segment", async () => {
+    const thread = (id: string, createdAt: number) => ({
+      id,
+      parentThreadId: null,
+      projectId: "proj_personal",
+      visibility: "visible",
+      archivedAt: null,
+      pinnedAt: null,
+      pinSortKey: null,
+      createdAt,
+    });
+    const list = vi.fn(async (args?: { offset?: number }) =>
+      (args?.offset ?? 0) === 0
+        ? [thread("thr_open", 1), thread("thr_next", 2)]
+        : [],
+    );
+    const projects = vi.fn(async () => [
+      { id: "proj_personal", kind: "personal" },
+      { id: "proj_a", kind: "standard" },
+    ]);
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: { threads: { list }, projects: { list: projects } },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await host.harness.behavior.callRpc("syncThreads", {
+      rootThreadIds: ["thr_open", "thr_next"],
+      childThreadIds: [],
+    });
+
+    await expect(
+      host.harness.behavior.callRpc("setWorkflowStage", {
+        threadId: "thr_open",
+        workflowStage: "Active",
+      }),
+    ).resolves.toEqual({
+      destination: {
+        kind: "thread",
+        threadId: "thr_next",
+        projectId: null,
+      },
+    });
+    expect(projects).toHaveBeenCalledWith({ includePersonal: true });
+  });
+
+  it("reads bb's own keybindings through the SDK", async () => {
+    const config = vi.fn(async () => ({
+      keybindings: [
+        {
+          command: "thread.new",
+          desktopOnly: false,
+          shortcut: {
+            alt: false,
+            control: false,
+            key: "o",
+            meta: false,
+            mod: true,
+            shift: true,
+          },
+          when: { all: [], none: [] },
+        },
+      ],
+    }));
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: { system: { config } },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("listAppKeybindings", null),
+    ).resolves.toEqual({
+      keybindings: [
+        {
+          command: "thread.new",
+          desktopOnly: false,
+          shortcut: {
+            alt: false,
+            control: false,
+            key: "o",
+            meta: false,
+            mod: true,
+            shift: true,
+          },
+        },
+      ],
+    });
+    expect(config).toHaveBeenCalled();
+  });
+
+  it("saves its own settings through the bb SDK", async () => {
+    const updateSettings = vi.fn(async () => ({ values: {} }));
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: { plugins: { updateSettings } },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("updateSettings", {
+        showSidebarFilter: false,
+      }),
+    ).resolves.toEqual({ ok: true });
+    expect(updateSettings).toHaveBeenCalledWith({
+      pluginId: "thread-stages",
+      values: { showSidebarFilter: false },
+    });
+  });
+
+  it("rejects an unknown setting at the RPC boundary", async () => {
+    const updateSettings = vi.fn(async () => ({ values: {} }));
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      sdk: { plugins: { updateSettings } },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("updateSettings", { showTheMoon: true }),
+    ).rejects.toMatchObject({ code: "invalid_input" });
+    expect(updateSettings).not.toHaveBeenCalled();
   });
 
   it("runs its CLI through host result normalization", async () => {

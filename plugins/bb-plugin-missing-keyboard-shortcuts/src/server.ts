@@ -55,6 +55,34 @@ async function removeThreadTab(
   }
 }
 
+const SIDE_CHAT_PLUGIN_ID = "side-chat";
+/**
+ * What the Side chat plugin answers `createSideChat` with. Mirrored rather
+ * than imported, and not strict: that plugin owns the shape and may grow it.
+ */
+const sideChatThreadSchema = z.object({ threadId: z.string().min(1) });
+/**
+ * The part of bb's keybinding table a delegate needs to replay a native
+ * command. Not strict: bb owns the rest of the row, and `when` in particular
+ * is bb's own availability rule, not this plugin's to interpret.
+ */
+const appKeybindingsSchema = z.object({
+  keybindings: z.array(
+    z.object({
+      command: z.string(),
+      desktopOnly: z.boolean(),
+      shortcut: z.object({
+        alt: z.boolean(),
+        control: z.boolean(),
+        key: z.string().min(1),
+        meta: z.boolean(),
+        mod: z.boolean(),
+        shift: z.boolean(),
+      }),
+    }),
+  ),
+});
+
 export const rpcContract = defineRpcContract({
   openTerminal: {
     input: z
@@ -85,6 +113,14 @@ export const rpcContract = defineRpcContract({
       })
       .strict(),
     output: z.object({ reusable: z.boolean() }).strict(),
+  },
+  createSideChat: {
+    input: z.object({ sourceThreadId: z.string().min(1) }).strict(),
+    output: sideChatThreadSchema,
+  },
+  listAppKeybindings: {
+    input: z.null(),
+    output: appKeybindingsSchema,
   },
 });
 
@@ -129,6 +165,23 @@ export default function plugin(bb: BbPluginApi) {
         child.visibility === "hidden";
       if (!reusable) await removeThreadTab(bb, parentThreadId, tabId);
       return { reusable };
+    },
+    // Starting a side chat is the Side chat plugin's job. bb makes the call
+    // between plugins, so the shortcut does not have to know its route.
+    // Replaying a native shortcut means knowing which keys bb listens for.
+    // The SDK reads the app config on the server, so the frontend does not
+    // have to reach for bb's own route.
+    async listAppKeybindings() {
+      const { keybindings } = await bb.sdk.system.config();
+      return { keybindings };
+    },
+    createSideChat({ sourceThreadId }) {
+      return bb.sdk.plugins.callRpc({
+        pluginId: SIDE_CHAT_PLUGIN_ID,
+        method: "createSideChat",
+        input: { sourceThreadId, anchorText: "" },
+        outputSchema: sideChatThreadSchema,
+      });
     },
   });
 

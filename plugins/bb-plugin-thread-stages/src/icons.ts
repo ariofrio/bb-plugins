@@ -1,13 +1,6 @@
 import type { IconSvgElement } from "@hugeicons/react";
 
 /**
- * Project icons come from the Icons plugin, over its RPC. The sidebar
- * degrades to no icons when that plugin is not installed, so this never
- * throws — a missing neighbour is a normal state, not an error.
- */
-const ICONS_PLUGIN_ID = "icons";
-const PERSONAL_PROJECT_ID = "proj_personal";
-/**
  * The Icons plugin announces edits here. A plugin cannot join another
  * plugin's realtime channel, and both run in the same document, so a broadcast
  * channel carries the change: instantly within a window, and to other windows
@@ -67,10 +60,11 @@ function iconColor(color: string | null): string | null {
 export function buildProjectIconMap(
   response: IconsResponse,
   projectIds: readonly string[],
+  personalProjectId: string | null,
 ): Map<string, ProjectIconView> {
   const byProject = new Map<string, ProjectIconView>();
   for (const projectId of projectIds) {
-    const personal = projectId === PERSONAL_PROJECT_ID;
+    const personal = projectId === personalProjectId;
     byProject.set(projectId, {
       name: personal ? "bubble-chat" : "folder-01",
       glyph: personal ? response.defaults.personal : response.defaults.project,
@@ -89,25 +83,18 @@ export function buildProjectIconMap(
   return byProject;
 }
 
+/**
+ * Project icons come from the Icons plugin, which bb calls on this plugin's
+ * behalf. The sidebar degrades to no icons when that plugin is not installed,
+ * so this never throws — a missing neighbour is a normal state, not an error.
+ */
 export async function fetchProjectIcons(
+  loadIcons: () => Promise<IconsResponse>,
   projectIds: readonly string[],
+  personalProjectId: string | null,
 ): Promise<Map<string, ProjectIconView>> {
   try {
-    const response = await fetch(
-      `/api/v1/plugins/${ICONS_PLUGIN_ID}/rpc/listIcons`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: "null",
-        credentials: "same-origin",
-      },
-    );
-    if (!response.ok) return new Map();
-    const envelope = (await response.json()) as
-      | { ok: true; result: IconsResponse }
-      | { ok: false };
-    if (!envelope.ok) return new Map();
-    return buildProjectIconMap(envelope.result, projectIds);
+    return buildProjectIconMap(await loadIcons(), projectIds, personalProjectId);
   } catch {
     return new Map();
   }

@@ -27,6 +27,7 @@ import {
   type WorkflowHierarchyThread,
 } from "./root-thread-ownership";
 
+const ICONS_PLUGIN_ID = "icons";
 const workflowStageSchema = z.enum(WORKFLOW_STAGES);
 const sectionSchema = z
   .object({
@@ -94,6 +95,53 @@ const projectSummarySchema = z
     name: z.string(),
   })
   .strict();
+
+/**
+ * What the Icons plugin answers `listIcons` with. Mirrored rather than
+ * imported, and deliberately not strict: that plugin may grow fields, and a
+ * neighbour's extra key is not this sidebar's business.
+ */
+const iconGlyphSchema = z.array(
+  z.tuple([z.string(), z.record(z.string(), z.any())]),
+);
+const projectIconsSchema = z.object({
+  icons: z.array(
+    z.object({
+      kind: z.enum(["project", "section"]),
+      id: z.string(),
+      icon: z.string(),
+      color: z.string().nullable(),
+      glyph: iconGlyphSchema,
+    }),
+  ),
+  defaults: z.object({
+    project: iconGlyphSchema,
+    personal: iconGlyphSchema,
+    section: iconGlyphSchema,
+  }),
+});
+
+/**
+ * The part of bb's keybinding table a delegate needs to replay a native
+ * command. Not strict: bb owns the rest of the row, and `when` in particular
+ * is bb's own availability rule, not this plugin's to interpret.
+ */
+const appKeybindingsSchema = z.object({
+  keybindings: z.array(
+    z.object({
+      command: z.string(),
+      desktopOnly: z.boolean(),
+      shortcut: z.object({
+        alt: z.boolean(),
+        control: z.boolean(),
+        key: z.string().min(1),
+        meta: z.boolean(),
+        mod: z.boolean(),
+        shift: z.boolean(),
+      }),
+    }),
+  ),
+});
 
 export const rpcContract = defineRpcContract({
   createProjectFromFolder: {
@@ -240,6 +288,23 @@ export const rpcContract = defineRpcContract({
       .strict(),
     output: z.object({ ok: z.literal(true) }).strict(),
   },
+  updateSettings: {
+    input: z
+      .object({
+        showSidebarFilter: z.boolean().optional(),
+        showCollapsedStageIndicators: z.boolean().optional(),
+      })
+      .strict(),
+    output: z.object({ ok: z.literal(true) }).strict(),
+  },
+  listProjectIcons: {
+    input: z.null(),
+    output: projectIconsSchema,
+  },
+  listAppKeybindings: {
+    input: z.null(),
+    output: appKeybindingsSchema,
+  },
 });
 
 export default function plugin(bb: BbPluginApi) {
@@ -290,6 +355,22 @@ export default function plugin(bb: BbPluginApi) {
   const db = bb.storage.database();
   bb.storage.migrate(db, THREAD_WORKFLOW_MIGRATIONS);
   const store = createThreadWorkflowStore(db);
+
+  // bb routes a personal-project thread without a project segment, and the
+  // project-scoped path would redirect to the composer instead. Which project
+  // is the personal one is bb's to say, and it never changes for a server.
+  let personalProjectId: string | null | undefined;
+  async function routableProjectId(
+    projectId: string | null,
+  ): Promise<string | null> {
+    if (projectId === null) return null;
+    if (personalProjectId === undefined) {
+      const projects = await bb.sdk.projects.list({ includePersonal: true });
+      personalProjectId =
+        projects.find(({ kind }) => kind === "personal")?.id ?? null;
+    }
+    return projectId === personalProjectId ? null : projectId;
+  }
 
   function requireRootThread(
     threadId: string,
@@ -479,9 +560,10 @@ export default function plugin(bb: BbPluginApi) {
           ? {
               kind: "thread",
               threadId: next.threadId,
-              projectId:
+              projectId: await routableProjectId(
                 threads.find(({ id }) => id === next.threadId)?.projectId ??
-                null,
+                  null,
+              ),
             }
           : next;
       return { destination };
@@ -529,6 +611,28 @@ export default function plugin(bb: BbPluginApi) {
     async renameSection({ sectionId, name }) {
       await bb.sdk.threadSections.update({ id: sectionId, name });
       return { ok: true as const };
+    },
+    async updateSettings(values) {
+      await bb.sdk.plugins.updateSettings({ pluginId: bb.pluginId, values });
+      return { ok: true as const };
+    },
+    // The sidebar draws icons the Icons plugin owns. Asking bb to make the
+    // call keeps the neighbour's route out of the frontend, and a missing
+    // neighbour stays what it has always been: a sidebar without icons.
+    // The stage chords replay bb's own New thread command, which means
+    // knowing which keys bb listens for. The SDK reads the app config on the
+    // server, so the frontend does not reach for bb's own route.
+    async listAppKeybindings() {
+      const { keybindings } = await bb.sdk.system.config();
+      return { keybindings };
+    },
+    listProjectIcons() {
+      return bb.sdk.plugins.callRpc({
+        pluginId: ICONS_PLUGIN_ID,
+        method: "listIcons",
+        input: null,
+        outputSchema: projectIconsSchema,
+      });
     },
   });
 
