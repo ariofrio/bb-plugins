@@ -44,7 +44,13 @@ async function freePort() {
   });
 }
 
-async function waitFor(check, { timeoutMs = 60000, label }) {
+/**
+ * Two minutes rather than one, because this is a readiness check bounded by a
+ * deadline and a deadline measures the machine. On a box carrying other
+ * worktrees' captures, both halves of the stack have failed to come up inside
+ * sixty seconds while nothing was wrong with either of them.
+ */
+async function waitFor(check, { timeoutMs = 120000, label }) {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
     if (await check()) return;
