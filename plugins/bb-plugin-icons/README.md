@@ -2,7 +2,8 @@
 
 Gives every project and every thread section an icon and an optional color,
 drawn on bb's own sidebar headers, in the thread header, and on each row of the
-[Thread stages](../bb-plugin-thread-stages#readme) sidebar.
+[Thread stages](../bb-plugin-thread-stages#readme) sidebar, where a thread shows
+its section's icon and falls back to its project's.
 
 Click any of them to change it: search 2,532 icons by name or synonym, filter
 by category, and pick a color. Changes save as you click and appear everywhere
@@ -75,7 +76,11 @@ groups under *Organize → By project* and section groups only under *Manually*,
 so which headers exist depends on that setting; the *Unorganized* bucket is not
 a section and gets none.
 
-**The thread header.** Before the project name, as it always has been.
+**The thread header.** One icon before each crumb
+[Breadcrumbs](../bb-plugin-breadcrumbs#readme) draws — the section's before the
+section, the project's before the project — and neither where that crumb is
+turned off. With no crumbs at all, the header keeps a single icon and picks its
+owner the way a sidebar row does.
 
 Either placement can be turned off on its own in the plugin's settings, and
 both are on by default. Sidebars other plugins draw are their own; Thread
@@ -83,11 +88,16 @@ stages reads these icons over this plugin's RPC.
 
 ## Header placement
 
-bb has no slot before the thread title, so the icon is portaled into the
-header the same way [Breadcrumbs](../bb-plugin-breadcrumbs#readme) portals
-the project name: immediately before that breadcrumb when it is installed, and
-before the title when it is not. `header-dom.test.ts` pins both shapes so a bb header
-change fails locally rather than moving the icon silently.
+bb's SDK lets no plugin render another's component, and these icons belong
+between the crumbs rather than ahead of them, so Breadcrumbs draws an empty
+marked span before each crumb and this plugin fills it. Unfilled it occupies
+nothing, so Breadcrumbs without this plugin reads as it always did, and an
+anchor React owns is also a container bb's foreign-DOM guard admits a fresh
+node into.
+
+Where there is no anchor — Breadcrumbs absent, or every crumb turned off — the
+lone icon is portaled in before the title, and `header-dom.test.ts` pins that
+shape so a bb header change fails locally rather than moving it silently.
 
 ## Development
 
