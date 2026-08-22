@@ -117,54 +117,61 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
     void stack.stop().then(() => process.exit(1));
   });
 }
-writeManagedConfig({ dataDir, harnessDir: harnessDirectory });
+try {
+  writeManagedConfig({ dataDir, harnessDir: harnessDirectory });
 
-console.log("Installing this repository's plugins…");
-execFileSync(process.execPath, [join(repositoryRoot, "scripts/install-plugins.mjs")], {
-  cwd: repositoryRoot,
-  env: { ...stack.env, BB_CLI: bb },
-  stdio: "inherit",
-});
+  console.log("Installing this repository's plugins…");
+  execFileSync(process.execPath, [join(repositoryRoot, "scripts/install-plugins.mjs")], {
+    cwd: repositoryRoot,
+    env: { ...stack.env, BB_CLI: bb },
+    stdio: "inherit",
+  });
 
-console.log("Seeding the fixture…");
-const fixture = seed({ stack, workspaceRoot, bb });
-await applyPluginState({ stack, projects: fixture.projects });
+  console.log("Seeding the fixture…");
+  const fixture = seed({ stack, workspaceRoot, bb });
+  await applyPluginState({ stack, projects: fixture.projects });
 
-console.log("Capturing…");
-// Imported here so the drift check runs without Playwright installed.
-const { capture } = await import("./capture.mjs");
-const captured = await capture({ stack, fixture, shots, shotFiles, repositoryRoot });
+  console.log("Capturing…");
+  // Imported here so the drift check runs without Playwright installed.
+  const { capture } = await import("./capture.mjs");
+  const captured = await capture({ stack, fixture, shots, shotFiles, repositoryRoot });
 
-const lock = readLock(lockPath);
-const expected = expectedLock();
-// A shot that no longer exists leaves an entry behind, and the check reports
-// it forever, since only a capture can clear one. SHOTS is the whole list of
-// shots there are, so anything else in the lock is a shot that was renamed or
-// dropped.
-for (const id of Object.keys(lock.shots)) {
-  if (!SHOTS.some((shot) => shot.id === id)) delete lock.shots[id];
-}
-for (const shot of captured) {
-  lock.shots[shot.id] = expected.shots[shot.id];
-  lock.shots[shot.id].files = Object.fromEntries(
-    Object.entries(shotFiles(shot)).map(([name, path]) => [name, fileDigest(path)]),
-  );
-}
-lock.bbVersion = execFileSync(bb, ["--version"], { encoding: "utf8" }).trim();
-writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
+  const lock = readLock(lockPath);
+  const expected = expectedLock();
+  // A shot that no longer exists leaves an entry behind, and the check reports
+  // it forever, since only a capture can clear one. SHOTS is the whole list of
+  // shots there are, so anything else in the lock is a shot that was renamed or
+  // dropped.
+  for (const id of Object.keys(lock.shots)) {
+    if (!SHOTS.some((shot) => shot.id === id)) delete lock.shots[id];
+  }
+  for (const shot of captured) {
+    lock.shots[shot.id] = expected.shots[shot.id];
+    lock.shots[shot.id].files = Object.fromEntries(
+      Object.entries(shotFiles(shot)).map(([name, path]) => [name, fileDigest(path)]),
+    );
+  }
+  lock.bbVersion = execFileSync(bb, ["--version"], { encoding: "utf8" }).trim();
+  writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
 
-console.log(
-  `\nWrote ${captured.flatMap((shot) => shot.outputs).length} files:\n${captured
-    .flatMap((shot) =>
-      Object.values(shotFiles(shot)).map((path) => `  ${relative(repositoryRoot, path)}`),
-    )
-    .join("\n")}`,
-);
-
-if (options.keep) {
   console.log(
-    `\nThe seeded bb is still running at ${stack.serverUrl}; the next run replaces it.`,
+    `\nWrote ${captured.flatMap((shot) => shot.outputs).length} files:\n${captured
+      .flatMap((shot) =>
+        Object.values(shotFiles(shot)).map((path) => `  ${relative(repositoryRoot, path)}`),
+      )
+      .join("\n")}`,
   );
-} else {
-  await stack.stop();
+  if (options.keep) {
+    console.log(
+      `\nThe seeded bb is still running at ${stack.serverUrl}; the next run replaces it.`,
+    );
+  }
+} finally {
+  // A run that throws must not leave its bb behind. An abandoned stack keeps a
+  // server, a host daemon and their workers alive, and stack.mjs only reaps one
+  // when THIS worktree runs again — so a worktree that fails once and stops
+  // trying leaks a whole bb until someone notices. Several worktrees doing that
+  // is what starves the next capture's seed, which fails, which leaks another.
+  if (!options.keep) await stack.stop();
 }
+

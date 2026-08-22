@@ -1,4 +1,5 @@
-import { SIDE_CHAT_QUESTION } from "./fixture.mjs";
+import { FEATURED_THREAD, SIDE_CHAT_QUESTION } from "./fixture.mjs";
+import { settleAnimations } from "./settle.mjs";
 
 // What each plugin's screenshot pictures. Every shot starts from the same
 // seeded bb and is captured twice: the whole window, for the plugin's own
@@ -34,7 +35,7 @@ function sideChatPanel(page) {
  */
 async function openFeaturedThread(page) {
   const href = await page
-    .getByRole("link", { name: /^Open Polish analytics dashboard/ })
+    .getByRole("link", { name: new RegExp(`^Open ${FEATURED_THREAD}`) })
     .first()
     .getAttribute("href");
   // Not networkidle: bb holds a socket open, so idleness never arrives
@@ -77,7 +78,9 @@ async function openFeaturedThread(page) {
   // reason: a freshly seeded bb is still settling while the first shots are
   // taken, and a plugin bundle can load well past Playwright's default minute.
   await projectCrumb(page).waitFor({ timeout: 120000 });
-  await page.waitForTimeout(600);
+  // Every wait above proves a thing arrived. This one proves nothing is still
+  // moving: the header reflows around the crumb once it lands.
+  await settleAnimations(page);
 }
 
 /**
@@ -124,7 +127,7 @@ export const SHOTS = [
       // found by attribute rather than by role.
       await projectCrumb(page).click();
       await page.getByRole("menu").waitFor();
-      await page.waitForTimeout(400);
+      await settleAnimations(page);
     },
     highlights: (page) => [
       { locator: projectCrumb(page) },
@@ -139,7 +142,7 @@ export const SHOTS = [
       await openFeaturedThread(page);
       await page.locator('[aria-label="Icon for Storefront"]').click();
       await page.getByRole("dialog").waitFor();
-      await page.waitForTimeout(600);
+      await settleAnimations(page);
     },
     highlights: (page) => [
       { locator: page.locator('[aria-label="Icon for Storefront"]') },
@@ -187,12 +190,20 @@ export const SHOTS = [
       // ⇧⌘L opens a side chat and puts the cursor in its composer, so the
       // question can be typed without clicking anything.
       await page.keyboard.press("Shift+Meta+KeyL");
-      await page.getByRole("textbox", { name: "Reply…" }).waitFor();
-      await page.waitForTimeout(800);
+      const reply = page.getByRole("textbox", { name: "Reply…" });
+      await reply.waitFor();
+      // The next line types blind, so focus has to have arrived: the shortcut
+      // moves it into this composer as the panel opens, and a keystroke sent
+      // before that lands in whatever still holds it.
+      await page.waitForFunction(
+        (composer) => document.activeElement === composer,
+        await reply.elementHandle(),
+      );
+      await settleAnimations(page);
       await page.keyboard.type(SIDE_CHAT_QUESTION);
       await page.keyboard.press("Enter");
       await page.getByText("Eighteen dashboard tests cover them.").waitFor();
-      await page.waitForTimeout(800);
+      await settleAnimations(page);
     },
     highlights: (page) => [
       {
