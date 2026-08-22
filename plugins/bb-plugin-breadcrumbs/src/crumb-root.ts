@@ -41,6 +41,7 @@ export interface CrumbRootOptions {
   retryDelayMs?: number;
   /** How long to keep offering before letting the header stand bare. */
   giveUpAfterMs?: number;
+  /** The clock that window is measured on. */
   now?: () => number;
 }
 
