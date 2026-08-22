@@ -323,7 +323,9 @@ function ThreadRow({
           {projectIcon === null ? null : (
             <HugeiconsIcon
               icon={projectIcon.glyph}
-              className={`size-4 shrink-0 ${projectIcon.color === null ? "text-muted-foreground/70" : ""}`}
+              // An uncolored icon takes the row's own color, so it reads as part
+              // of the title it sits beside rather than a dimmer thing near it.
+              className="size-4 shrink-0"
               style={projectIcon.color === null ? undefined : { color: projectIcon.color }}
               data-project-icon={projectIcon.name}
               aria-hidden

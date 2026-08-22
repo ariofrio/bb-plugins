@@ -79,7 +79,11 @@ function SidebarIcon({
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
       onDragStart={(event) => event.preventDefault()}
-      className="relative z-20 inline-flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm text-subtle-foreground transition-colors duration-150 hover:duration-0 hover:text-foreground"
+      // No color of its own: bb pairs an icon with the label beside it, and
+      // that label's color is the one thing that moves with the theme. Pinning
+      // a token here made the icon brighter than its label in one theme and
+      // darker in another, since the token stayed put while the label did not.
+      className="relative z-20 inline-flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-sm transition-colors duration-150 hover:duration-0 hover:text-foreground"
     >
       {glyphNode}
     </button>
