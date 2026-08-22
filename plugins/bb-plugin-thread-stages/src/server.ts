@@ -282,7 +282,7 @@ export default function plugin(bb: BbPluginApi) {
       type: "select",
       label: "Auto-archive completed threads",
       description:
-        "Archive safe Completed threads after they have stayed in that stage for the selected time.",
+        "Archive unpinned Completed thread hierarchies after they have stayed in that stage for the selected time.",
       options: [...AUTO_ARCHIVE_OPTIONS],
       default: "7 days",
     },

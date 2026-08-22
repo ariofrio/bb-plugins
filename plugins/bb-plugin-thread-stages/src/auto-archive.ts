@@ -29,21 +29,27 @@ type ListedThread = Awaited<
   ReturnType<BbPluginApi["sdk"]["threads"]["list"]>
 >[number];
 
-function hasActiveWork(thread: ListedThread): boolean {
-  if (["active", "starting", "stopping"].includes(thread.status)) return true;
-  if (
-    thread.runtime.displayStatus !== "idle" &&
-    thread.runtime.displayStatus !== "error"
-  ) {
-    return true;
-  }
-  return Object.values(thread.activity).some((count) => count > 0);
+interface HierarchyEntry {
+  depth: number;
+  thread: ListedThread;
 }
 
-function isUnread(thread: ListedThread): boolean {
-  return (
-    thread.lastReadAt === null || thread.lastReadAt < thread.latestAttentionAt
-  );
+function collectHierarchy(
+  root: ListedThread,
+  childrenByParent: ReadonlyMap<string, readonly ListedThread[]>,
+): HierarchyEntry[] {
+  const hierarchy: HierarchyEntry[] = [{ depth: 0, thread: root }];
+  const visited = new Set([root.id]);
+  for (let index = 0; index < hierarchy.length; index += 1) {
+    const entry = hierarchy[index];
+    if (!entry) continue;
+    for (const child of childrenByParent.get(entry.thread.id) ?? []) {
+      if (visited.has(child.id)) continue;
+      visited.add(child.id);
+      hierarchy.push({ depth: entry.depth + 1, thread: child });
+    }
+  }
+  return hierarchy;
 }
 
 export async function archiveEligibleCompletedThreads(
@@ -68,23 +74,12 @@ export async function archiveEligibleCompletedThreads(
     }),
   );
   const threadById = new Map(threads.map((thread) => [thread.id, thread]));
-  const rootsWithUnsafeDescendants = new Set<string>();
+  const childrenByParent = new Map<string, ListedThread[]>();
   for (const thread of threads) {
-    if (
-      thread.parentThreadId === null ||
-      (!hasActiveWork(thread) &&
-        !thread.hasPendingInteraction &&
-        thread.pinnedAt === null)
-    ) {
-      continue;
-    }
-    let ancestorId: string | null = thread.parentThreadId;
-    const visited = new Set<string>();
-    while (ancestorId !== null && !visited.has(ancestorId)) {
-      visited.add(ancestorId);
-      rootsWithUnsafeDescendants.add(ancestorId);
-      ancestorId = threadById.get(ancestorId)?.parentThreadId ?? null;
-    }
+    if (thread.parentThreadId === null) continue;
+    const siblings = childrenByParent.get(thread.parentThreadId) ?? [];
+    siblings.push(thread);
+    childrenByParent.set(thread.parentThreadId, siblings);
   }
 
   const archived: string[] = [];
@@ -93,18 +88,21 @@ export async function archiveEligibleCompletedThreads(
     if (
       !thread ||
       thread.parentThreadId !== null ||
-      thread.visibility !== "visible" ||
-      thread.archivedAt !== null ||
-      thread.pinnedAt !== null ||
-      thread.hasPendingInteraction ||
-      hasActiveWork(thread) ||
-      isUnread(thread) ||
-      rootsWithUnsafeDescendants.has(thread.id)
+      thread.archivedAt !== null
     ) {
       continue;
     }
+    const hierarchy = collectHierarchy(thread, childrenByParent);
+    if (hierarchy.some((entry) => entry.thread.pinnedAt !== null)) continue;
+    hierarchy.sort(
+      (left, right) =>
+        right.depth - left.depth ||
+        left.thread.id.localeCompare(right.thread.id),
+    );
     try {
-      await bb.sdk.threads.archive({ threadId: thread.id });
+      for (const entry of hierarchy) {
+        await bb.sdk.threads.archiveAll({ threadId: entry.thread.id });
+      }
       archived.push(thread.id);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

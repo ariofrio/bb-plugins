@@ -22,8 +22,9 @@
   nonempty disabled stage remains visible until its threads are moved out.
 - Add safe Completed-thread auto-archive, defaulting to 7 days with Never,
   1 day, and 30 days also available. Retention follows time in Completed
-  rather than reorder time and excludes unread, pinned, active, waiting, and
-  active-descendant threads.
+  rather than reorder time. A pinned root or descendant protects the whole
+  hierarchy; otherwise every parent-linked level archives bottom-up so its
+  relationships remain intact.
 - Replace Backlog, To do, Working, Blocked, Done, and Canceled with Deferred,
   Idle, Active, Blocked, and Completed. Existing assignments and saved collapse
   choices migrate, with Done and Canceled combined in Completed.
