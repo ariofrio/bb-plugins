@@ -17,7 +17,8 @@ with that parent. Their thread actions therefore omit stage controls.
 Each row shows its project's icon when the
 [Icons](../bb-plugin-icons#readme) plugin is installed, so a stage-grouped
 list still tells you what a thread belongs to. Without that
-plugin the rows look as they always have.
+plugin the rows look as they always have. Message previews remain visible by
+default and can be hidden in the plugin's settings for a denser list.
 
 Use **Projects** (or **Projects and sections** when sections exist) above the
 stages to focus the whole sidebar—including pinned and search results—on one

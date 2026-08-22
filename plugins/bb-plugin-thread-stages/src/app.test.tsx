@@ -1,6 +1,81 @@
 // @vitest-environment jsdom
-import { loadPluginApp } from "@get-bb/plugin-sdk/testing/app";
-import { describe, expect, it } from "vitest";
+import {
+  loadPluginApp,
+  renderSlot,
+} from "@get-bb/plugin-sdk/testing/app";
+import { cleanup } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+
+afterEach(() => cleanup());
+
+const sidebarThread = {
+  id: "thread-1",
+  projectId: "project-1",
+  title: "Polish the release",
+  titleFallback: null,
+  parentThreadId: null,
+  sectionId: null,
+  originKind: null,
+  originPluginId: null,
+  providerId: "codex",
+  hasPendingInteraction: false,
+  activity: {
+    workflows: 0,
+    backgroundAgents: 0,
+    backgroundCommands: 0,
+    planMode: 0,
+    goals: 0,
+  },
+  indicator: "none" as const,
+  indicatorLabel: null,
+  isUnread: false,
+  isPinned: false,
+  isArchived: false,
+  environment: null,
+  host: null,
+  createdAt: 1,
+  updatedAt: 2,
+  lastReadAt: 2,
+  latestAttentionAt: 1,
+};
+
+const threadListProps = {
+  activeThreadId: null,
+  activeProjectId: null,
+  isCompactViewport: false,
+  onNavigate: () => {},
+  searchQuery: "",
+  experimental_Original: () => null,
+};
+
+function threadListOptions(showThreadPreviews: boolean) {
+  return {
+    settings: { showThreadPreviews },
+    rpc: {
+      listState: () => ({
+        assignments: [
+          {
+            threadId: "thread-1",
+            workflowStage: "Idle" as const,
+            sortKey: "a",
+            updatedAt: 1,
+          },
+        ],
+      }),
+      listPreviews: () => ({
+        previews: [{ threadId: "thread-1", preview: "A useful preview" }],
+      }),
+      listSections: () => ({ sections: [] }),
+      listProjectActionStates: () => ({ projects: [] }),
+    },
+    sidebarThreads: {
+      projects: [
+        { id: "project-1", name: "Example project", isPersonal: false },
+      ],
+      threads: [sidebarThread],
+    },
+  };
+}
 
 describe("thread stages app registration", () => {
   it(
@@ -21,4 +96,31 @@ describe("thread stages app registration", () => {
     },
     10_000,
   );
+
+  it("hides message previews when the setting is disabled", async () => {
+    const app = await loadPluginApp(() => import("./app"));
+    const threadList = app.threadLists[0]!;
+    const slot = renderSlot(
+      threadList,
+      threadListProps,
+      threadListOptions(false),
+    );
+
+    await slot.findByText("Polish the release");
+    expect(slot.queryByText("A useful preview")).toBeNull();
+    slot.lifecycle.unmount();
+  });
+
+  it("shows message previews by default", async () => {
+    const app = await loadPluginApp(() => import("./app"));
+    const threadList = app.threadLists[0]!;
+    const slot = renderSlot(
+      threadList,
+      threadListProps,
+      threadListOptions(true),
+    );
+
+    expect(await slot.findByText("A useful preview")).toBeTruthy();
+    slot.lifecycle.unmount();
+  });
 });

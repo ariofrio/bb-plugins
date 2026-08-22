@@ -250,6 +250,12 @@ export default function plugin(bb: BbPluginApi) {
         "Show the highest-priority thread activity indicator in collapsed stage headers.",
       default: false,
     },
+    showThreadPreviews: {
+      type: "boolean",
+      label: "Show thread message previews",
+      description: "Show the latest message preview below each thread title.",
+      default: true,
+    },
   });
   const db = bb.storage.database();
   bb.storage.migrate(db, THREAD_WORKFLOW_MIGRATIONS);
