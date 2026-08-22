@@ -21,12 +21,16 @@ import {
   readLock,
 } from "./lock.mjs";
 import { startStack } from "./stack.mjs";
+import { resolveBbCli } from "../bb-cli.mjs";
 
 const harnessDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(harnessDirectory, "../..");
 const lockPath = join(harnessDirectory, LOCK_FILENAME);
 const scratch = join(repositoryRoot, ".scratch/screenshots");
-const bb = process.env.BB_CLI ?? "bb";
+// Resolved where it is first needed: --check never invokes bb, and CI installs
+// none, so demanding one up front fails a check that has no use for it.
+let cachedBb;
+const bb = () => (cachedBb ??= resolveBbCli());
 
 const options = parseArguments(process.argv.slice(2));
 const shots = SHOTS.filter(
@@ -122,12 +126,12 @@ writeManagedConfig({ dataDir, harnessDir: harnessDirectory });
 console.log("Installing this repository's plugins…");
 execFileSync(process.execPath, [join(repositoryRoot, "scripts/install-plugins.mjs")], {
   cwd: repositoryRoot,
-  env: { ...stack.env, BB_CLI: bb },
+  env: { ...stack.env, BB_CLI: bb() },
   stdio: "inherit",
 });
 
 console.log("Seeding the fixture…");
-const fixture = seed({ stack, workspaceRoot, bb });
+const fixture = seed({ stack, workspaceRoot, bb: bb() });
 await applyPluginState({ stack, projects: fixture.projects });
 
 console.log("Capturing…");
@@ -150,7 +154,7 @@ for (const shot of captured) {
     Object.entries(shotFiles(shot)).map(([name, path]) => [name, fileDigest(path)]),
   );
 }
-lock.bbVersion = execFileSync(bb, ["--version"], { encoding: "utf8" }).trim();
+lock.bbVersion = execFileSync(bb(), ["--version"], { encoding: "utf8" }).trim();
 writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
 
 console.log(
