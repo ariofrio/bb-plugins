@@ -54,6 +54,13 @@ async function openFeaturedThread(page) {
     .getByRole("button", { name: "Permission mode" })
     .filter({ hasText: "Accept Edits" })
     .waitFor();
+  // The branch the thread's workspace is on arrives later than the composer it
+  // is written under, and it widens the row it lands in, so a shot taken in
+  // between differs from the same shot taken after. Named inside the timeline
+  // panel because the thread's details panel carries the same chip.
+  await page
+    .locator('#thread-detail-timeline-panel [title^="Copy branch name"]')
+    .waitFor();
   // The crumbs arrive later still: their backend is asked for the trail after
   // the header has already painted, and they mount into a React root of their
   // own on an animation frame. Only the breadcrumbs shot clicks the crumb, so
