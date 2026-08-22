@@ -54,13 +54,38 @@ async function openFeaturedThread(page) {
     .getByRole("button", { name: "Permission mode" })
     .filter({ hasText: "Accept Edits" })
     .waitFor();
+  // The branch the thread's workspace is on arrives later than the composer it
+  // is written under, and it widens the row it lands in, so a shot taken in
+  // between differs from the same shot taken after. Named inside the timeline
+  // panel because the thread's details panel carries the same chip.
+  await page
+    .locator('#thread-detail-timeline-panel [title^="Copy branch name"]')
+    .waitFor();
   // The crumbs arrive later still: their backend is asked for the trail after
   // the header has already painted, and they mount into a React root of their
   // own on an animation frame. Only the breadcrumbs shot clicks the crumb, so
   // every other shot framing this header would otherwise race it and capture
   // whichever title won — with the project before it, or bare.
-  await page.locator('[aria-label="Storefront actions"]').waitFor();
+  // Given the room the Thread stages sidebar is given, and for the same
+  // reason: a freshly seeded bb is still settling while the first shots are
+  // taken, and a plugin bundle can load well past Playwright's default minute.
+  await projectCrumb(page).waitFor({ timeout: 120000 });
   await page.waitForTimeout(600);
+}
+
+/**
+ * The crumb the featured thread's project draws, named by the container the
+ * plugin installs rather than by the label alone.
+ *
+ * bb's own sidebar lists threads under a project heading whose menu carries
+ * the same `Storefront actions` label, and it is on screen from the first
+ * paint until Thread stages replaces the list — which happens just before the
+ * crumb arrives. Waiting on the label alone is therefore answered immediately
+ * by a control in the other half of the window, and the wait returns during
+ * the one second when neither the heading nor the crumb is on screen.
+ */
+function projectCrumb(page) {
+  return page.locator('[data-breadcrumbs-root] [aria-label="Storefront actions"]');
 }
 
 export const SHOTS = [
@@ -90,12 +115,12 @@ export const SHOTS = [
       await openFeaturedThread(page);
       // The open menu marks the header aria-hidden, so the trigger has to be
       // found by attribute rather than by role.
-      await page.locator('[aria-label="Storefront actions"]').click();
+      await projectCrumb(page).click();
       await page.getByRole("menu").waitFor();
       await page.waitForTimeout(400);
     },
     highlights: (page) => [
-      { locator: page.locator('[aria-label="Storefront actions"]') },
+      { locator: projectCrumb(page) },
       { locator: page.getByRole("menu") },
     ],
   },

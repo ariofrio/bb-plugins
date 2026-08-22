@@ -274,8 +274,20 @@ export async function openApp({ browser, stack, theme, viewport, style }) {
     style === undefined ? HOST_STATE_STYLE : `${HOST_STATE_STYLE}\n${style}`,
   );
   const page = await context.newPage();
+  // Registered before the first navigation, because the mount every shot waits
+  // for happens during it: a listener added after `goto` observes none of the
+  // window a plugin fails in, and a run that ends in a timeout then has nothing
+  // to say about why.
+  const diagnostics = [];
+  page.on("console", (message) => {
+    if (message.type() !== "error" && message.type() !== "warning") return;
+    diagnostics.push(`${message.type()}: ${message.text()}`);
+  });
+  page.on("pageerror", (error) => {
+    diagnostics.push(`pageerror: ${error.stack ?? error.message}`);
+  });
   await page.goto(stack.serverUrl, { waitUntil: "networkidle" });
-  return { context, page };
+  return { context, page, diagnostics };
 }
 
 /**
@@ -562,7 +574,13 @@ async function freezeLoopingAnimations(page) {
  * it. Each frame gets its own window, because a card may want a different one.
  */
 async function render({ browser, stack, fixture, shot, theme, viewport, style, take }) {
-  const { context, page } = await openApp({ browser, stack, theme, viewport, style });
+  const { context, page, diagnostics } = await openApp({
+    browser,
+    stack,
+    theme,
+    viewport,
+    style,
+  });
   try {
     await shot.prepare({ page, fixture, stack, theme });
     await freezeLoopingAnimations(page);
@@ -585,6 +603,15 @@ async function render({ browser, stack, fixture, shot, theme, viewport, style, t
       ...chipBoxes,
     ];
     return await take({ page, focusBoxes });
+  } catch (error) {
+    // What the page said while it was failing, which is the only record of an
+    // error React swallowed or a warning bb logged on its way to a timeout.
+    if (diagnostics.length > 0) {
+      error.message = `${error.message}\n\nThe page reported:\n${diagnostics
+        .map((line) => `  ${line}`)
+        .join("\n")}`;
+    }
+    throw error;
   } finally {
     await context.close();
   }

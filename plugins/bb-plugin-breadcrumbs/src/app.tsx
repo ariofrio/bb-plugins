@@ -8,14 +8,13 @@ import {
 } from "@get-bb/plugin-sdk/app";
 import { Icon } from "@/components/ui/icon";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createRoot, type Root } from "react-dom/client";
 import { ProjectBreadcrumb } from "./ProjectBreadcrumb";
 import { SectionBreadcrumb } from "./SectionBreadcrumb";
 import {
   installBreadcrumbPortal,
   navigateToProjectSettings,
 } from "./header-dom";
-import { afterPluginFrame } from "./after-plugin-frame";
+import { createCrumbRoot, type CrumbRoot } from "./crumb-root";
 import type { rpcContract } from "./server";
 
 interface Trail {
@@ -84,56 +83,50 @@ function BreadcrumbsBridge({ threadId }: PluginThreadHeaderActionProps) {
   }, [shouldShow]);
 
   /**
-   * The crumbs render in a root of their own, scheduled out of the call bb is
-   * watching.
+   * The crumbs render in a root of their own, which draws them on a frame of
+   * its own and offers them again if bb refuses them.
    *
-   * bb guards its React tree: while any plugin is attributed on the stack it
-   * refuses to put a React-owned node under a container React does not own.
-   * Portaling from bb's own root put these crumbs in exactly that position —
-   * a commit begun by another plugin would carry them into the block, and bb
-   * would report that the *other* plugin had moved a node out of React's tree.
-   * A separate root shares no commit with anyone else, and the timeout leaves
-   * bb's stack before rendering.
+   * bb refuses a React-owned node under a container React does not own while a
+   * plugin is attributed on its stack, and the crumbs' container is exactly
+   * that. Whose commit carries them makes no difference — the refusal reads
+   * bb's attribution depth, not the tree — but a root of their own is what
+   * lets the crumbs be drawn on their own terms, see what became of the draw,
+   * and mount again. Portaled from bb's own root they would be committed and
+   * re-committed on bb's schedule, blocked without anyone noticing, and
+   * reported against whichever plugin's render bb happened to be in.
+   * `crumb-root.ts` has the rest.
    */
-  const rootRef = useRef<Root | null>(null);
+  const crumbRootRef = useRef<CrumbRoot | null>(null);
   useEffect(() => {
     if (portalTarget === null) return;
-    let root = rootRef.current;
-    return afterPluginFrame(() => {
-      root ??= createRoot(portalTarget);
-      rootRef.current = root;
-      root.render(
-        <Crumbs
-          section={section}
-          project={project}
-          ancestors={ancestors}
-          refresh={refresh}
-          rpc={rpc}
-          navigate={navigate}
-          threadActions={threadActions}
-        />,
-      );
-    });
-  }, [
-    ancestors,
-    navigate,
-    portalTarget,
-    project,
-    refresh,
-    rpc,
-    section,
-    threadActions,
-  ]);
+    const crumbRoot = createCrumbRoot(portalTarget);
+    crumbRootRef.current = crumbRoot;
+    return () => {
+      crumbRootRef.current = null;
+      crumbRoot.dispose();
+    };
+  }, [portalTarget]);
 
-  useEffect(
-    () => () => {
-      const root = rootRef.current;
-      rootRef.current = null;
-      // Unmounting during a commit is what React warns about, so it waits.
-      if (root !== null) afterPluginFrame(() => root.unmount());
-    },
-    [],
-  );
+  /**
+   * Handed over on every render rather than on a dependency list: `ancestors`
+   * is a fresh array each time, so a list would fire anyway, and the root
+   * coalesces repeats into the one frame it already has on its way. A list
+   * would instead cancel that frame each render, and a burst of them would
+   * leave the crumbs undrawn for as long as it lasted.
+   */
+  useEffect(() => {
+    crumbRootRef.current?.render(
+      <Crumbs
+        section={section}
+        project={project}
+        ancestors={ancestors}
+        refresh={refresh}
+        rpc={rpc}
+        navigate={navigate}
+        threadActions={threadActions}
+      />,
+    );
+  });
 
   return <span ref={markerRef} hidden />;
 }
