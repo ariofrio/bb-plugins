@@ -100,20 +100,35 @@ export function buildProjectIconMap(
 export function buildSectionIconMap(
   response: IconsResponse,
 ): Map<string, ProjectIconView> {
-  const bySection = new Map<string, ProjectIconView>();
+  return buildChosenIconMap(response, "section");
+}
+
+/**
+ * Icons of one kind that someone actually picked.
+ *
+ * Unlike {@link buildProjectIconMap}, nothing is seeded: the Icons plugin
+ * writes a row on the first pick and deletes it on Remove, so a row's absence
+ * is what sends a sidebar row on to the next owner.
+ */
+export function buildChosenIconMap(
+  response: IconsResponse,
+  kind: "project" | "section",
+): Map<string, ProjectIconView> {
+  const chosen = new Map<string, ProjectIconView>();
   for (const icon of response.icons) {
-    if (icon.kind !== "section") continue;
-    bySection.set(icon.id, {
+    if (icon.kind !== kind) continue;
+    chosen.set(icon.id, {
       name: icon.icon,
       glyph: icon.glyph,
       color: iconColor(icon.color),
     });
   }
-  return bySection;
+  return chosen;
 }
 
 export interface IconMaps {
   projects: Map<string, ProjectIconView>;
+  chosenProjects: Map<string, ProjectIconView>;
   sections: Map<string, ProjectIconView>;
 }
 
@@ -137,6 +152,7 @@ export async function fetchIcons(
     if (!envelope.ok) return empty();
     return {
       projects: buildProjectIconMap(envelope.result, projectIds),
+      chosenProjects: buildChosenIconMap(envelope.result, "project"),
       sections: buildSectionIconMap(envelope.result),
     };
   } catch {
@@ -145,7 +161,7 @@ export async function fetchIcons(
 }
 
 function empty(): IconMaps {
-  return { projects: new Map(), sections: new Map() };
+  return { projects: new Map(), chosenProjects: new Map(), sections: new Map() };
 }
 
 /** Calls back whenever the Icons plugin reports an edit. */

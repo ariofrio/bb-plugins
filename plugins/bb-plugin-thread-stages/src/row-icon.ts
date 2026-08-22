@@ -1,9 +1,12 @@
 import type { ProjectIconView } from "./icons";
 
 export interface RowIconOwners {
-  /** Sections that carry an icon of their own. Absent means none was set. */
-  sections: ReadonlyMap<string, ProjectIconView>;
+  /** Every project, carrying its default where nobody has picked one. */
   projects: ReadonlyMap<string, ProjectIconView>;
+  /** Only projects someone has picked an icon for. */
+  chosenProjects: ReadonlyMap<string, ProjectIconView>;
+  /** Only sections someone has picked an icon for. */
+  sections: ReadonlyMap<string, ProjectIconView>;
 }
 
 export interface RowIconThread {
@@ -16,17 +19,21 @@ export interface RowIconThread {
 }
 
 /**
- * The icon a sidebar row draws: its section's, or its project's.
+ * The icon a sidebar row draws: its project's, or its section's.
  *
- * A section only appears in `sections` once someone has given it an icon —
- * the Icons plugin stores a row on the first pick and deletes it on Remove —
- * so a section left alone falls through to the project, and every row in an
- * untouched sidebar looks exactly as it did before.
+ * The project is asked first, because that is what a row meant before sections
+ * had icons at all. A section answers only for a project nobody has picked an
+ * icon for, and where neither was picked the row falls back to the project's
+ * default — so an untouched sidebar looks exactly as it did, and giving a
+ * section an icon marks the threads in it without overriding a project someone
+ * has already chosen for.
  */
 export function rowIcon(
   { sectionId, projectId }: RowIconThread,
-  { sections, projects }: RowIconOwners,
+  { projects, chosenProjects, sections }: RowIconOwners,
 ): ProjectIconView | null {
+  const chosen = chosenProjects.get(projectId);
+  if (chosen !== undefined) return chosen;
   const section = sectionId === null ? undefined : sections.get(sectionId);
   return section ?? projects.get(projectId) ?? null;
 }

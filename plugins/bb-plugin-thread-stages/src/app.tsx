@@ -846,6 +846,9 @@ function WorkflowStageList({
   const [sectionIcons, setSectionIcons] = useState<
     ReadonlyMap<string, ProjectIconView>
   >(new Map());
+  const [chosenProjectIcons, setChosenProjectIcons] = useState<
+    ReadonlyMap<string, ProjectIconView>
+  >(new Map());
   const threadsById = useMemo(
     () => new Map(sidebar.threads.map((thread) => [thread.id, thread] as const)),
     [sidebar.threads],
@@ -877,6 +880,7 @@ function WorkflowStageList({
       void fetchIcons(projectIds.split(",").filter(Boolean)).then((icons) => {
         if (canceled) return;
         setProjectIcons(icons.projects);
+        setChosenProjectIcons(icons.chosenProjects);
         setSectionIcons(icons.sections);
       });
     };
@@ -1553,7 +1557,11 @@ function WorkflowStageList({
                       }
                       projectIcon={rowIcon(
                         { sectionId: sectionOf(thread), projectId: thread.projectId },
-                        { sections: sectionIcons, projects: projectIcons },
+                        {
+                          projects: projectIcons,
+                          chosenProjects: chosenProjectIcons,
+                          sections: sectionIcons,
+                        },
                       )}
                       reorderable={isRoot && !Boolean(normalizedSearch)}
                       showDropAfter={
@@ -1740,7 +1748,11 @@ function WorkflowStageList({
                         }
                         projectIcon={rowIcon(
                           { sectionId: sectionOf(thread), projectId: thread.projectId },
-                          { sections: sectionIcons, projects: projectIcons },
+                          {
+                          projects: projectIcons,
+                          chosenProjects: chosenProjectIcons,
+                          sections: sectionIcons,
+                        },
                         )}
                         reorderable={isRoot && !Boolean(normalizedSearch)}
                         showDropAfter={

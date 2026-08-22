@@ -33,6 +33,24 @@ describe("icon plugin API", () => {
     );
   });
 
+  it("keeps the default glyphs out of the catalog, so picking one is never a no-op", async () => {
+    const harness = createPluginHarness();
+
+    const { icons } = (await harness.behavior.callRpc(
+      "listIconCatalog",
+      null,
+    )) as { icons: Array<{ name: string }> };
+    const names = new Set(icons.map((icon) => icon.name));
+
+    // Choosing one of these would store a row indistinguishable from having
+    // chosen nothing, which then outranks the section's icon on every row.
+    expect(names.has("folder-01")).toBe(false);
+    expect(names.has("bubble-chat")).toBe(false);
+    // The section's default is drawn by the plugin and was never in here.
+    expect(names.has("section")).toBe(false);
+    expect(icons.length).toBeGreaterThan(2000);
+  });
+
   it("persists a project icon through the schema-validated RPC boundary", async () => {
     const harness = createPluginHarness();
 
