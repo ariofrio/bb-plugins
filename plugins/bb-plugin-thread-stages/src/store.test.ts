@@ -147,7 +147,7 @@ describe("thread status store", () => {
   it("migrates every legacy stage into the five-stage model", () => {
     const migrationDb = new Database(":memory:");
     try {
-      for (const migration of THREAD_WORKFLOW_MIGRATIONS.slice(0, -1)) {
+      for (const migration of THREAD_WORKFLOW_MIGRATIONS.slice(0, -2)) {
         migrationDb.exec(migration);
       }
       const insert = migrationDb.prepare(
@@ -173,6 +173,7 @@ describe("thread status store", () => {
         );
       }
 
+      migrationDb.exec(THREAD_WORKFLOW_MIGRATIONS.at(-2) ?? "");
       migrationDb.exec(THREAD_WORKFLOW_MIGRATIONS.at(-1) ?? "");
       const migrated = createThreadWorkflowStore(migrationDb);
 
@@ -194,6 +195,27 @@ describe("thread status store", () => {
     }
   });
 
+  it("backfills stage-entry age from existing assignment timestamps", () => {
+    const migrationDb = new Database(":memory:");
+    try {
+      for (const migration of THREAD_WORKFLOW_MIGRATIONS.slice(0, -1)) {
+        migrationDb.exec(migration);
+      }
+      migrationDb
+        .prepare(
+          "INSERT INTO thread_organization(thread_id, status, position, updated_at, sort_key) VALUES (?, ?, ?, ?, ?)",
+        )
+        .run("thr_existing", "Completed", 0, 123, "a");
+      migrationDb.exec(THREAD_WORKFLOW_MIGRATIONS.at(-1) ?? "");
+
+      expect(
+        createThreadWorkflowStore(migrationDb).listCompletedBefore(124),
+      ).toEqual([{ threadId: "thr_existing", enteredAt: 123 }]);
+    } finally {
+      migrationDb.close();
+    }
+  });
+
   it("places status changes at the bottom and preserves idempotent keys", () => {
     store.ensureThreads(["thr_a", "thr_b"]);
     store.setStage("thr_b", "Active");
@@ -210,6 +232,35 @@ describe("thread status store", () => {
       "thr_a",
     ]);
     expect(working[0]?.sortKey < (working[1]?.sortKey ?? "")).toBe(true);
+  });
+
+  it("ages Completed threads from stage entry, not later reordering", () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(1_000);
+      store.setStage("thr_a", "Completed");
+      store.setStage("thr_b", "Completed");
+
+      vi.setSystemTime(5_000);
+      store.reorderThread({
+        threadId: "thr_a",
+        workflowStage: "Completed",
+        previousThreadId: "thr_b",
+        nextThreadId: null,
+      });
+      expect(store.listCompletedBefore(2_000).map(({ threadId }) => threadId)).toEqual([
+        "thr_a",
+        "thr_b",
+      ]);
+
+      store.setStage("thr_a", "Idle");
+      store.setStage("thr_a", "Completed");
+      expect(store.listCompletedBefore(2_000).map(({ threadId }) => threadId)).toEqual([
+        "thr_b",
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("moves a task to Active only when it enters a working lifecycle", () => {

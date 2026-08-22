@@ -1,5 +1,9 @@
 import { defineRpcContract, type BbPluginApi } from "@get-bb/plugin-sdk";
 import { z } from "zod";
+import {
+  AUTO_ARCHIVE_OPTIONS,
+  registerCompletedAutoArchive,
+} from "./auto-archive";
 import { runThreadWorkflowCli } from "./cli";
 import { listAllThreads } from "./list-all-threads";
 import { sortExplicitPinnedThreadIds } from "./pinned-threads";
@@ -273,6 +277,14 @@ export default function plugin(bb: BbPluginApi) {
       description:
         "Allow threads to move into Blocked. A nonempty Blocked stage remains visible until it is emptied.",
       default: true,
+    },
+    autoArchiveCompletedAfter: {
+      type: "select",
+      label: "Auto-archive completed threads",
+      description:
+        "Archive safe Completed threads after they have stayed in that stage for the selected time.",
+      options: [...AUTO_ARCHIVE_OPTIONS],
+      default: "Never",
     },
   });
   const db = bb.storage.database();
@@ -589,6 +601,11 @@ export default function plugin(bb: BbPluginApi) {
 
   registerThreadWorkflow(bb, store);
   registerThreadPreviews(bb, store);
+  registerCompletedAutoArchive(
+    bb,
+    store,
+    async () => (await settings.get()).autoArchiveCompletedAfter,
+  );
 
   bb.log.info("Thread stages loaded");
 }

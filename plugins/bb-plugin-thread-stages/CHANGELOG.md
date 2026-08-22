@@ -20,6 +20,9 @@
 - Let Deferred and Blocked be disabled. Disabled stages disappear from empty
   sidebar groups, move menus, drag destinations, and shortcuts, while a
   nonempty disabled stage remains visible until its threads are moved out.
+- Add safe Completed-thread auto-archive with Never, 1 day, 7 days, and 30 days
+  settings. Retention follows time in Completed rather than reorder time and
+  excludes unread, pinned, active, waiting, and active-descendant threads.
 - Replace Backlog, To do, Working, Blocked, Done, and Canceled with Deferred,
   Idle, Active, Blocked, and Completed. Existing assignments and saved collapse
   choices migrate, with Done and Canceled combined in Completed.

@@ -188,6 +188,14 @@ export const THREAD_WORKFLOW_MIGRATIONS = [
     CREATE INDEX IF NOT EXISTS thread_organization_status_sort_key
       ON thread_organization(status, sort_key, thread_id);
   `,
+  `
+    CREATE TABLE IF NOT EXISTS thread_stage_entry (
+      thread_id TEXT PRIMARY KEY,
+      entered_at INTEGER NOT NULL
+    );
+    INSERT OR IGNORE INTO thread_stage_entry(thread_id, entered_at)
+      SELECT thread_id, updated_at FROM thread_organization;
+  `,
 ];
 
 interface AssignmentRow {
@@ -244,10 +252,16 @@ export interface ThreadPreview {
   preview: string | null;
 }
 
+export interface CompletedThreadCandidate {
+  threadId: string;
+  enteredAt: number;
+}
+
 export interface ThreadWorkflowStore {
   listState(): WorkflowStageState;
   listPreviews(): ThreadPreview[];
   listUndoCandidates(): UndoCandidate[];
+  listCompletedBefore(cutoff: number): CompletedThreadCandidate[];
   get(threadId: string): WorkflowStageLookup;
   ensureThreads(threadIds: readonly string[]): WorkflowStageState;
   syncRootThreads(
@@ -344,6 +358,21 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
   const deleteAssignment = db.prepare(
     "DELETE FROM thread_organization WHERE thread_id = ?",
   );
+  const upsertStageEntry = db.prepare(`
+    INSERT INTO thread_stage_entry(thread_id, entered_at)
+    VALUES (?, ?)
+    ON CONFLICT(thread_id) DO UPDATE SET entered_at = excluded.entered_at
+  `);
+  const listCompletedBeforeRows = db.prepare(`
+    SELECT organization.thread_id, entry.entered_at
+    FROM thread_organization AS organization
+    JOIN thread_stage_entry AS entry ON entry.thread_id = organization.thread_id
+    WHERE organization.status = 'Completed' AND entry.entered_at <= ?
+    ORDER BY entry.entered_at, organization.thread_id
+  `);
+  const deleteStageEntry = db.prepare(
+    "DELETE FROM thread_stage_entry WHERE thread_id = ?",
+  );
   const getWorkingState = db.prepare(
     "SELECT is_working FROM thread_task_workflow WHERE thread_id = ?",
   );
@@ -412,6 +441,7 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
         null,
         null,
       );
+      upsertStageEntry.run(threadId, now);
       previousKey = sortKey;
     }
     return listState();
@@ -437,6 +467,7 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
           throw new Error("A thread cannot be both a root and a child.");
         }
         deleteAssignment.run(threadId);
+        deleteStageEntry.run(threadId);
         deleteWorkingState.run(threadId);
       }
       return ensureThreads(rootThreadIds);
@@ -445,8 +476,9 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
 
   const removeRootThreadTransaction = db.transaction((threadId: string): boolean => {
     const assignmentDeleted = deleteAssignment.run(threadId).changes > 0;
+    const stageEntryDeleted = deleteStageEntry.run(threadId).changes > 0;
     const workflowDeleted = deleteWorkingState.run(threadId).changes > 0;
-    return assignmentDeleted || workflowDeleted;
+    return assignmentDeleted || stageEntryDeleted || workflowDeleted;
   });
 
   function moveToStage(
@@ -460,15 +492,17 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
     const sortKey = last
       ? createOrderKeyAfter({ previousKey: last.sort_key })
       : createOrderKeyBetween({ previousKey: null, nextKey: null });
+    const now = Date.now();
     upsertAssignment.run(
       threadId,
       stage,
-      Date.now(),
+      now,
       sortKey,
       source,
       existing?.status ?? null,
       existing?.sort_key ?? null,
     );
+    upsertStageEntry.run(threadId, now);
     return true;
   }
 
@@ -490,15 +524,19 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
         return listState();
       }
       const existing = getAssignment.get(threadId) as AssignmentRow | undefined;
+      const now = Date.now();
       upsertAssignment.run(
         threadId,
         "Idle",
-        Date.now(),
+        now,
         sortKey,
         "app",
         existing?.status ?? null,
         existing?.sort_key ?? null,
       );
+      if (existing?.status !== "Idle") {
+        upsertStageEntry.run(threadId, now);
+      }
       return listState();
     },
   );
@@ -579,15 +617,19 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
         previousKey: previous?.sortKey ?? null,
         nextKey: next?.sortKey ?? null,
       });
+      const now = Date.now();
       upsertAssignment.run(
         input.threadId,
         input.workflowStage,
-        Date.now(),
+        now,
         sortKey,
         input.source ?? "app",
         moved?.status ?? null,
         moved?.sort_key ?? null,
       );
+      if (moved?.status !== input.workflowStage) {
+        upsertStageEntry.run(input.threadId, now);
+      }
       return listState();
     },
   );
@@ -656,6 +698,18 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
         updatedAt: row.updated_at,
       }));
     },
+    listCompletedBefore(cutoff) {
+      if (!Number.isFinite(cutoff)) throw new Error("Cutoff must be finite.");
+      return (
+        listCompletedBeforeRows.all(cutoff) as Array<{
+          thread_id: string;
+          entered_at: number;
+        }>
+      ).map((row) => ({
+        threadId: row.thread_id,
+        enteredAt: row.entered_at,
+      }));
+    },
     observeActiveState(threadId, isWorking) {
       assertThreadId(threadId);
       return observeActiveStateTransaction.immediate(threadId, isWorking);
@@ -686,9 +740,15 @@ export function createThreadWorkflowStore(db: Database): ThreadWorkflowStore {
       return db
         .transaction(() => {
           const assignmentDeleted = deleteAssignment.run(threadId).changes > 0;
+          const stageEntryDeleted = deleteStageEntry.run(threadId).changes > 0;
           const workflowDeleted = deleteWorkingState.run(threadId).changes > 0;
           const previewDeleted = deletePreview.run(threadId).changes > 0;
-          return assignmentDeleted || workflowDeleted || previewDeleted;
+          return (
+            assignmentDeleted ||
+            stageEntryDeleted ||
+            workflowDeleted ||
+            previewDeleted
+          );
         })
         .immediate();
     },

@@ -78,7 +78,12 @@ on:
 |      ⌃⌘. | Deferred    | Go to the thread below it      |
 
 **Active** has no chord because Thread stages assigns it automatically.
-Moving a thread to **Completed** does not archive it.
+Moving a thread to **Completed** does not archive it immediately. Auto-archive
+is **Never** by default; plugin settings can instead archive eligible threads
+after 1, 7, or 30 continuous days in Completed. The hourly sweep skips pinned,
+unread, running, or waiting threads and roots with active, waiting, or pinned
+descendants. Reordering does not reset the timer, and the Completed assignment
+is preserved if a thread is later unarchived.
 
 Filing a thread moves you down the Idle stage, so the chords walk it in
 place: you land on the row below the one you filed, or on the row above it
