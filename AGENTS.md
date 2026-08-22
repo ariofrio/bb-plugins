@@ -29,6 +29,7 @@
 - A shot of the collection rather than of a plugin writes to the repository's own `assets/`: `hero-<mode>.png` shades nothing, because it points at nothing. Every other shot names the plugin it belongs to, and lands beside that plugin's own README.
 - Whatever the capturing machine brings with it stays out of frame, and whatever the app resolves late is waited for rather than raced — the update chips report this machine's pending updates, and the composer's permission mode and the branch its workspace is on both arrive after the thread does. Two runs on one machine write the same files byte for byte; that is the bar a change to the harness has to keep.
 - Capturing needs macOS, the bb desktop app, the Node in `.nvmrc`, and `npx playwright install chromium`. `npm run check:screenshots` needs none of it, and CI runs it to report a screenshot whose plugin changed after it was captured.
+- `--only` is for looking, not for committing. Every shot opens the same thread, so by the time the last one runs bb has long since marked it read; a run of that shot on its own opens it for the first time and draws the unread divider a full run never sees. A file that is going to be committed comes from a full run.
 
 ## Testing
 
