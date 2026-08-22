@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "name": "ribbon",
   "displayName": "Ribbon",
-  "description": "A suite of bb plugins for managing large amounts of agents. Grow your swarm. Don't lose the thread.",
+  "description": "A suite of bb plugins for managing large amounts of agents.",
   "plugins": [
     {
       "id": "breadcrumbs",
