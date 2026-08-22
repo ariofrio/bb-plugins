@@ -25,6 +25,7 @@ describe("icon plugin API", () => {
       "listPlacements",
       "setIcon",
       "clearIcon",
+      "sectionForThread",
     ]);
     expect(harness.inspection.registrations.services).toHaveLength(1);
     expect(harness.inspection.registrations.services[0]?.name).toBe(
