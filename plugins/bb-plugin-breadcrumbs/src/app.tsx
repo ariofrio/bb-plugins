@@ -84,15 +84,17 @@ function BreadcrumbsBridge({ threadId }: PluginThreadHeaderActionProps) {
 
   /**
    * The crumbs render in a root of their own, which draws them on a frame of
-   * its own and again later if bb refused them.
+   * its own and offers them again if bb refuses them.
    *
-   * bb guards its React tree: while any plugin is attributed on its stack it
-   * refuses to put a React-owned node under a container React does not own.
-   * Portaling from bb's own root put these crumbs in exactly that position —
-   * a commit begun by another plugin would carry them into the block, and bb
-   * would report that the *other* plugin had moved a node out of React's tree.
-   * A separate root shares no commit with anyone else. See `crumb-root.ts` for
-   * why leaving bb's stack is not by itself enough to leave that window.
+   * bb refuses a React-owned node under a container React does not own while a
+   * plugin is attributed on its stack, and the crumbs' container is exactly
+   * that. Whose commit carries them makes no difference — the refusal reads
+   * bb's attribution depth, not the tree — but a root of their own is what
+   * lets the crumbs be drawn on their own terms, see what became of the draw,
+   * and mount again. Portaled from bb's own root they would be committed and
+   * re-committed on bb's schedule, blocked without anyone noticing, and
+   * reported against whichever plugin's render bb happened to be in.
+   * `crumb-root.ts` has the rest.
    */
   const crumbRootRef = useRef<CrumbRoot | null>(null);
   useEffect(() => {
