@@ -59,7 +59,10 @@ async function openFeaturedThread(page) {
   // own on an animation frame. Only the breadcrumbs shot clicks the crumb, so
   // every other shot framing this header would otherwise race it and capture
   // whichever title won — with the project before it, or bare.
-  await projectCrumb(page).waitFor();
+  // Given the room the Thread stages sidebar is given, and for the same
+  // reason: a freshly seeded bb is still settling while the first shots are
+  // taken, and a plugin bundle can load well past Playwright's default minute.
+  await projectCrumb(page).waitFor({ timeout: 120000 });
   await page.waitForTimeout(600);
 }
 
