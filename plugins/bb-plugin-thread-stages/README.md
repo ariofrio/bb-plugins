@@ -81,10 +81,11 @@ on:
 Moving a thread to **Completed** does not archive it immediately. Auto-archive
 defaults to **7 days**; plugin settings can instead archive eligible threads
 after 1 or 30 continuous days in Completed, or disable it with Never. The
-hourly sweep skips pinned, unread, running, or waiting threads and roots with
-active, waiting, or pinned
-descendants. Reordering does not reset the timer, and the Completed assignment
-is preserved if a thread is later unarchived.
+hourly sweep skips a hierarchy only when its root or a descendant is pinned.
+Otherwise it archives every parent-linked level from the bottom up, preserving
+the hierarchy even when threads are unread, running, or waiting. Reordering
+does not reset the timer, and the Completed assignment is preserved if a
+thread is later unarchived.
 
 Filing a thread moves you down the Idle stage, so the chords walk it in
 place: you land on the row below the one you filed, or on the row above it

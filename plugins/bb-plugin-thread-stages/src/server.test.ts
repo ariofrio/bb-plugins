@@ -58,7 +58,7 @@ describe("thread stages plugin API", () => {
         type: "select",
         label: "Auto-archive completed threads",
         description:
-          "Archive safe Completed threads after they have stayed in that stage for the selected time.",
+          "Archive unpinned Completed thread hierarchies after they have stayed in that stage for the selected time.",
         options: ["Never", "1 day", "7 days", "30 days"],
         default: "7 days",
       },
