@@ -20,6 +20,7 @@
 ## Workflow
 
 - After every atomic plugin change that you are confident works correctly, install or reload it in bb as applicable, verify it with the relevant tests and checks, then commit and push it before moving on.
+- Merge a pull request with squash, and let GitHub write the commit message. The repository takes the subject from the pull request title and leaves the body blank on purpose, so `gh pr merge --squash` wants no `--subject` and no `--body`; passing either overrides a deliberate setting. Title the pull request the way the commit should read, and put the reasoning in its body, which is where it stays — a commit body written locally does not survive the merge.
 
 ## Screenshots
 
