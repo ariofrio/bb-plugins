@@ -59,15 +59,17 @@ import { createNativeCommandDelegate } from "./native-command-delegation";
 import { notifyNativeShortcutHandled } from "./native-command-hints";
 import { usePersistentStringSet } from "./persistent-string-set";
 import {
-  fetchProjectIcons,
+  fetchIcons,
   subscribeToProjectIconChanges,
   type ProjectIconView,
 } from "./icons";
 import { shouldSyncThreads } from "./workflow-sync";
 import {
   partitionWorkflowThreads,
+  rootThreadIdByThreadId,
   withThreadAncestors,
 } from "./root-thread-ownership";
+import { rowIcon } from "./row-icon";
 import {
   currentThreadId,
   workflowReorderShortcut,
@@ -841,17 +843,42 @@ function WorkflowStageList({
   const [projectIcons, setProjectIcons] = useState<
     ReadonlyMap<string, ProjectIconView>
   >(new Map());
+  const [sectionIcons, setSectionIcons] = useState<
+    ReadonlyMap<string, ProjectIconView>
+  >(new Map());
+  const threadsById = useMemo(
+    () => new Map(sidebar.threads.map((thread) => [thread.id, thread] as const)),
+    [sidebar.threads],
+  );
+  const rootIdByThreadId = useMemo(
+    () => rootThreadIdByThreadId(sidebar.threads),
+    [sidebar.threads],
+  );
+  /**
+   * A thread's section, which bb keeps on its root thread — a child carries
+   * null and shows what its root is filed under, the same rule the Breadcrumbs
+   * plugin follows for the section crumb.
+   */
+  const sectionOf = useCallback(
+    (thread: { id: string; sectionId: string | null }) => {
+      if (thread.sectionId !== null) return thread.sectionId;
+      const rootId = rootIdByThreadId.get(thread.id) ?? null;
+      if (rootId === null || rootId === thread.id) return null;
+      return threadsById.get(rootId)?.sectionId ?? null;
+    },
+    [rootIdByThreadId, threadsById],
+  );
   const [projectActionStates, setProjectActionStates] = useState<
     ReadonlyMap<string, { canAddLocalPath: boolean }>
   >(new Map());
   useEffect(() => {
     let canceled = false;
     const load = () => {
-      void fetchProjectIcons(projectIds.split(",").filter(Boolean)).then(
-        (icons) => {
-          if (!canceled) setProjectIcons(icons);
-        },
-      );
+      void fetchIcons(projectIds.split(",").filter(Boolean)).then((icons) => {
+        if (canceled) return;
+        setProjectIcons(icons.projects);
+        setSectionIcons(icons.sections);
+      });
     };
     load();
     const unsubscribe = subscribeToProjectIconChanges(load);
@@ -1524,7 +1551,10 @@ function WorkflowStageList({
                           ? (previews.get(thread.id) ?? null)
                           : null
                       }
-                      projectIcon={projectIcons.get(thread.projectId) ?? null}
+                      projectIcon={rowIcon(
+                        { sectionId: sectionOf(thread), projectId: thread.projectId },
+                        { sections: sectionIcons, projects: projectIcons },
+                      )}
                       reorderable={isRoot && !Boolean(normalizedSearch)}
                       showDropAfter={
                         dropGroup === PINNED_SECTION &&
@@ -1708,7 +1738,10 @@ function WorkflowStageList({
                             ? (previews.get(thread.id) ?? null)
                             : null
                         }
-                        projectIcon={projectIcons.get(thread.projectId) ?? null}
+                        projectIcon={rowIcon(
+                          { sectionId: sectionOf(thread), projectId: thread.projectId },
+                          { sections: sectionIcons, projects: projectIcons },
+                        )}
                         reorderable={isRoot && !Boolean(normalizedSearch)}
                         showDropAfter={
                           dropGroup === stage && dropAfter === thread.id

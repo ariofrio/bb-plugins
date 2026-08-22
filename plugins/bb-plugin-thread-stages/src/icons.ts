@@ -89,9 +89,37 @@ export function buildProjectIconMap(
   return byProject;
 }
 
-export async function fetchProjectIcons(
+/**
+ * Sections that carry an icon of their own.
+ *
+ * Unlike projects, nothing is seeded here: the Icons plugin writes a row on
+ * the first pick and deletes it on Remove, so a section is in this map exactly
+ * when someone chose an icon for it. A row's absence is what sends a row back
+ * to its project's icon.
+ */
+export function buildSectionIconMap(
+  response: IconsResponse,
+): Map<string, ProjectIconView> {
+  const bySection = new Map<string, ProjectIconView>();
+  for (const icon of response.icons) {
+    if (icon.kind !== "section") continue;
+    bySection.set(icon.id, {
+      name: icon.icon,
+      glyph: icon.glyph,
+      color: iconColor(icon.color),
+    });
+  }
+  return bySection;
+}
+
+export interface IconMaps {
+  projects: Map<string, ProjectIconView>;
+  sections: Map<string, ProjectIconView>;
+}
+
+export async function fetchIcons(
   projectIds: readonly string[],
-): Promise<Map<string, ProjectIconView>> {
+): Promise<IconMaps> {
   try {
     const response = await fetch(
       `/api/v1/plugins/${ICONS_PLUGIN_ID}/rpc/listIcons`,
@@ -102,15 +130,22 @@ export async function fetchProjectIcons(
         credentials: "same-origin",
       },
     );
-    if (!response.ok) return new Map();
+    if (!response.ok) return empty();
     const envelope = (await response.json()) as
       | { ok: true; result: IconsResponse }
       | { ok: false };
-    if (!envelope.ok) return new Map();
-    return buildProjectIconMap(envelope.result, projectIds);
+    if (!envelope.ok) return empty();
+    return {
+      projects: buildProjectIconMap(envelope.result, projectIds),
+      sections: buildSectionIconMap(envelope.result),
+    };
   } catch {
-    return new Map();
+    return empty();
   }
+}
+
+function empty(): IconMaps {
+  return { projects: new Map(), sections: new Map() };
 }
 
 /** Calls back whenever the Icons plugin reports an edit. */
