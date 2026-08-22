@@ -139,6 +139,15 @@ export const SHOTS = [
       await openFeaturedThread(page);
       await page.locator('[aria-label="Icon for Storefront"]').click();
       await page.getByRole("dialog").waitFor();
+      // The catalog is fetched rather than bundled, so the picker opens on a
+      // placeholder and fills a beat later. Waiting for the grid rather than
+      // for a moment is what keeps the shot from catching whichever of the two
+      // won — the picker's whole point, empty, is not the picture.
+      await page
+        .getByRole("dialog")
+        .getByText("Loading icons…")
+        .waitFor({ state: "detached" });
+      await page.locator('[aria-label="Icon categories"]').waitFor();
       await page.waitForTimeout(600);
     },
     highlights: (page) => [
