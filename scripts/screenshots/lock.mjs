@@ -12,16 +12,22 @@ function hashFile(hash, path) {
 }
 
 /**
- * Skips what cannot change a picture: build output, and the harness's own lock
- * and tests — the lock in particular is written by every capture, so hashing it
- * would report drift the moment a capture finished.
+ * Skips what cannot change a picture: build output, the lock, and tests of
+ * either half. The lock in particular is written by every capture, so hashing
+ * it would report drift the moment a capture finished. A plugin's tests are
+ * neither shipped nor bundled — `bb plugin build` reaches them from no entry
+ * point — so editing one can no more move a pixel than editing the harness's
+ * own tests can, and charging a recapture for it costs an hour on a busy
+ * machine to redraw an identical set of files.
  */
+const TEST_FILE = /\.test\.[cm]?[jt]sx?$/u;
+
 function ignored(name) {
   return (
     name === "node_modules" ||
     name === "dist" ||
     name === LOCK_FILENAME ||
-    name.endsWith(".test.mjs")
+    TEST_FILE.test(name)
   );
 }
 
