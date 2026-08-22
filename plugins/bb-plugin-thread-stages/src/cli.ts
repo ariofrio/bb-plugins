@@ -8,6 +8,7 @@ interface CliResult {
 }
 
 export interface ThreadWorkflowCliContext {
+  enabledStages?: readonly (typeof WORKFLOW_STAGES)[number][];
   listThreadIds?: readonly string[];
   rootIdsByThreadId?: ReadonlyMap<string, string | null>;
   threadId?: string;
@@ -259,6 +260,13 @@ export function runThreadWorkflowCli(
           : current.workflowStage;
       if (!stage) {
         throw new Error(`Unknown stage. Expected one of: ${STAGE_LABELS}`);
+      }
+      if (
+        typeof rawStage === "string" &&
+        context.enabledStages &&
+        !context.enabledStages.includes(stage)
+      ) {
+        throw new Error(`Stage ${stage} is disabled in Thread stages settings.`);
       }
 
       const warnings: string[] = [];

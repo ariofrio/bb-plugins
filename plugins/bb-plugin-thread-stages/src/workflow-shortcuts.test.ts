@@ -59,6 +59,22 @@ describe("workflowStageShortcut", () => {
     ).toBeNull();
   });
 
+  it("does not claim shortcuts for disabled stages", () => {
+    const enabledStages = ["Idle", "Active", "Completed"] as const;
+    expect(
+      workflowStageShortcut(
+        { ...baseChord, ctrlKey: true },
+        enabledStages,
+      ),
+    ).toBeNull();
+    expect(
+      workflowStageShortcut(
+        { ...baseChord, ctrlKey: true, shiftKey: true },
+        enabledStages,
+      ),
+    ).toBeNull();
+  });
+
   it("rejects other chords and held-key repeats", () => {
     expect(workflowStageShortcut({ ...baseChord, metaKey: false })).toBeNull();
     expect(

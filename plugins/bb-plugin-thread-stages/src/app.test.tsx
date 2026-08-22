@@ -48,15 +48,19 @@ const threadListProps = {
   experimental_Original: () => null,
 };
 
-function threadListOptions(showThreadPreviews: boolean) {
+function threadListOptions(
+  showThreadPreviews: boolean,
+  workflowStage: "Deferred" | "Idle" = "Idle",
+  settings: Record<string, boolean> = {},
+) {
   return {
-    settings: { showThreadPreviews },
+    settings: { ...settings, showThreadPreviews },
     rpc: {
       listState: () => ({
         assignments: [
           {
             threadId: "thread-1",
-            workflowStage: "Idle" as const,
+            workflowStage,
             sortKey: "a",
             updatedAt: 1,
           },
@@ -121,6 +125,31 @@ describe("thread stages app registration", () => {
     );
 
     expect(await slot.findByText("A useful preview")).toBeTruthy();
+    slot.lifecycle.unmount();
+  });
+
+  it("hides an empty disabled stage", async () => {
+    const app = await loadPluginApp(() => import("./app"));
+    const slot = renderSlot(
+      app.threadLists[0]!,
+      threadListProps,
+      threadListOptions(true, "Idle", { showDeferredStage: false }),
+    );
+
+    await slot.findByText("Polish the release");
+    expect(slot.queryByText("Deferred")).toBeNull();
+    slot.lifecycle.unmount();
+  });
+
+  it("keeps a nonempty disabled stage visible so it can be emptied", async () => {
+    const app = await loadPluginApp(() => import("./app"));
+    const slot = renderSlot(
+      app.threadLists[0]!,
+      threadListProps,
+      threadListOptions(true, "Deferred", { showDeferredStage: false }),
+    );
+
+    expect(await slot.findByText("Deferred")).toBeTruthy();
     slot.lifecycle.unmount();
   });
 });

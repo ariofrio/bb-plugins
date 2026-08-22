@@ -42,6 +42,7 @@ export interface ResolveWorkflowReorderInput {
   assignments: readonly ThreadAssignment[];
   threadId: string;
   workflowStage: WorkflowStage;
+  enabledStages?: readonly WorkflowStage[];
   intent: ReorderIntent;
 }
 
@@ -91,6 +92,7 @@ export function resolveWorkflowReorder({
   assignments,
   threadId,
   workflowStage,
+  enabledStages = WORKFLOW_STAGES,
   intent,
 }: ResolveWorkflowReorderInput): WorkflowReorder {
   const listed = listedThreads(threads);
@@ -98,8 +100,19 @@ export function resolveWorkflowReorder({
   if (roots.get(threadId) !== threadId) return { kind: "none" };
 
   if (intent.scope === "stage") {
+    const currentIndex = enabledStages.indexOf(workflowStage);
     const nextStage =
-      WORKFLOW_STAGES[WORKFLOW_STAGES.indexOf(workflowStage) + intent.direction];
+      currentIndex === -1
+        ? enabledStages
+            .filter((stage) =>
+              intent.direction === -1
+                ? WORKFLOW_STAGES.indexOf(stage) <
+                  WORKFLOW_STAGES.indexOf(workflowStage)
+                : WORKFLOW_STAGES.indexOf(stage) >
+                  WORKFLOW_STAGES.indexOf(workflowStage),
+            )
+            .at(intent.direction === -1 ? -1 : 0)
+        : enabledStages[currentIndex + intent.direction];
     return nextStage === undefined
       ? { kind: "none" }
       : { kind: "stage", workflowStage: nextStage };

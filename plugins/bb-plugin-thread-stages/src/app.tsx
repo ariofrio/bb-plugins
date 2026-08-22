@@ -28,6 +28,7 @@ import {
   DEFAULT_WORKFLOW_STAGE,
   WORKFLOW_STAGES,
   destinationOrder,
+  enabledWorkflowStages,
   groupThreadsByStage,
   type ThreadAssignment,
   type WorkflowStage,
@@ -187,6 +188,7 @@ interface ThreadRowProps {
   showDropBefore: boolean;
   sections: readonly ThreadSectionOption[];
   workflowStage: WorkflowStage | null;
+  workflowStages: readonly WorkflowStage[];
   thread: PluginSidebarThread;
 }
 
@@ -220,6 +222,7 @@ function ThreadRow({
   showDropBefore,
   sections,
   workflowStage,
+  workflowStages,
   thread,
 }: ThreadRowProps) {
   const { splitProps, isAvailable: splitAvailable, layout } =
@@ -263,6 +266,7 @@ function ThreadRow({
     onSetWorkflowStage: onChangeStage,
     splitAvailable,
     workflowStage,
+    workflowStages,
     thread,
   };
 
@@ -675,6 +679,11 @@ function WorkflowStageList({
   const showCollapsedStageIndicators =
     settings.values?.showCollapsedStageIndicators === true;
   const showThreadPreviews = settings.values?.showThreadPreviews !== false;
+  const enabledStages = useMemo(
+    () => enabledWorkflowStages(settings.values),
+    [settings.values?.showBlockedStage, settings.values?.showDeferredStage],
+  );
+  const enabledStageSet = useMemo(() => new Set(enabledStages), [enabledStages]);
   const showSidebarFilter = settings.values?.showSidebarFilter !== false;
   const [mutationPending, setMutationPending] = useState(false);
   const [pinnedThreadIds, setPinnedThreadIds] = useState<readonly string[]>([]);
@@ -1021,6 +1030,13 @@ function WorkflowStageList({
     () => groupThreadsByStage(statusThreads, organization?.assignments ?? []),
     [organization?.assignments, statusThreads],
   );
+  const displayedStages = useMemo(
+    () =>
+      WORKFLOW_STAGES.filter(
+        (stage) => enabledStageSet.has(stage) || groups[stage].length > 0,
+      ),
+    [enabledStageSet, groups],
+  );
   const assignmentByThreadId = useMemo(
     () =>
       new Map(
@@ -1053,7 +1069,12 @@ function WorkflowStageList({
       stage: WorkflowStage,
       beforeThreadId: string | null,
     ) => {
-      if (mutationPending || unsyncedThreadIds.length > 0) return;
+      if (
+        mutationPending ||
+        unsyncedThreadIds.length > 0 ||
+        !enabledStageSet.has(stage)
+      )
+        return;
       const order = destinationOrder(
         flattenThreadHierarchy(groups[stage], new Set<string>())
           .filter(({ depth }) => depth === 0)
@@ -1082,7 +1103,15 @@ function WorkflowStageList({
         clearDrag();
       }
     },
-    [clearDrag, groups, mutationPending, refresh, rpc, unsyncedThreadIds.length],
+    [
+      clearDrag,
+      enabledStageSet,
+      groups,
+      mutationPending,
+      refresh,
+      rpc,
+      unsyncedThreadIds.length,
+    ],
   );
 
   const commitPinnedMove = useCallback(
@@ -1508,6 +1537,7 @@ function WorkflowStageList({
                       }
                       sections={sections}
                       workflowStage={workflowStage}
+                      workflowStages={enabledStages}
                       thread={thread}
                     />
                   );
@@ -1516,7 +1546,7 @@ function WorkflowStageList({
             </ul>
           </SidebarSection>
         ) : null}
-        {WORKFLOW_STAGES.map((stage) => {
+        {displayedStages.map((stage) => {
           const allThreads = groups[stage];
           const shownThreads = allThreads;
           const idsInStage = new Set(allThreads.map((thread) => thread.id));
@@ -1547,7 +1577,8 @@ function WorkflowStageList({
               onDragOverEnd={(event) => {
                 if (
                   !draggingThreadId ||
-                  pinnedRootIds.has(draggingThreadId)
+                  pinnedRootIds.has(draggingThreadId) ||
+                  !enabledStageSet.has(stage)
                 ) {
                   return;
                 }
@@ -1559,7 +1590,8 @@ function WorkflowStageList({
               onDropAtEnd={(event) => {
                 if (
                   !draggingThreadId ||
-                  pinnedRootIds.has(draggingThreadId)
+                  pinnedRootIds.has(draggingThreadId) ||
+                  !enabledStageSet.has(stage)
                 ) {
                   return;
                 }
@@ -1688,6 +1720,7 @@ function WorkflowStageList({
                         }
                         sections={sections}
                         workflowStage={isRoot ? stage : null}
+                        workflowStages={enabledStages}
                         thread={thread}
                       />
                     );
@@ -1808,6 +1841,26 @@ export default definePluginApp((app) => {
   app.contentScripts.register({
     id: "workflow-shortcuts",
     mount({ pluginId, signal }) {
+      let shortcutStages: readonly WorkflowStage[] = WORKFLOW_STAGES;
+      const refreshShortcutStages = async () => {
+        try {
+          const response = await fetch(
+            `/api/v1/plugins/${encodeURIComponent(pluginId)}/settings`,
+            { credentials: "same-origin", signal },
+          );
+          if (!response.ok) return;
+          const body = (await response.json()) as {
+            values?: Record<string, string | boolean>;
+          };
+          shortcutStages = enabledWorkflowStages(body.values);
+        } catch {
+          // Keep the last known settings while the host is reconnecting.
+        }
+      };
+      void refreshShortcutStages();
+      window.addEventListener("focus", () => void refreshShortcutStages(), {
+        signal,
+      });
       const createKeyboardEvent = (type: string, init: KeyboardEventInit) =>
         new KeyboardEvent(type, init);
       const newThreadCommand = createNativeCommandDelegate({
@@ -1830,7 +1883,7 @@ export default definePluginApp((app) => {
         "keydown",
         (event) => {
           if (newThreadCommand.isDelegatedEvent(event)) return;
-          const workflowStage = workflowStageShortcut(event);
+          const workflowStage = workflowStageShortcut(event, shortcutStages);
           const reorder = workflowReorderShortcut(event);
           if (workflowStage === null && reorder === null) return;
           const threadId = currentThreadId(window.location.pathname);

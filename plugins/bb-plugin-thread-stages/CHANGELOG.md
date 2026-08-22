@@ -17,6 +17,9 @@
 
 - Add a setting to hide thread message previews while preserving the compact
   title-only row layout.
+- Let Deferred and Blocked be disabled. Disabled stages disappear from empty
+  sidebar groups, move menus, drag destinations, and shortcuts, while a
+  nonempty disabled stage remains visible until its threads are moved out.
 - Replace Backlog, To do, Working, Blocked, Done, and Canceled with Deferred,
   Idle, Active, Blocked, and Completed. Existing assignments and saved collapse
   choices migrate, with Done and Canceled combined in Completed.

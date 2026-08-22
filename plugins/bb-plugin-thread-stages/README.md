@@ -36,6 +36,9 @@ setting can add the highest-priority aggregate activity indicator to collapsed
 stage headers, immediately to the right of the count. On a client with no saved
 collapse choices, Deferred and Completed start collapsed; Idle, Active, and
 Blocked start expanded. Saved choices from the former stage names migrate.
+Deferred and Blocked can each be disabled in plugin settings. A disabled stage
+stays visible while it still contains threads, but no longer accepts moves;
+after it is emptied, it disappears.
 
 Drag root threads to reorder or change their stage. Ordering uses
 fractional keys, so a move updates only the moved thread. Root threads enter
@@ -106,6 +109,7 @@ and rejects stage shortcuts on child threads, whichever sidebar is displayed.
 All of these shortcuts work while an input, editor, or composer has focus. They
 use exact modifier matching, ignore held-key repeats, and stop matched key
 events from propagating to downstream BB or editor handlers.
+Shortcuts for disabled stages are left unclaimed.
 
 ## CLI
 

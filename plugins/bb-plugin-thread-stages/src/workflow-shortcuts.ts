@@ -1,4 +1,4 @@
-import type { WorkflowStage } from "./workflow-stage";
+import { WORKFLOW_STAGES, type WorkflowStage } from "./workflow-stage";
 
 export interface ShortcutKeyEvent {
   altKey: boolean;
@@ -28,16 +28,17 @@ const STAGE_CHORDS: readonly StageChord[] = [
 
 export function workflowStageShortcut(
   event: ShortcutKeyEvent,
+  enabledStages: readonly WorkflowStage[] = WORKFLOW_STAGES,
 ): WorkflowStage | null {
   if (!event.metaKey || event.repeat || event.code !== "Period") return null;
-  return (
+  const stage =
     STAGE_CHORDS.find(
       (chord) =>
         chord.altKey === event.altKey &&
         chord.ctrlKey === event.ctrlKey &&
         chord.shiftKey === event.shiftKey,
-    )?.stage ?? null
-  );
+    )?.stage ?? null;
+  return stage !== null && enabledStages.includes(stage) ? stage : null;
 }
 
 export type ReorderScope = "step" | "edge" | "stage";

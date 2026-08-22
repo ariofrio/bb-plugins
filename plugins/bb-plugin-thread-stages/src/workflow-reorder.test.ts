@@ -110,6 +110,29 @@ describe("resolveWorkflowReorder", () => {
     ).toEqual({ kind: "none" });
   });
 
+  it("skips disabled stages during cross-stage keyboard moves", () => {
+    expect(
+      resolveWorkflowReorder({
+        threads,
+        assignments,
+        threadId: "thr_b",
+        workflowStage: "Idle",
+        enabledStages: ["Idle", "Active", "Completed"],
+        intent: { scope: "stage", direction: 1 },
+      }),
+    ).toEqual({ kind: "stage", workflowStage: "Active" });
+    expect(
+      resolveWorkflowReorder({
+        threads,
+        assignments,
+        threadId: "thr_b",
+        workflowStage: "Idle",
+        enabledStages: ["Idle", "Active", "Completed"],
+        intent: { scope: "stage", direction: -1 },
+      }),
+    ).toEqual({ kind: "none" });
+  });
+
   it("moves among rows at the task's own depth", () => {
     const nested = [
       thread("thr_a"),

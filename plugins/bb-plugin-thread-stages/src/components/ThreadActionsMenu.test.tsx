@@ -316,6 +316,45 @@ describe("ThreadActionsDropdown", () => {
     expectMenuItemIcon("Blocked", "BlockedProgress");
     expectMenuItemIcon("Completed", "CompletedProgress");
   });
+
+  it("omits disabled stages from its stage submenu", () => {
+    const actions = {
+      open: vi.fn(),
+      openNewThread: vi.fn(),
+      setPinned: vi.fn(async () => {}),
+      setRead: vi.fn(async () => {}),
+      rename: vi.fn(async () => {}),
+      archive: vi.fn(),
+      requestDelete: vi.fn(),
+    } satisfies PluginSidebarThreadActions;
+    render(
+      <ThreadActionsDropdown
+        actions={actions}
+        disabled={false}
+        sections={[]}
+        onNewSection={vi.fn()}
+        onOpenChange={vi.fn()}
+        onRename={vi.fn()}
+        onSetSection={vi.fn()}
+        onSetWorkflowStage={vi.fn()}
+        splitAvailable={false}
+        workflowStage="Idle"
+        workflowStages={["Idle", "Active", "Completed"]}
+        thread={thread()}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByLabelText("Thread actions"), {
+      key: "Enter",
+    });
+    fireEvent.click(screen.getByText("Move to stage"));
+
+    expect(screen.queryByText("Deferred")).toBeNull();
+    expect(screen.queryByText("Blocked")).toBeNull();
+    expect(screen.getByText("Idle")).toBeDefined();
+    expect(screen.getByText("Active")).toBeDefined();
+    expect(screen.getByText("Completed")).toBeDefined();
+  });
 });
 
 describe("ThreadActionsContextMenu", () => {

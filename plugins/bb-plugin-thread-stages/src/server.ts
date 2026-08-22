@@ -12,7 +12,11 @@ import {
 } from "./store";
 import { registerThreadWorkflow } from "./workflow-automation";
 import { registerThreadPreviews } from "./thread-preview";
-import { WORKFLOW_STAGES } from "./workflow-stage";
+import {
+  WORKFLOW_STAGES,
+  enabledWorkflowStages,
+  type WorkflowStage,
+} from "./workflow-stage";
 import {
   partitionWorkflowThreads,
   rootThreadIdByThreadId,
@@ -235,7 +239,7 @@ export const rpcContract = defineRpcContract({
 });
 
 export default function plugin(bb: BbPluginApi) {
-  bb.settings.define({
+  const settings = bb.settings.define({
     showSidebarFilter: {
       type: "boolean",
       label: "Show projects and sections in sidebar",
@@ -256,6 +260,20 @@ export default function plugin(bb: BbPluginApi) {
       description: "Show the latest message preview below each thread title.",
       default: true,
     },
+    showDeferredStage: {
+      type: "boolean",
+      label: "Show Deferred stage",
+      description:
+        "Allow threads to move into Deferred. A nonempty Deferred stage remains visible until it is emptied.",
+      default: true,
+    },
+    showBlockedStage: {
+      type: "boolean",
+      label: "Show Blocked stage",
+      description:
+        "Allow threads to move into Blocked. A nonempty Blocked stage remains visible until it is emptied.",
+      default: true,
+    },
   });
   const db = bb.storage.database();
   bb.storage.migrate(db, THREAD_WORKFLOW_MIGRATIONS);
@@ -272,6 +290,12 @@ export default function plugin(bb: BbPluginApi) {
         ? `Child thread ${threadId} has no stage; its stage belongs to root thread ${rootId}.`
         : `Thread ${threadId} is not a root thread.`,
     );
+  }
+
+  async function requireEnabledStage(stage: WorkflowStage): Promise<void> {
+    const enabledStages = enabledWorkflowStages(await settings.get());
+    if (enabledStages.includes(stage)) return;
+    throw new Error(`Stage ${stage} is disabled in Thread stages settings.`);
   }
 
   bb.rpc.register(rpcContract, {
@@ -405,6 +429,7 @@ export default function plugin(bb: BbPluginApi) {
       return state;
     },
     async moveThread(input) {
+      await requireEnabledStage(input.workflowStage);
       const threads = await listAllThreads(({ limit, offset }) =>
         bb.sdk.threads.list({ archived: false, limit, offset }),
       );
@@ -414,6 +439,7 @@ export default function plugin(bb: BbPluginApi) {
       return state;
     },
     async setWorkflowStage({ threadId, workflowStage }) {
+      await requireEnabledStage(workflowStage);
       const threads = await listAllThreads(({ limit, offset }) =>
         bb.sdk.threads.list({ archived: false, limit, offset }),
       );
@@ -459,6 +485,7 @@ export default function plugin(bb: BbPluginApi) {
         assignments: store.listState().assignments,
         threadId,
         workflowStage: store.get(threadId).workflowStage,
+        enabledStages: enabledWorkflowStages(await settings.get()),
         intent: { scope, direction },
       });
       if (move.kind === "none") return store.listState();
@@ -542,6 +569,7 @@ export default function plugin(bb: BbPluginApi) {
         }
       }
       const result = runThreadWorkflowCli(store, argv, {
+        enabledStages: enabledWorkflowStages(await settings.get()),
         ...(listThreadIds ? { listThreadIds } : {}),
         ...(rootIdsByThreadId ? { rootIdsByThreadId } : {}),
         ...(context.threadId ? { threadId: context.threadId } : {}),

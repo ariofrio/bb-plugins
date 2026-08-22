@@ -40,6 +40,20 @@ describe("thread stages plugin API", () => {
         description: "Show the latest message preview below each thread title.",
         default: true,
       },
+      showDeferredStage: {
+        type: "boolean",
+        label: "Show Deferred stage",
+        description:
+          "Allow threads to move into Deferred. A nonempty Deferred stage remains visible until it is emptied.",
+        default: true,
+      },
+      showBlockedStage: {
+        type: "boolean",
+        label: "Show Blocked stage",
+        description:
+          "Allow threads to move into Blocked. A nonempty Blocked stage remains visible until it is emptied.",
+        default: true,
+      },
     });
     expect(harness.inspection.registrations.rpcMethods).toEqual([
       "createProjectFromFolder",
@@ -364,6 +378,24 @@ describe("thread stages plugin API", () => {
         nextThreadId: null,
       }),
     ).rejects.toMatchObject({ code: "invalid_input" });
+  });
+
+  it("rejects moves into disabled stages", async () => {
+    const host = createFakePluginHost({
+      pluginId: "thread-stages",
+      settings: { showBlockedStage: false },
+    });
+    plugin(host.bb);
+    disposeHosts.push(() => host.harness.lifecycle.dispose());
+
+    await expect(
+      host.harness.behavior.callRpc("moveThread", {
+        threadId: "thr_1",
+        workflowStage: "Blocked",
+        previousThreadId: null,
+        nextThreadId: null,
+      }),
+    ).rejects.toThrow("Stage Blocked is disabled");
   });
 
   it("runs its CLI through host result normalization", async () => {

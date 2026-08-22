@@ -319,6 +319,20 @@ describe("thread stages CLI", () => {
     expect(invalid.stderr).toContain("Deferred, Idle, Active");
   });
 
+  it("rejects updates into a stage disabled in settings", () => {
+    const result = runThreadWorkflowCli(
+      store,
+      ["update", "thr_a", "--stage", "Blocked"],
+      { enabledStages: ["Idle", "Active", "Completed"] },
+    );
+
+    expect(result).toMatchObject({
+      exitCode: 1,
+      stderr: expect.stringContaining("Stage Blocked is disabled"),
+    });
+    expect(store.get("thr_a").workflowStage).toBe("Idle");
+  });
+
   it("rejects stage reads and writes for child threads", () => {
     store.ensureThreads(["parent", "child"]);
     const rootIdsByThreadId = new Map<string, string | null>([
