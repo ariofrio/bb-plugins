@@ -45,6 +45,7 @@ interface CommonMenuProps {
   onSetSection: (sectionId: string | null) => void;
   onSetWorkflowStage: (stage: WorkflowStage) => void;
   workflowStage: WorkflowStage | null;
+  workflowStages?: readonly WorkflowStage[];
   thread: PluginSidebarThread;
   splitAvailable: boolean;
 }
@@ -132,7 +133,7 @@ function ContextMenuItems(props: CommonMenuProps) {
           </ContextMenuSubTrigger>
           <ContextMenuPortal>
             <ContextMenuSubContent>
-              {WORKFLOW_STAGES.map((stage) => (
+              {(props.workflowStages ?? WORKFLOW_STAGES).map((stage) => (
                 <ContextMenuItem
                   key={stage}
                   onSelect={() => {
@@ -252,7 +253,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
             <DropdownMenuSubContent className={DROPDOWN_LAYER_CLASS}>
-              {WORKFLOW_STAGES.map((stage) => (
+              {(props.workflowStages ?? WORKFLOW_STAGES).map((stage) => (
                 <DropdownMenuItem
                   key={stage}
                   onSelect={() => {

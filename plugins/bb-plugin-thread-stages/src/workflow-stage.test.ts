@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   WORKFLOW_STAGES,
   destinationOrder,
+  enabledWorkflowStages,
   groupThreadsByStage,
   parseWorkflowStage,
   type ThreadAssignment,
@@ -24,6 +25,16 @@ describe("thread statuses", () => {
     expect(parseWorkflowStage("done")).toBe("Completed");
     expect(parseWorkflowStage("cancelled")).toBe("Completed");
     expect(parseWorkflowStage("not started")).toBeNull();
+  });
+
+  it("keeps required stages while allowing Deferred and Blocked to be hidden", () => {
+    expect(
+      enabledWorkflowStages({
+        showDeferredStage: false,
+        showBlockedStage: false,
+      }),
+    ).toEqual(["Idle", "Active", "Completed"]);
+    expect(enabledWorkflowStages(undefined)).toEqual(WORKFLOW_STAGES);
   });
 
   it("defaults unassigned threads to Idle and honors explicit sort keys", () => {

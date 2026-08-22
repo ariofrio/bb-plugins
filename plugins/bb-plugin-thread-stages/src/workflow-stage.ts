@@ -10,6 +10,21 @@ export const WORKFLOW_STAGES = [
 
 export type WorkflowStage = (typeof WORKFLOW_STAGES)[number];
 
+export interface WorkflowStageVisibilitySettings {
+  showDeferredStage?: boolean | string;
+  showBlockedStage?: boolean | string;
+}
+
+export function enabledWorkflowStages(
+  settings: WorkflowStageVisibilitySettings | undefined,
+): readonly WorkflowStage[] {
+  return WORKFLOW_STAGES.filter((stage) => {
+    if (stage === "Deferred") return settings?.showDeferredStage !== false;
+    if (stage === "Blocked") return settings?.showBlockedStage !== false;
+    return true;
+  });
+}
+
 export interface ThreadAssignment {
   threadId: string;
   workflowStage: WorkflowStage;
