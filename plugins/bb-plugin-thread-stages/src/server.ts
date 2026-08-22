@@ -284,7 +284,7 @@ export default function plugin(bb: BbPluginApi) {
       description:
         "Archive safe Completed threads after they have stayed in that stage for the selected time.",
       options: [...AUTO_ARCHIVE_OPTIONS],
-      default: "Never",
+      default: "7 days",
     },
   });
   const db = bb.storage.database();

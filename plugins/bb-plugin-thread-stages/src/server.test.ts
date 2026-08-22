@@ -60,7 +60,7 @@ describe("thread stages plugin API", () => {
         description:
           "Archive safe Completed threads after they have stayed in that stage for the selected time.",
         options: ["Never", "1 day", "7 days", "30 days"],
-        default: "Never",
+        default: "7 days",
       },
     });
     expect(harness.inspection.registrations.rpcMethods).toEqual([
