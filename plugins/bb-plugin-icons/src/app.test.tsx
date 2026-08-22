@@ -134,15 +134,20 @@ describe("the window the sidebar script leaves open", () => {
       answer = (showInSidebar) => resolve({ showInSidebar });
     });
     unanswered.push(answer);
-    globalThis.fetch = vi.fn(async () => {
+    const answered = (body: unknown) =>
+      new Response(JSON.stringify(body), {
+        headers: { "content-type": "application/json" },
+      });
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      // Only the placements call is answered. The script's other reads say no,
+      // which is what `iconsRpc` turns into a null state — the same thing a
+      // backend hiccup gives it, and the path SidebarIcons has to survive.
+      if (!String(input).endsWith("/listPlacements")) return answered({ ok: false });
       const placements = await settled;
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          result: { showInThreadHeader: true, showInSidebar: placements.showInSidebar },
-        }),
-        { headers: { "content-type": "application/json" } },
-      );
+      return answered({
+        ok: true,
+        result: { showInThreadHeader: true, showInSidebar: placements.showInSidebar },
+      });
     }) as unknown as typeof fetch;
     // The fetch, its body, the caller resuming, and the observer's first read
     // are each a turn of their own.
@@ -199,7 +204,13 @@ describe("the window the sidebar script leaves open", () => {
     // in it, so nothing is placed until the answer arrives.
     expect(document.querySelector("[data-icons-sidebar-root]")).toBeNull();
     await placements.settle(true);
-    expect(document.querySelector("[data-icons-sidebar-root]")).not.toBeNull();
+    const anchor = document.querySelector("[data-icons-sidebar-root]");
+    expect(anchor).not.toBeNull();
+    // Drawn into, not merely placed. The anchor is put there by the DOM scan,
+    // so asserting only its presence would pass while the render that fills it
+    // was throwing — which is how this test first went green locally and red in
+    // CI, on a machine that got one animation frame further.
+    await vi.waitFor(() => expect(anchor!.childElementCount).toBeGreaterThan(0));
   });
 
   it("places nothing when the answer says the sidebar is off", async () => {
