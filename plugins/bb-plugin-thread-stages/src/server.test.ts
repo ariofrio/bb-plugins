@@ -34,6 +34,12 @@ describe("thread stages plugin API", () => {
           "Show the highest-priority thread activity indicator in collapsed stage headers.",
         default: false,
       },
+      showThreadPreviews: {
+        type: "boolean",
+        label: "Show thread message previews",
+        description: "Show the latest message preview below each thread title.",
+        default: true,
+      },
     });
     expect(harness.inspection.registrations.rpcMethods).toEqual([
       "createProjectFromFolder",

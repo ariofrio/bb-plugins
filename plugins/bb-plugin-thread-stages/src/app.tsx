@@ -674,6 +674,7 @@ function WorkflowStageList({
   );
   const showCollapsedStageIndicators =
     settings.values?.showCollapsedStageIndicators === true;
+  const showThreadPreviews = settings.values?.showThreadPreviews !== false;
   const showSidebarFilter = settings.values?.showSidebarFilter !== false;
   const [mutationPending, setMutationPending] = useState(false);
   const [pinnedThreadIds, setPinnedThreadIds] = useState<readonly string[]>([]);
@@ -1489,7 +1490,11 @@ function WorkflowStageList({
                       onToggleChildren={() =>
                         toggleThreadCollapsed(thread.id)
                       }
-                      preview={previews.get(thread.id) ?? null}
+                      preview={
+                        showThreadPreviews
+                          ? (previews.get(thread.id) ?? null)
+                          : null
+                      }
                       projectIcon={projectIcons.get(thread.projectId) ?? null}
                       reorderable={isRoot && !Boolean(normalizedSearch)}
                       showDropAfter={
@@ -1666,7 +1671,11 @@ function WorkflowStageList({
                         onToggleChildren={() =>
                           toggleThreadCollapsed(thread.id)
                         }
-                        preview={previews.get(thread.id) ?? null}
+                        preview={
+                          showThreadPreviews
+                            ? (previews.get(thread.id) ?? null)
+                            : null
+                        }
                         projectIcon={projectIcons.get(thread.projectId) ?? null}
                         reorderable={isRoot && !Boolean(normalizedSearch)}
                         showDropAfter={

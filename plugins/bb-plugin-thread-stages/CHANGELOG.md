@@ -15,6 +15,8 @@
 
 ### Minor Changes
 
+- Add a setting to hide thread message previews while preserving the compact
+  title-only row layout.
 - Replace Backlog, To do, Working, Blocked, Done, and Canceled with Deferred,
   Idle, Active, Blocked, and Completed. Existing assignments and saved collapse
   choices migrate, with Done and Canceled combined in Completed.
