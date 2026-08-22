@@ -15,11 +15,11 @@ const collection = await readJson(new URL("../.bb/plugins.json", import.meta.url
 test("publishes every repository plugin from its immutable release line", async () => {
   assert.equal(marketplace.$schema, "https://getbb.app/schemas/marketplace.schema.json");
   assert.equal(marketplace.schemaVersion, 1);
-  assert.equal(marketplace.name, "ariofrio");
+  assert.equal(marketplace.name, "ribbon");
   // The catalog and the collection name the same thing, so a reader who meets
   // one of the two files never has to wonder whether the other is something else.
   assert.equal(collection.name, marketplace.name);
-  assert.equal(marketplace.displayName, "Andres Riofrio's bb plugins");
+  assert.equal(marketplace.displayName, "Ribbon");
 
   const listings = new Map(marketplace.plugins.map((plugin) => [plugin.id, plugin]));
   assert.equal(listings.size, marketplace.plugins.length, "marketplace plugin ids must be unique");
@@ -50,7 +50,7 @@ test("publishes every repository plugin from its immutable release line", async 
     const { range, ...source } = listing.source.git;
     assert.deepEqual({ git: source }, {
       git: {
-        url: "https://github.com/ariofrio/bb-plugins.git",
+        url: "https://github.com/ariofrio/ribbon.git",
         subdir: directory,
         tagPrefix: `${id}/`,
       },
@@ -111,7 +111,7 @@ test("packages every plugin the same way and paints its icon in bb's muted foreg
     assert.equal(manifest.repository.directory, directory, `${id} repository.directory`);
     assert.equal(
       manifest.homepage,
-      `https://github.com/ariofrio/bb-plugins/tree/main/${directory}#readme`,
+      `https://github.com/ariofrio/ribbon/tree/main/${directory}#readme`,
       `${id} homepage`,
     );
     assert.ok(manifest.files.includes("assets"), `${id} must publish assets/`);

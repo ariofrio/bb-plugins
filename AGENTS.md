@@ -1,4 +1,4 @@
-# bb-plugins Instructions
+# Ribbon Instructions
 
 ## Naming
 

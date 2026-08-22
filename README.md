@@ -1,11 +1,13 @@
-<h1 align="center"><a href="https://github.com/ariofrio">Andres Riofrio</a>'s bb plugins</h1>
+<h1 align="center">Ribbon</h1>
 
-<p align="center"><strong>Plugins for <a href="https://getbb.app">bb</a>, the agent IDE that builds itself</strong></p>
+<p align="center"><strong>Grow your swarm without losing the thread</strong></p>
+
+<p align="center">Plugins for <a href="https://getbb.app">bb</a>, the agent IDE that builds itself</p>
 
 <p align="center">
   <a href="https://getbb.app"><img src="https://img.shields.io/badge/bb-0.39%2B-656D76?style=flat-square" alt="bb 0.39+"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/ariofrio/bb-plugins?style=flat-square&color=656D76" alt="MIT license"></a>
-  <a href="https://github.com/ariofrio/bb-plugins/actions/workflows/plugins.yml"><img src="https://img.shields.io/github/actions/workflow/status/ariofrio/bb-plugins/plugins.yml?branch=main&style=flat-square&label=CI" alt="CI status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/ariofrio/ribbon?style=flat-square&color=656D76" alt="MIT license"></a>
+  <a href="https://github.com/ariofrio/ribbon/actions/workflows/plugins.yml"><img src="https://img.shields.io/github/actions/workflow/status/ariofrio/ribbon/plugins.yml?branch=main&style=flat-square&label=CI" alt="CI status"></a>
 </p>
 
 <br>
@@ -25,8 +27,8 @@
 Group threads in the sidebar into stages from Backlog to Done, updating as they run.
 
 ```sh
-bb marketplace add git:github.com/ariofrio/bb-plugins
-bb plugin install thread-stages@ariofrio
+bb marketplace add git:github.com/ariofrio/ribbon
+bb plugin install thread-stages@ribbon
 ```
 
 <a href="plugins/bb-plugin-thread-stages#readme">Read more &rarr;</a>
@@ -40,8 +42,8 @@ bb plugin install thread-stages@ariofrio
 Give each project and section an icon and color.
 
 ```sh
-bb marketplace add git:github.com/ariofrio/bb-plugins
-bb plugin install icons@ariofrio
+bb marketplace add git:github.com/ariofrio/ribbon
+bb plugin install icons@ribbon
 ```
 
 <a href="plugins/bb-plugin-icons#readme">Read more &rarr;</a>
@@ -55,8 +57,8 @@ bb plugin install icons@ariofrio
 Show a thread's section, project, and ancestors in its header.
 
 ```sh
-bb marketplace add git:github.com/ariofrio/bb-plugins
-bb plugin install breadcrumbs@ariofrio
+bb marketplace add git:github.com/ariofrio/ribbon
+bb plugin install breadcrumbs@ribbon
 ```
 
 <a href="plugins/bb-plugin-breadcrumbs#readme">Read more &rarr;</a>
@@ -70,8 +72,8 @@ bb plugin install breadcrumbs@ariofrio
 Add shortcuts to start personal or project threads, navigate history, and reach the composer or panel tabs.
 
 ```sh
-bb marketplace add git:github.com/ariofrio/bb-plugins
-bb plugin install missing-keyboard-shortcuts@ariofrio
+bb marketplace add git:github.com/ariofrio/ribbon
+bb plugin install missing-keyboard-shortcuts@ribbon
 ```
 
 <a href="plugins/bb-plugin-missing-keyboard-shortcuts#readme">Read more &rarr;</a>
@@ -85,8 +87,8 @@ bb plugin install missing-keyboard-shortcuts@ariofrio
 Restyle bb to match the OpenAI ChatGPT (Codex) desktop app.
 
 ```sh
-bb marketplace add git:github.com/ariofrio/bb-plugins
-bb plugin install chatgpt-theme@ariofrio
+bb marketplace add git:github.com/ariofrio/ribbon
+bb plugin install chatgpt-theme@ribbon
 ```
 
 <a href="plugins/bb-plugin-chatgpt-theme#readme">Read more &rarr;</a>
@@ -104,8 +106,8 @@ Settings → Plugins.
 Clone the repository and install every plugin at once:
 
 ```sh
-git clone https://github.com/ariofrio/bb-plugins.git
-cd bb-plugins
+git clone https://github.com/ariofrio/ribbon.git
+cd ribbon
 npm run install:plugins
 ```
 
@@ -117,7 +119,7 @@ by its entry name in the collection — the entries are listed in
 [.bb/plugins.json](.bb/plugins.json):
 
 ```sh
-bb plugin install git:https://github.com/ariofrio/bb-plugins.git@main --plugin chatgpt-theme
+bb plugin install git:https://github.com/ariofrio/ribbon.git@main --plugin chatgpt-theme
 ```
 
 That install follows the branch rather than the release tags, so
@@ -130,7 +132,7 @@ change. After the change reaches `main`, automation opens or updates a release
 pull request with version, lockfile, and changelog updates. Merging that pull
 request validates the affected plugins, creates immutable `<plugin-id>/vX.Y.Z`
 Git tags, and publishes a
-[GitHub release](https://github.com/ariofrio/bb-plugins/releases) per tag
+[GitHub release](https://github.com/ariofrio/ribbon/releases) per tag
 carrying that version's changelog entry. Every listing accepts any released
 version, so the catalog never changes with a release. Nothing is published to
 npm yet.

@@ -1,9 +1,9 @@
 {
   "$schema": "https://getbb.app/schemas/marketplace.schema.json",
   "schemaVersion": 1,
-  "name": "ariofrio",
-  "displayName": "Andres Riofrio's bb plugins",
-  "description": "Plugins for bb maintained by Andres Riofrio.",
+  "name": "ribbon",
+  "displayName": "Ribbon",
+  "description": "Plugins for running a lot of bb agents at once. Grow your swarm without losing the thread.",
   "plugins": [
     {
       "id": "breadcrumbs",
@@ -25,7 +25,7 @@
       },
       "source": {
         "git": {
-          "url": "https://github.com/ariofrio/bb-plugins.git",
+          "url": "https://github.com/ariofrio/ribbon.git",
           "subdir": "plugins/bb-plugin-breadcrumbs",
           "range": "*",
           "tagPrefix": "breadcrumbs/"
@@ -54,7 +54,7 @@
       },
       "source": {
         "git": {
-          "url": "https://github.com/ariofrio/bb-plugins.git",
+          "url": "https://github.com/ariofrio/ribbon.git",
           "subdir": "plugins/bb-plugin-chatgpt-theme",
           "range": "*",
           "tagPrefix": "chatgpt-theme/"
@@ -82,7 +82,7 @@
       },
       "source": {
         "git": {
-          "url": "https://github.com/ariofrio/bb-plugins.git",
+          "url": "https://github.com/ariofrio/ribbon.git",
           "subdir": "plugins/bb-plugin-icons",
           "range": "*",
           "tagPrefix": "icons/"
@@ -110,7 +110,7 @@
       },
       "source": {
         "git": {
-          "url": "https://github.com/ariofrio/bb-plugins.git",
+          "url": "https://github.com/ariofrio/ribbon.git",
           "subdir": "plugins/bb-plugin-missing-keyboard-shortcuts",
           "range": "*",
           "tagPrefix": "missing-keyboard-shortcuts/"
@@ -139,7 +139,7 @@
       },
       "source": {
         "git": {
-          "url": "https://github.com/ariofrio/bb-plugins.git",
+          "url": "https://github.com/ariofrio/ribbon.git",
           "subdir": "plugins/bb-plugin-thread-stages",
           "range": "*",
           "tagPrefix": "thread-stages/"

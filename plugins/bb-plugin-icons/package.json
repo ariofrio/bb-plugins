@@ -5,12 +5,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ariofrio/bb-plugins.git",
+    "url": "git+https://github.com/ariofrio/ribbon.git",
     "directory": "plugins/bb-plugin-icons"
   },
-  "homepage": "https://github.com/ariofrio/bb-plugins/tree/main/plugins/bb-plugin-icons#readme",
+  "homepage": "https://github.com/ariofrio/ribbon/tree/main/plugins/bb-plugin-icons#readme",
   "bugs": {
-    "url": "https://github.com/ariofrio/bb-plugins/issues"
+    "url": "https://github.com/ariofrio/ribbon/issues"
   },
   "files": [
     "assets",

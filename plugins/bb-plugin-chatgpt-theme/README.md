@@ -23,8 +23,8 @@ Add this repository as a bb marketplace, then install the theme from it and
 select it:
 
 ```sh
-bb marketplace add git:github.com/ariofrio/bb-plugins
-bb plugin install chatgpt-theme@ariofrio
+bb marketplace add git:github.com/ariofrio/ribbon
+bb plugin install chatgpt-theme@ribbon
 bb theme set plugin:chatgpt-theme:chatgpt
 ```
 
