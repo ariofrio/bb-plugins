@@ -189,7 +189,7 @@ function ContextMenuItems(props: CommonMenuProps) {
                 ) : null}
               </span>
               <Icon name="ListViewOff" aria-hidden />
-              Uncategorized
+              Unorganized
             </ContextMenuItem>
             <ContextMenuItem inset onSelect={props.onNewSection}>
               <Icon name="SectionAdd" aria-hidden />
@@ -309,7 +309,7 @@ function DropdownMenuItems(props: CommonMenuProps) {
                 ) : null}
               </span>
               <Icon name="ListViewOff" aria-hidden />
-              Uncategorized
+              Unorganized
             </DropdownMenuItem>
             <DropdownMenuItem inset onSelect={props.onNewSection}>
               <Icon name="SectionAdd" aria-hidden />

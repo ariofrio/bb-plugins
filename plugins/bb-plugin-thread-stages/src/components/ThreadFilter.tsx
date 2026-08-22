@@ -114,7 +114,7 @@ export function ThreadFilter({
     ? "Threads"
     : (activeProject?.name ??
       activeSection?.name ??
-      (activeUncategorized ? "Uncategorized" : null));
+      (activeUncategorized ? "Unorganized" : null));
   const personalProject = projects.find((project) => project.isPersonal);
   const regularProjects = projects.filter((project) => !project.isPersonal);
   const scopeLabel = "Projects and sections";
@@ -301,7 +301,7 @@ export function ThreadFilter({
                 </ActionableThreadFilterItem>
               ))}
               {sections.length > 0 ? (
-                <ThreadFilterItem label="Uncategorized" value="uncategorized">
+                <ThreadFilterItem label="Unorganized" value="uncategorized">
                   <Icon
                     name="ListViewOff"
                     className="size-4 shrink-0"

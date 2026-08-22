@@ -81,7 +81,7 @@ agent-browser --session "$qa_session" eval '(() => {
   const sectionItems = itemText(sectionGroup);
   const validSectionOrder =
     (sectionItems.length === 1 && sectionItems[0] === "New section") ||
-    (sectionItems.at(-2) === "Uncategorized" &&
+    (sectionItems.at(-2) === "Unorganized" &&
       sectionItems.at(-1) === "New section");
   if (
     projectItems.at(-2) !== "Threads" ||
@@ -117,7 +117,7 @@ agent-browser --session "$qa_session" eval '(() => {
     section:
       sectionItems.length === 1
         ? null
-        : assertCreationIconAligned(sectionGroup, "Uncategorized", "New section"),
+        : assertCreationIconAligned(sectionGroup, "Unorganized", "New section"),
   };
   const reference = getComputedStyle(stageHeader);
   for (const label of groupLabels) {

@@ -126,7 +126,7 @@ describe("ThreadFilter", () => {
     });
     expect(projectsGroup.textContent).toBe("ProjectsAlphaThreadsNew project");
     expect(sectionsGroup.textContent).toBe(
-      "SectionsWaitingUncategorizedNew section",
+      "SectionsWaitingUnorganizedNew section",
     );
     expect(
       within(projectsGroup).getByRole("menuitem", { name: "New project" }),
@@ -143,7 +143,7 @@ describe("ThreadFilter", () => {
       "Alpha",
       "Threads",
       "Waiting",
-      "Uncategorized",
+      "Unorganized",
     ]);
     expect(
       within(menu)
@@ -157,7 +157,7 @@ describe("ThreadFilter", () => {
     ).not.toBeNull();
     expect(
       within(menu)
-        .getByRole("menuitemradio", { name: "Uncategorized" })
+        .getByRole("menuitemradio", { name: "Unorganized" })
         .querySelector('[data-icon="ListViewOff"]'),
     ).not.toBeNull();
   });
@@ -258,7 +258,7 @@ describe("ThreadFilter", () => {
       <ThreadFilter {...sharedProps} value={{ kind: "uncategorized" }} />,
     );
     trigger = screen.getByRole("button", {
-      name: "Projects and sections: Uncategorized",
+      name: "Projects and sections: Unorganized",
     });
     expect(trigger.querySelector('[data-icon="ListViewOff"]')).not.toBeNull();
   });
@@ -286,7 +286,7 @@ describe("ThreadFilter", () => {
 
     fireEvent.keyDown(trigger, { key: "Enter" });
     fireEvent.click(
-      screen.getByRole("menuitemradio", { name: "Uncategorized" }),
+      screen.getByRole("menuitemradio", { name: "Unorganized" }),
       { detail: 1 },
     );
 
@@ -349,7 +349,7 @@ describe("ThreadFilter", () => {
     expect(within(projectsOnlyMenu).getByText("Sections")).toBeDefined();
     expect(
       within(projectsOnlyMenu).queryByRole("menuitemradio", {
-        name: "Uncategorized",
+        name: "Unorganized",
       }),
     ).toBeNull();
     expect(

@@ -19,10 +19,10 @@
   Idle, Active, Blocked, and Completed. Existing assignments and saved collapse
   choices migrate, with Done and Canceled combined in Completed.
 - Add New project and New section to their respective filter-dropdown groups,
-  after the regular choices and the Threads or Uncategorized fallback. Place
+  after the regular choices and the Threads or Unorganized fallback. Place
   the active filter marker beside its label, and match BB's native dropdown
   group labels, dividers, and selectable-row indentation. Keep Move to section
-  in the same order, without separating Uncategorized from New section. Keep
+  in the same order, without separating Unorganized from New section. Keep
   the sidebar and All choice labeled Projects and sections even before the
   first section exists.
 - Bring Blocked into the progress-ring icon family with a diagonally divided,

@@ -221,12 +221,12 @@ describe("ThreadActionsDropdown", () => {
       Array.from(sectionMenu?.querySelectorAll('[role="menuitem"]') ?? []).map(
         (item) => item.textContent,
       ),
-    ).toEqual(["Now", "Later", "Uncategorized", "New section"]);
+    ).toEqual(["Now", "Later", "Unorganized", "New section"]);
     expect(sectionMenu?.querySelectorAll('[role="separator"]')).toHaveLength(0);
-    expect(screen.getByText("Uncategorized")).toBeDefined();
+    expect(screen.getByText("Unorganized")).toBeDefined();
     expect(screen.getByText("Now")).toBeDefined();
     expect(screen.getByText("Later")).toBeDefined();
-    expectMenuItemIcon("Uncategorized", "ListViewOff");
+    expectMenuItemIcon("Unorganized", "ListViewOff");
     expectMenuItemIcon("Now", "ListView");
     expectMenuItemIcon("Later", "ListView");
     const newSectionItem = screen
@@ -243,7 +243,7 @@ describe("ThreadActionsDropdown", () => {
       key: "Enter",
     });
     fireEvent.click(screen.getByText("Move to section"));
-    fireEvent.click(screen.getByText("Uncategorized"));
+    fireEvent.click(screen.getByText("Unorganized"));
     expect(onSetSection).toHaveBeenCalledWith(null);
 
     view.rerender(
@@ -268,7 +268,7 @@ describe("ThreadActionsDropdown", () => {
       key: "Enter",
     });
     fireEvent.click(screen.getByText("Move to section"));
-    fireEvent.click(screen.getByText("Uncategorized"));
+    fireEvent.click(screen.getByText("Unorganized"));
     expect(onSetSection).toHaveBeenCalledTimes(2);
 
     fireEvent.keyDown(screen.getByLabelText("Thread actions"), {
@@ -392,16 +392,16 @@ describe("ThreadActionsContextMenu", () => {
       Array.from(sectionMenu?.querySelectorAll('[role="menuitem"]') ?? []).map(
         (item) => item.textContent,
       ),
-    ).toEqual(["Later", "Uncategorized", "New section"]);
+    ).toEqual(["Later", "Unorganized", "New section"]);
     expect(sectionMenu?.querySelectorAll('[role="separator"]')).toHaveLength(0);
     expect(
       screen.getByText("New section").closest('[role="menuitem"]')?.className,
     ).toContain("pl-8");
 
-    expect(screen.getByText("Uncategorized")).toBeDefined();
+    expect(screen.getByText("Unorganized")).toBeDefined();
     expect(screen.getByText("Later")).toBeDefined();
     expect(screen.getByText("New section")).toBeDefined();
-    expectMenuItemIcon("Uncategorized", "ListViewOff");
+    expectMenuItemIcon("Unorganized", "ListViewOff");
     expectMenuItemIcon("Later", "ListView");
     expect(parentMenu.contains(screen.getByText("New section"))).toBe(false);
   });
