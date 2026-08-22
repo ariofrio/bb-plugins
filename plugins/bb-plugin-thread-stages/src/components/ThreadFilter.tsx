@@ -117,10 +117,8 @@ export function ThreadFilter({
       (activeUncategorized ? "Uncategorized" : null));
   const personalProject = projects.find((project) => project.isPersonal);
   const regularProjects = projects.filter((project) => !project.isPersonal);
-  const scopeLabel =
-    sections.length === 0 ? "Projects" : "Projects and sections";
-  const allLabel =
-    sections.length === 0 ? "All projects" : "All projects and sections";
+  const scopeLabel = "Projects and sections";
+  const allLabel = "All projects and sections";
 
   function handleFilterChange(nextValue: string): void {
     if (!nextValue) {

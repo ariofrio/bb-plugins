@@ -11,7 +11,9 @@
   after the regular choices and the Threads or Uncategorized fallback. Place
   the active filter marker beside its label, and match BB's native dropdown
   group labels, dividers, and selectable-row indentation. Keep Move to section
-  in the same order, without separating Uncategorized from New section.
+  in the same order, without separating Uncategorized from New section. Keep
+  the sidebar and All choice labeled Projects and sections even before the
+  first section exists.
 - Bring Blocked into the progress-ring icon family with a diagonally divided,
   filled upper-right semicircle.
 

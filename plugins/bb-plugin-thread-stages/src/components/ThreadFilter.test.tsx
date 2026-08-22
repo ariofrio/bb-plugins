@@ -335,10 +335,16 @@ describe("ThreadFilter", () => {
     rerender(
       <ThreadFilter {...sharedProps} projects={projects} sections={[]} />,
     );
-    fireEvent.keyDown(screen.getByRole("button", { name: "Projects" }), {
-      key: "Enter",
-    });
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Projects and sections" }),
+      { key: "Enter" },
+    );
     const projectsOnlyMenu = screen.getByRole("menu");
+    expect(
+      within(projectsOnlyMenu).getByRole("menuitemradio", {
+        name: "All projects and sections",
+      }),
+    ).toBeDefined();
     expect(within(projectsOnlyMenu).getByText("Projects")).toBeDefined();
     expect(within(projectsOnlyMenu).getByText("Sections")).toBeDefined();
     expect(
@@ -366,7 +372,7 @@ describe("ThreadFilter", () => {
       />,
     );
     expect(
-      screen.getByRole("button", { name: "Projects: Alpha" }),
+      screen.getByRole("button", { name: "Projects and sections: Alpha" }),
     ).toBeDefined();
   });
 

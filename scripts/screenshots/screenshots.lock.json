@@ -2,14 +2,14 @@
   "bbVersion": "0.39.0",
   "shots": {
     "thread-stages": {
-      "inputs": "0ff05d4c552ec95789da101a7bf1755827081aeeed79ec7a74e9b6ce9c7a3fed",
+      "inputs": "358aff5c1254957bc5e8d5b6c6e0f9c3fb0723a89631150598412ffbd86f28dd",
       "files": {
-        "screenshot-light.png": "7cc7730862054e407ddef50d73c619be1cf48c5a3b9ec8a3792fd75c9440a99e",
-        "screenshot-dark.png": "81ca8e102672734169ec36e65dada53a6b3b511fb01584351d518ca99aaecd42",
-        "card-light.png": "f71c48917814c2ed65d20cb0b8fdd1b44f85b0c37164a7c9dc2ebb9e86525aa9",
-        "card-dark.png": "00496955059024b6543b12c1a079f311d89979869688a5fca43633e9eefa0318",
-        "card-beside-light.png": "b68fe5449a650bbc9e12f80df4f48fa8a6466a993908563890fde14806dbe1be",
-        "card-beside-dark.png": "b846df959a09179534fac9f41a08d679082cf235597073812f5b6a437dc45560"
+        "screenshot-light.png": "0216dcb3d96507a2feeefa0862954e38c2eb31b0a53ccd2aa46622f7dfbd7fe1",
+        "screenshot-dark.png": "e36d0022e2e5405cbec78507e904dc9464b010cee0b3d670538d87915e8ed3c8",
+        "card-light.png": "15d98a94d6fbed19dc3c1c2880f33d2e0fbe818aafe3065bf40037c3a860a52d",
+        "card-dark.png": "51f850f66722977ec862a30a453e15435a361e568e8731de7eebe2e59e291299",
+        "card-beside-light.png": "6d780a4906695fce7973ed40b2f27eb68228c6b88dde339efe52882fba0dc9e0",
+        "card-beside-dark.png": "f82427c58edcaf01a03d62608be644fdc80d71e229fd32cb396da30b624f37b8"
       }
     },
     "missing-keyboard-shortcuts": {
@@ -35,10 +35,10 @@
       }
     },
     "collection": {
-      "inputs": "748d1cdcf319be3f26e489677a11a37aeeaccf30cc7c28863e0f2a9830f4a1e7",
+      "inputs": "8cdec3a87ee0909c0fbc73c7bdc9814938dac2c546dc3a1070f76f744becbba5",
       "files": {
-        "hero-light.png": "db20dad8418b7d7ebfe493afbba4e27526712a4b5f88055b77950e2417fada62",
-        "hero-dark.png": "e95869c7610b1f8200faaf138cb35afbbd2f16792a23b43a63abe82384225056"
+        "hero-light.png": "ce410322f7d509c7538fabccebed49769a217cab01cd0f0a79c77b477d2dfed1",
+        "hero-dark.png": "98ea2f7412067e5bf04f777ef029928e4df9772105396b5bbd361e251ea76e10"
       }
     },
     "breadcrumbs": {

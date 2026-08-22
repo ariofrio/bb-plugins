@@ -15,7 +15,7 @@ cleanup() {
 trap cleanup EXIT
 
 agent-browser --session "$qa_session" open "$qa_server_url" >/dev/null
-agent-browser --session "$qa_session" wait 2000 >/dev/null
+agent-browser --session "$qa_session" wait '[data-thread-filter-trigger]' >/dev/null
 agent-browser --session "$qa_session" set viewport 900 700 2 >/dev/null
 agent-browser --session "$qa_session" wait 300 >/dev/null
 agent-browser --session "$qa_session" eval '(() => {
@@ -25,7 +25,7 @@ agent-browser --session "$qa_session" eval '(() => {
   if (
     !(control instanceof HTMLButtonElement) ||
     !(icon instanceof SVGElement) ||
-    (label !== "Projects" && label !== "Projects and sections") ||
+    label !== "Projects and sections" ||
     icon.getAttribute("data-icon") !== "FolderLibrary"
   ) {
     throw new Error(
@@ -53,19 +53,22 @@ agent-browser --session "$qa_session" eval '(() => {
     ? []
     : [...menu.querySelectorAll("[role=menuitem]")]
         .filter((item) => item.textContent === "New project" || item.textContent === "New section");
+  const allItem = menu?.querySelector("[role=menuitemradio]");
   if (
     !(menu instanceof HTMLElement) ||
     !(stageHeader instanceof HTMLElement) ||
     groupLabels.length === 0 ||
     groups.length !== groupLabels.length ||
     separators.length !== groupLabels.length ||
-    createItems.length !== 2
+    createItems.length !== 2 ||
+    allItem?.textContent !== "All projects and sections"
   ) {
     throw new Error(`Unexpected native dropdown structure: ${JSON.stringify({
       labels: groupLabels.map((label) => label.textContent),
       groups: groups.length,
       separators: separators.length,
       createItems: createItems.map((item) => item.textContent),
+      allItem: allItem?.textContent,
     })}.`);
   }
   const projectGroup = groups.find((group) => group.getAttribute("aria-labelledby") === "thread-filter-projects-label");
@@ -76,11 +79,14 @@ agent-browser --session "$qa_session" eval '(() => {
         .map((item) => item.textContent);
   const projectItems = itemText(projectGroup);
   const sectionItems = itemText(sectionGroup);
+  const validSectionOrder =
+    (sectionItems.length === 1 && sectionItems[0] === "New section") ||
+    (sectionItems.at(-2) === "Uncategorized" &&
+      sectionItems.at(-1) === "New section");
   if (
     projectItems.at(-2) !== "Threads" ||
     projectItems.at(-1) !== "New project" ||
-    sectionItems.at(-2) !== "Uncategorized" ||
-    sectionItems.at(-1) !== "New section"
+    !validSectionOrder
   ) {
     throw new Error(`Unexpected dropdown item order: ${JSON.stringify({
       projectItems,
@@ -108,7 +114,10 @@ agent-browser --session "$qa_session" eval '(() => {
   };
   const creationAlignment = {
     project: assertCreationIconAligned(projectGroup, "Threads", "New project"),
-    section: assertCreationIconAligned(sectionGroup, "Uncategorized", "New section"),
+    section:
+      sectionItems.length === 1
+        ? null
+        : assertCreationIconAligned(sectionGroup, "Uncategorized", "New section"),
   };
   const reference = getComputedStyle(stageHeader);
   for (const label of groupLabels) {
