@@ -28,7 +28,7 @@
 - Both carry rounded corners and no shadow, and only the window shots carry the hairline edge that makes a window a window. Margins in an image are margins a reader sees, so they exist only where a layout needs them: a card is written twice, flush for the column that stacks it and with a left margin for the column that floats it beside a paragraph.
 - A shot of the collection rather than of a plugin writes to the repository's own `assets/`: `hero-<mode>.png` shades nothing, because it points at nothing. Every other shot names the plugin it belongs to, and lands beside that plugin's own README.
 - Whatever the capturing machine brings with it stays out of frame, and whatever the app resolves late is waited for rather than raced — the update chips report this machine's pending updates, and the composer's permission mode arrives after the thread does. Two runs on one machine write the same files byte for byte; that is the bar a change to the harness has to keep.
-- Capturing needs macOS, the bb desktop app, and `npx playwright install chromium`. `npm run check:screenshots` needs neither, and CI runs it to report a screenshot whose plugin changed after it was captured.
+- Capturing needs macOS, the bb desktop app, the Node in `.nvmrc`, and `npx playwright install chromium`. `npm run check:screenshots` needs none of it, and CI runs it to report a screenshot whose plugin changed after it was captured.
 
 ## Testing
 

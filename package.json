@@ -13,7 +13,7 @@
     "check:heading-icons": "node scripts/heading-icons.mjs --check",
     "check:screenshots": "node scripts/screenshots/run.mjs --check",
     "install:plugins": "node scripts/install-plugins.mjs",
-    "screenshots": "node scripts/screenshots/run.mjs",
+    "screenshots": "node scripts/require-node.mjs && node scripts/screenshots/run.mjs",
     "test": "node --test scripts/*.test.mjs scripts/screenshots/*.test.mjs",
     "version:plugins": "changeset version && node scripts/sync-plugin-lockfiles.mjs"
   },

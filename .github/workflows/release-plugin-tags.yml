@@ -45,7 +45,7 @@ jobs:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: ${{ matrix.release.directory }}/package-lock.json
       - run: npm ci --workspaces=false
