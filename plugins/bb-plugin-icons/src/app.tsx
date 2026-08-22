@@ -248,52 +248,87 @@ export default definePluginApp((app) => {
   // why this half talks to its own backend over fetch.
   app.contentScripts.register({
     id: "sidebar-icons",
-    async mount({ pluginId, signal }) {
-      const rpcEarly = iconsRpc(pluginId);
-      // Asked before a single node is placed: an anchor left in bb's sidebar
-      // would space the group label out even with nothing drawn in it. bb
-      // never applies a settings edit without a reload, so one read holds.
-      const placements = await rpcEarly.listPlacements();
-      if (placements?.showInSidebar === false || signal.aborted) return;
-
-      const host = document.createElement("div");
-      host.style.display = "none";
-      document.body.append(host);
-      const root = createRoot(host);
-      const rpc = rpcEarly;
-
-      /**
-       * Rendering is pushed out of the call bb is watching.
-       *
-       * bb guards its own React tree: while a plugin's code is on the stack it
-       * blocks any React-owned node from being moved under a parent React does
-       * not own. A render committed straight from the observer lands inside
-       * that window and takes every plugin's portal down with it — the
-       * Breadcrumbs plugin loses its crumbs and bb warns that "icons" tried to
-       * move a node out of React's tree. A timeout leaves the window first.
-       */
-      let cancel: (() => void) | undefined;
-      let pending: SidebarAnchor[] = [];
-      const draw = (anchors: SidebarAnchor[]) => {
-        pending = anchors;
-        if (cancel !== undefined) return;
-        cancel = afterPluginFrame(() => {
-          cancel = undefined;
-          root.render(<SidebarIcons anchors={pending} rpc={rpc} />);
-        });
-      };
-      draw([]);
-      const stop = observeSidebarIconAnchors(draw);
+    /**
+     * Answers bb with its disposer first, and reads its settings after.
+     *
+     * bb holds a plugin attributed for as long as `mount` is unresolved, and
+     * while any plugin is attributed it refuses to let a React-owned node into
+     * a container React does not own. Reading the settings before returning
+     * therefore held the whole app in that state for the length of a round
+     * trip — a second or more on a cold start — and every plugin drawing into
+     * bb's chrome in the meantime was refused, this collection's crumbs
+     * included. bb's contract takes a disposer straight back, so the read
+     * happens after it, and the window closes on the next microtask.
+     */
+    mount({ pluginId, signal }) {
+      const rpc = iconsRpc(pluginId);
+      let teardown: (() => void) | null = null;
+      let disposed = false;
 
       const dispose = () => {
-        cancel?.();
-        // React owns nodes inside bb's sidebar, so it unmounts before the
-        // anchors holding them are taken back out.
-        root.unmount();
-        stop();
-        host.remove();
+        disposed = true;
+        const stop = teardown;
+        teardown = null;
+        stop?.();
       };
+      // Registered before anything can be placed, so an abort that arrives
+      // mid-read is seen by the read rather than lost.
       signal.addEventListener("abort", dispose, { once: true });
+
+      const place = () => {
+        const host = document.createElement("div");
+        host.style.display = "none";
+        document.body.append(host);
+        const root = createRoot(host);
+
+        /**
+         * Rendering is pushed off the call that asked for it, so a render is
+         * never committed from inside bb's own mutation callback, and a burst
+         * of sidebar changes redraws once rather than once each.
+         *
+         * It does not leave bb's guard: attribution is wall-clock, not stack,
+         * so a frame that lands inside another plugin's mount is refused like
+         * any other. See `after-plugin-frame.ts`. These anchors have never been
+         * seen refused — 240 inserts over 40 loads, none blocked, in runs where
+         * the crumbs beside them were blocked 68 times — because a draw is
+         * scheduled from a settings read that has already ended, and a redraw
+         * comes from an observer built outside anyone's window. So there is no
+         * recovery here, as there is nothing yet to recover from.
+         */
+        let cancel: (() => void) | undefined;
+        let pending: SidebarAnchor[] = [];
+        const draw = (anchors: SidebarAnchor[]) => {
+          pending = anchors;
+          if (cancel !== undefined) return;
+          cancel = afterPluginFrame(() => {
+            cancel = undefined;
+            root.render(<SidebarIcons anchors={pending} rpc={rpc} />);
+          });
+        };
+        draw([]);
+        const stop = observeSidebarIconAnchors(draw);
+
+        teardown = () => {
+          cancel?.();
+          // React owns nodes inside bb's sidebar, so it unmounts before the
+          // anchors holding them are taken back out.
+          root.unmount();
+          stop();
+          host.remove();
+        };
+      };
+
+      // Still asked before a single node is placed: an anchor left in bb's
+      // sidebar would space the group label out even with nothing drawn in it.
+      // bb never applies a settings edit without a reload, so one read holds,
+      // and `iconsRpc` answers null rather than throwing, so this cannot
+      // reject.
+      void rpc.listPlacements().then((placements) => {
+        if (disposed || signal.aborted) return;
+        if (placements?.showInSidebar === false) return;
+        place();
+      });
+
       return dispose;
     },
   });
