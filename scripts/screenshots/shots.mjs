@@ -50,10 +50,17 @@ async function openFeaturedThread(page) {
   // The composer resolves its permission mode after the thread itself, and a
   // shot taken in between differs from the same shot taken after, in a corner
   // no plugin here owns.
+  //
+  // Given the same two minutes as the crumb below, and for the same reason:
+  // this is a readiness check bounded by a deadline, and a deadline measures
+  // the machine. On a box carrying other captures it has timed out at thirty
+  // seconds while the app was merely slow, which fails a run that would have
+  // succeeded. The slack goes here rather than into accepting a shot taken
+  // before the chip resolves.
   await page
     .getByRole("button", { name: "Permission mode" })
     .filter({ hasText: "Accept Edits" })
-    .waitFor();
+    .waitFor({ timeout: 120000 });
   // The branch the thread's workspace is on arrives later than the composer it
   // is written under, and it widens the row it lands in, so a shot taken in
   // between differs from the same shot taken after. Named inside the timeline
