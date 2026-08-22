@@ -54,6 +54,14 @@ describe("thread stages plugin API", () => {
           "Allow threads to move into Blocked. A nonempty Blocked stage remains visible until it is emptied.",
         default: true,
       },
+      autoArchiveCompletedAfter: {
+        type: "select",
+        label: "Auto-archive completed threads",
+        description:
+          "Archive safe Completed threads after they have stayed in that stage for the selected time.",
+        options: ["Never", "1 day", "7 days", "30 days"],
+        default: "Never",
+      },
     });
     expect(harness.inspection.registrations.rpcMethods).toEqual([
       "createProjectFromFolder",
@@ -80,6 +88,9 @@ describe("thread stages plugin API", () => {
     expect(
       harness.inspection.registrations.services.map(({ name }) => name),
     ).toEqual(["stage-automation", "thread-previews"]);
+    expect(harness.inspection.registrations.schedules).toMatchObject([
+      { name: "completed-auto-archive", cron: "17 * * * *" },
+    ]);
     expect(harness.inspection.registrations.cli?.name).toBe("thread-stages");
     expect(harness.inspection.registrations.threadEventHandlers).toMatchObject({
       "thread.active": 1,
