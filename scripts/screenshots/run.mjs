@@ -21,12 +21,13 @@ import {
   readLock,
 } from "./lock.mjs";
 import { startStack } from "./stack.mjs";
+import { resolveBbCli } from "../bb-cli.mjs";
 
 const harnessDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(harnessDirectory, "../..");
 const lockPath = join(harnessDirectory, LOCK_FILENAME);
 const scratch = join(repositoryRoot, ".scratch/screenshots");
-const bb = process.env.BB_CLI ?? "bb";
+const bb = resolveBbCli();
 
 const options = parseArguments(process.argv.slice(2));
 const shots = SHOTS.filter(
